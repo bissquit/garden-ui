@@ -1,58 +1,77 @@
-# CLAUDE.md — StatusPage Frontend
+# CLAUDE.md — StatusPage Frontend (единый гайд для разработки)
 
-## 🎯 Цель проекта
+Этот документ — **инструкция к действию** для Claude/любой автоматизации и для разработчика: как вносить изменения, где что лежит, какие паттерны применять, какие тесты и CI-гейты обязательны.
+
+## 1) Контекст проекта
+
+### Цель
 
 Веб-интерфейс для StatusPage API. Позволяет:
-- Просматривать статус сервисов (публичная страница)
-- Управлять сервисами, событиями, шаблонами (админка)
-- Настраивать уведомления (личный кабинет)
+- Просматривать статус сервисов (публичная страница).
+- Управлять сервисами, событиями, шаблонами (админка).
+- Настраивать уведомления (личный кабинет).
 
----
+### Связь с Backend (источник истины)
 
-## 🔗 Связь с Backend
+Backend репозиторий: https://github.com/bissquit/incident-garden
 
-**Backend репозиторий:** https://github.com/bissquit/incident-garden
+API спецификация:
+- Источник истины: backend репозиторий `api/openapi/openapi.yaml`.
+- Локальная копия: `src/api/openapi.yaml`.
+- Сгенерированные типы: `src/api/types.generated.ts`.
 
-**API спецификация:**
-- Источник истины: backend репозиторий `api/openapi/openapi.yaml`
-- Локальная копия: `src/api/openapi.yaml`
-- Сгенерированные типы: `src/api/types.generated.ts`
-
-**Обновление API:**
+Обновление API:
 ```bash
 npm run api:update    # Скачать свежую спеку из backend
 npm run api:generate  # Сгенерировать TypeScript типы
 ```
 
-**Матрица совместимости:**
+Матрица совместимости:
 
 | Frontend | Backend  | Статус       |
 |----------|----------|--------------|
 | 1.x.x    | >= 1.0.0 | ✅ Совместимы |
 
-> При обновлении backend API — обновить спеку, сгенерировать типы, исправить ошибки TypeScript.
+Инвариант: при изменении backend API — обновить спеку, сгенерировать типы, исправить ошибки TypeScript.
 
 ---
 
-## 📊 Текущий статус
+## 2) Режим работы (playbook)
 
-| Компонент             | Статус     | Описание                      |
-|-----------------------|------------|-------------------------------|
-| Public Status Page    | 🔜 Planned | Отображение статусов сервисов |
-| Auth (Login/Logout)   | 🔜 Planned | JWT аутентификация            |
-| Dashboard Layout      | 🔜 Planned | Общий layout админки          |
-| Services Management   | 🔜 Planned | CRUD сервисов                 |
-| Groups Management     | 🔜 Planned | CRUD групп                    |
-| Events Management     | 🔜 Planned | CRUD событий                  |
-| Event Updates         | 🔜 Planned | Timeline обновлений           |
-| Templates             | 🔜 Planned | Управление шаблонами          |
-| Notification Channels | 🔜 Planned | Email, Telegram каналы        |
-| Subscriptions         | 🔜 Planned | Подписки на уведомления       |
-| User Profile          | 🔜 Planned | Настройки пользователя        |
+Эта секция — главное: **как выполнять любую задачу**.
+
+### Алгоритм для любой задачи
+
+1. Уточнить входные данные: какая страница/фича/endpoint, роли доступа, UI состояния (loading/empty/error/success), требования к SSR/SEO.
+2. Проверить контракт: есть ли endpoint в `src/api/openapi.yaml`, какие типы уже сгенерированы, нужно ли обновить спеку.
+3. Спроектировать «границы»: какие слои затрагиваем (page → feature component → hook → api client), какие тесты добавляем.
+4. Реализация: сначала типы/валидации (Zod), затем hooks (TanStack Query), затем UI.
+5. Ошибки и UX: явные состояния загрузки/ошибок/пустоты, тосты/диалоги подтверждения, error boundary (если уместно).
+6. Тесты: unit/integration обязательны по матрице ниже; E2E — для критических flow.
+7. Локальная валидация: lint + typecheck + tests + build.
+8. PR: описание, скриншоты для UI, чеклист DoD выполнен.
+
+### Definition of Done (DoD) для PR
+
+PR считается готовым, только если выполнено всё ниже:
+- Код соответствует архитектуре и паттернам из этого файла.
+- Нет прямых HTTP вызовов из UI: только через `src/api/*` и hooks.
+- Есть обработка loading/error/empty.
+- Типы не «ручные»: используются OpenAPI types + Zod схемы.
+- Тесты добавлены согласно матрице (минимум).
+- `npm run lint` проходит.
+- `npm run typecheck` проходит.
+- `npm run test:coverage` проходит и не ухудшает coverage ниже порогов.
+- `npm run build` проходит.
+- Если затронуты критические потоки — добавлены/обновлены E2E тесты Playwright.
+- Документация обновлена при необходимости (включая этот CLAUDE.md, если изменились правила/структура/команды).
+
+Рекомендуется добавить агрегирующую команду (локальная parity с CI):
+- `npm run verify` = lint + typecheck + test:coverage + build.
 
 ---
 
-## 🛠 Технологический стек
+## 3) Технологический стек (фиксируем решения)
 
 | Компонент        | Технология              | Обоснование                              |
 |------------------|-------------------------|------------------------------------------|
@@ -69,256 +88,147 @@ npm run api:generate  # Сгенерировать TypeScript типы
 
 ---
 
-## 📁 Структура проекта
+## 4) Архитектура и границы (самое важное)
 
-```
+### Структура проекта (ориентир)
+
+```text
 statuspage-ui/
 ├── src/
 │   ├── api/
 │   │   ├── openapi.yaml          # Копия спеки из backend
-│   │   ├── types.generated.ts    # Сгенерированные типы (не редактировать!)
+│   │   ├── types.generated.ts    # Сгенерированные типы (НЕ редактировать)
 │   │   └── client.ts             # Настроенный API клиент
-│   │
 │   ├── app/                      # Next.js App Router
-│   │   ├── (public)/             # Публичные страницы (без auth)
-│   │   │   ├── page.tsx          # Главная — статус сервисов
-│   │   │   ├── history/          # История событий
-│   │   │   └── layout.tsx
-│   │   │
-│   │   ├── (auth)/               # Auth страницы
-│   │   │   ├── login/
-│   │   │   ├── register/
-│   │   │   └── layout.tsx
-│   │   │
-│   │   ├── dashboard/            # Защищённая зона (требует auth)
-│   │   │   ├── page.tsx          # Dashboard home
-│   │   │   ├── services/         # Управление сервисами
-│   │   │   ├── groups/           # Управление группами
-│   │   │   ├── events/           # Управление событиями
-│   │   │   ├── templates/        # Управление шаблонами
-│   │   │   └── layout.tsx        # Dashboard layout с sidebar
-│   │   │
-│   │   ├── settings/             # Настройки пользователя
-│   │   │   ├── profile/
-│   │   │   ├── channels/         # Каналы уведомлений
-│   │   │   ├── subscriptions/    # Подписки
-│   │   │   └── layout.tsx
-│   │   │
-│   │   ├── layout.tsx            # Root layout
-│   │   ├── providers.tsx         # React Query, Auth providers
-│   │   └── globals.css           # Tailwind imports
-│   │
 │   ├── components/
-│   │   ├── ui/                   # shadcn/ui компоненты
-│   │   │   ├── button.tsx
-│   │   │   ├── input.tsx
-│   │   │   ├── dialog.tsx
-│   │   │   └── ...
-│   │   │
-│   │   ├── layout/               # Layout компоненты
-│   │   │   ├── header.tsx
-│   │   │   ├── sidebar.tsx
-│   │   │   ├── footer.tsx
-│   │   │   └── mobile-nav.tsx
-│   │   │
-│   │   └── features/             # Бизнес-компоненты
-│   │       ├── auth/
-│   │       │   ├── login-form.tsx
-│   │       │   └── register-form.tsx
-│   │       ├── services/
-│   │       │   ├── service-card.tsx
-│   │       │   ├── service-list.tsx
-│   │       │   ├── service-form.tsx
-│   │       │   └── service-status-badge.tsx
-│   │       ├── events/
-│   │       │   ├── event-card.tsx
-│   │       │   ├── event-list.tsx
-│   │       │   ├── event-form.tsx
-│   │       │   ├── event-timeline.tsx
-│   │       │   └── event-update-form.tsx
-│   │       └── status/
-│   │           ├── status-overview.tsx
-│   │           ├── status-history.tsx
-│   │           └── overall-status.tsx
-│   │
-│   ├── hooks/                    # Custom React hooks
-│   │   ├── use-auth.ts           # Auth state и методы
-│   │   ├── use-services.ts       # Services queries
-│   │   ├── use-events.ts         # Events queries
-│   │   └── use-media-query.ts    # Responsive helpers
-│   │
-│   ├── lib/                      # Утилиты и конфигурация
-│   │   ├── utils.ts              # Общие утилиты (cn, formatDate, etc.)
-│   │   ├── auth.ts               # Auth utilities
-│   │   ├── validations.ts        # Zod schemas
-│   │   └── constants.ts          # Константы приложения
-│   │
-│   └── types/                    # Дополнительные TypeScript типы
-│       └── index.ts
-│
+│   │   ├── ui/                   # shadcn/ui (переиспользуемые атомы)
+│   │   ├── layout/               # layout-компоненты (header/sidebar/footer)
+│   │   └── features/             # фичи/домены (auth/services/events/status/...)
+│   ├── hooks/                    # hooks уровня приложения (use-auth, use-services...)
+│   ├── lib/                      # утилиты/валидации/константы/сервисы
+│   └── types/                    # дополнительные доменные типы (если не из OpenAPI)
 ├── tests/
-│   ├── unit/                     # Vitest unit тесты
-│   ├── integration/              # Component тесты
-│   ├── e2e/                      # Playwright E2E тесты
+│   ├── unit/
+│   ├── integration/
+│   ├── e2e/
 │   └── mocks/                    # MSW handlers
-│       ├── handlers.ts
-│       └── server.ts
-│
-├── public/
-│   ├── favicon.ico
-│   └── ...
-│
-├── scripts/
-│   ├── update-api.sh             # Скачать свежую OpenAPI спеку
-│   └── generate-types.sh         # Сгенерировать типы
-│
-├── .github/
-│   └── workflows/
-│       ├── ci.yml                # Lint, Test, Build
-│       ├── release-please.yml    # Автоматические релизы
-│       └── e2e.yml               # E2E тесты
-│
-├── .env.example
-├── .env.local                    # Локальные переменные (не в git)
-├── next.config.js
-├── tailwind.config.js
-├── tsconfig.json
-├── vitest.config.ts
-├── playwright.config.ts
-├── package.json
-├── CHANGELOG.md
-├── README.md
-└── CLAUDE.md
+└── .github/workflows/
 ```
+
+### Инварианты слоёв
+
+- Pages (`src/app/**`) отвечают за маршрутизацию/композицию, не содержат бизнес-логики и не делают HTTP.
+- Feature components (`src/components/features/**`) содержат UI и используют hooks.
+- Hooks (`src/hooks/**`) инкапсулируют TanStack Query (queryKey, queryFn/mutationFn, invalidate, обработка ошибок).
+- API слой (`src/api/**`) — единое место для клиента, baseUrl, auth header и общих параметров.
+- `src/lib/**` — чистые функции, валидации (Zod), маппинги статусов, форматирование, общие policy.
+
+Если правило нарушено — это дизайн-баг, а не “быстрее сделать”.
+
+### Предпочтительные паттерны (явно)
+
+Используем следующие паттерны, чтобы проект оставался консистентным:
+
+- Feature module pattern: «фича = компоненты + hooks + валидации + тесты» в одном домене.
+- Container/Presentational: тяжёлая логика — в контейнере/хуке, UI — в простых компонентах.
+- Functional core / imperative shell: преобразования данных — чистые функции в `lib/`, React-слой — оркестрация.
+- Single source of truth для server state: TanStack Query, без дублирования в локальном стейте (кроме UI состояния).
+- Error as data: единый формат ошибок и единая стратегия отображения (см. раздел «Ошибки»).
+- SSR boundary: публичные страницы по возможности SSR/SSG; интерактивные части — client components точечно.
 
 ---
 
-## 🔐 Аутентификация
+## 5) Код-стайл, best practices, ограничения
+
+### Naming conventions
+
+- Компоненты: `PascalCase`, один компонент = один файл.
+- Хуки: `camelCase` с префиксом `use`.
+- Утилиты/функции: `camelCase`.
+- Типы/интерфейсы: `PascalCase` + суффиксы по смыслу (`Props`, `State`, `Params`, `Response`).
+- Имена файлов/директорий: предпочтительно `kebab-case` (кроме случаев, когда Next.js диктует имена).
+
+### Правила TypeScript
+
+- Не использовать `any` (кроме узких “escape hatches”, обязательно с комментарием почему и ссылкой на issue/долг).
+- Предпочитать `unknown` + narrowing.
+- Для данных от API: типы только из `types.generated.ts` + runtime-валидация Zod на границах (формы, query params, user input).
+
+### Компоненты и UI
+
+- Всегда реализовывать состояния: loading / error / empty / success.
+- Опасные действия (удаление/отключение) — только с confirmation dialog.
+- Для долгих операций — disable кнопок + спиннер/loader.
+- Accessibility: семантические элементы, label для inputs, корректные aria-атрибуты.
+
+### Ошибки (единая политика)
+
+- 401: инициировать logout/refresh flow, затем redirect на `/login` (без бесконечных циклов).
+- 403: показывать “Access denied” (без редиректа на login).
+- 5xx/сеть: user-friendly сообщение + возможность retry.
+
+Рекомендуется держать централизованный маппинг ошибок в `src/lib/api-error.ts` и использовать его в hooks.
+
+---
+
+## 6) Аутентификация и безопасность
 
 ### Механизм
 
-- **Тип:** JWT токены от backend API
-- **Access token:** короткоживущий (15 минут)
-- **Refresh token:** долгоживущий (7 дней)
+- Тип: JWT токены от backend API.
+- Access token: короткоживущий (15 минут).
+- Refresh token: долгоживущий (7 дней).
 
-### Хранение токенов
+### Хранение токенов (обязательные правила)
 
-```typescript
-// ⚠️ ВАЖНО: НЕ использовать localStorage — уязвимость XSS
+```ts
+// ❌ НИКОГДА не использовать localStorage/sessionStorage для токенов (XSS).
 
-// Правильно: хранить в памяти (React state/context)
+// ✅ Допустимо: хранить access token в памяти (React state/context).
 const [accessToken, setAccessToken] = useState<string | null>(null);
 
-// Refresh token: 
-// - Идеально: httpOnly cookie (требует изменений в backend)
-// - Допустимо: память (теряется при перезагрузке страницы)
+// Refresh token:
+// - Идеально: httpOnly cookie (требует поддержки backend).
+// - Временно допустимо: в памяти (минус: теряется при перезагрузке страницы).
 ```
 
-### Auth Flow
+### Auth Flow (инвариант)
 
-```
-1. Login
+```text
+1) Login
    POST /api/v1/auth/login { email, password }
    → { data: { user, tokens: { access_token, refresh_token } } }
-   → Сохранить токены в state
-   → Redirect to /dashboard
+   → сохранить токены в state
+   → redirect /dashboard
 
-2. Authenticated Request
-   GET /api/v1/services
-   Headers: { Authorization: "Bearer <access_token>" }
+2) Authenticated Request
+   Authorization: Bearer <access_token>
 
-3. Token Refresh (при 401)
+3) Token Refresh (при 401)
    POST /api/v1/auth/refresh { refresh_token }
-   → Новая пара токенов
-   → Повторить оригинальный запрос
+   → обновить токены
+   → повторить оригинальный запрос
 
-4. Logout
+4) Logout
    POST /api/v1/auth/logout { refresh_token }
-   → Очистить токены из state
-   → Redirect to /login
+   → очистить state
+   → redirect /login
 ```
 
-### Auth Context
+### Security checklist
 
-```typescript
-// src/hooks/use-auth.ts
-interface AuthContext {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  hasRole: (role: Role) => boolean;
-}
-```
+- Токены: не логировать, не сохранять в storage.
+- API URL: только через environment variables.
+- Sensitive data: не выводить в console и не отправлять в аналитики.
+- User input: всегда валидировать Zod (и на клиенте, и на серверной стороне, где применимо).
 
 ---
 
-## 🎨 UI/UX Guidelines
+## 7) API integration (обязательные практики)
 
-### Публичная страница
+### Клиент
 
-- **Цель:** быстро показать текущий статус
-- **Дизайн:** минималистичный, чистый
-- **Производительность:** SSR/SSG, минимум JS
-- **Мобильная версия:** обязательна
-- **Accessibility:** WCAG 2.1 AA
-
-**Элементы:**
-- Overall status indicator (All Systems Operational / Partial Outage / Major Outage)
-- Список сервисов с текущим статусом
-- Активные инциденты с timeline
-- Запланированные maintenance
-- История за последние 7 дней
-
-### Админка (Dashboard)
-
-- **Layout:** sidebar navigation + main content
-- **Таблицы:** пагинация, сортировка, фильтры
-- **Формы:** inline validation, loading states
-- **Actions:** confirmation dialogs для опасных действий
-- **Feedback:** toast notifications для результатов операций
-
-### Статусы и цвета
-
-```typescript
-const statusColors = {
-  operational: 'green',
-  degraded: 'yellow', 
-  partial_outage: 'orange',
-  major_outage: 'red',
-  maintenance: 'blue',
-} as const;
-
-const severityColors = {
-  minor: 'yellow',
-  major: 'orange',
-  critical: 'red',
-} as const;
-```
-
-### Responsive Breakpoints
-
-```typescript
-// Tailwind defaults
-// sm: 640px
-// md: 768px
-// lg: 1024px
-// xl: 1280px
-
-// Mobile-first approach
-// Default styles → mobile
-// sm: → tablet
-// lg: → desktop
-```
-
----
-
-## 📋 API Integration
-
-### Настройка клиента
-
-```typescript
+```ts
 // src/api/client.ts
 import createClient from 'openapi-fetch';
 import type { paths } from './types.generated';
@@ -327,7 +237,6 @@ const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 export const client = createClient<paths>({ baseUrl });
 
-// Добавление auth header
 export function createAuthClient(accessToken: string) {
   return createClient<paths>({
     baseUrl,
@@ -338,9 +247,16 @@ export function createAuthClient(accessToken: string) {
 }
 ```
 
-### Использование с TanStack Query
+### Hooks + TanStack Query (паттерн)
 
-```typescript
+- Для каждой сущности (services/groups/events/…) должен быть `use<Entity>()` (read) и `useCreate/Update/Delete<Entity>()` (write).
+- `queryKey` — стабильный, сериализуемый, однообразный.
+- После мутаций — `invalidateQueries` соответствующих key.
+- Ошибки — единообразно нормализуются (одна стратегия для UI).
+
+Пример:
+
+```ts
 // src/hooks/use-services.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { client } from '@/api/client';
@@ -355,179 +271,42 @@ export function useServices() {
     },
   });
 }
-
-export function useCreateService() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (body: CreateServiceRequest) => {
-      const { data, error } = await authClient.POST('/api/v1/services', { body });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['services'] });
-    },
-  });
-}
-```
-
-### Обработка ошибок
-
-```typescript
-// src/lib/api-error.ts
-export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-    public details?: string
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
-
-// В компонентах
-const { error } = useServices();
-if (error instanceof ApiError) {
-  if (error.status === 401) {
-    // Redirect to login
-  }
-  if (error.status === 403) {
-    // Show "Access denied"
-  }
-}
 ```
 
 ---
 
-## 🧪 Тестирование
+## 8) Тестирование (стратегия + обязательная матрица)
 
-### Стратегия
+### Пирамида тестов
 
-```
-Пирамида тестов:
-         /\
-        /  \     E2E (10%) — критические user flows
-       /────\
-      /      \   Integration (30%) — компоненты + мок API
-     /────────\
-    /          \ Unit (60%) — хуки, утилиты, чистые функции
-   /────────────\
+```text
+E2E (10%)          — критические user flows
+Integration (30%)  — компоненты + мок API (MSW)
+Unit (60%)         — хуки, утилиты, чистые функции
 ```
 
-### Требования к покрытию
+### Coverage требования
 
-| Тип | Минимум | Цель | Что покрывать |
-|-----|---------|------|---------------|
-| Unit | 70% | 85% | hooks, lib/, utils, валидации |
-| Integration | 50% | 70% | components/features/, формы |
-| E2E | — | 100% критических flows | auth, CRUD операции |
+| Тип          | Минимум | Цель  | Что покрывать |
+|--------------|---------|-------|---------------|
+| Unit         | 70%     | 85%   | hooks, lib/, utils, валидации |
+| Integration  | 50%     | 70%   | components/features/, формы, UX состояния |
+| E2E          | —       | 100% критических flows | auth, CRUD операции, права доступа |
 
-**Правила:**
-- Новый код без тестов не мержится (CI проверяет coverage)
-- При падении coverage ниже минимума — CI падает
-- Критические компоненты (auth, forms) — 90%+ coverage
+### Матрица “изменение → какие тесты обязательны”
 
-### Unit тесты (Vitest)
+- Изменил `src/lib/**` (чистые функции, форматирование, маппинги): unit тест обязателен.
+- Добавил/изменил hook `src/hooks/use-*.ts`:
+    - unit тест (если есть чистая логика/маппинг),
+    - интеграционный тест компонента, который использует hook, через MSW (минимум 1 сценарий успеха + 1 ошибка).
+- Добавил/изменил форму (React Hook Form + Zod): integration тест обязателен (валидация + submit + error case).
+- Добавил новую страницу/flow в dashboard: минимум 1 integration тест на ключевое состояние, E2E — если это критический flow.
+- Auth/permissions изменения: integration + E2E обязательны.
 
-**Что тестировать:**
-- Custom hooks (без API)
-- Utility функции
-- Валидационные схемы
-- Pure компоненты
+### MSW
 
-```typescript
-// src/lib/utils.test.ts
-import { formatStatus, cn } from './utils';
-
-describe('formatStatus', () => {
-  it('formats operational status', () => {
-    expect(formatStatus('operational')).toBe('Operational');
-  });
-  
-  it('formats partial_outage', () => {
-    expect(formatStatus('partial_outage')).toBe('Partial Outage');
-  });
-});
-```
-
-### Integration тесты (Vitest + Testing Library)
-
-**Что тестировать:**
-- Компоненты с мок API (MSW)
-- Формы (заполнение, валидация, submit)
-- User interactions
-
-```typescript
-// src/components/features/auth/login-form.test.tsx
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { LoginForm } from './login-form';
-
-describe('LoginForm', () => {
-  it('submits and calls onSuccess', async () => {
-    const onSuccess = vi.fn();
-    render(<LoginForm onSuccess={onSuccess} />);
-    
-    await userEvent.type(screen.getByLabelText(/email/i), 'admin@example.com');
-    await userEvent.type(screen.getByLabelText(/password/i), 'admin123');
-    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
-    
-    await waitFor(() => {
-      expect(onSuccess).toHaveBeenCalled();
-    });
-  });
-  
-  it('shows validation errors', async () => {
-    render(<LoginForm />);
-    
-    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
-    
-    expect(await screen.findByText(/email is required/i)).toBeInTheDocument();
-  });
-});
-```
-
-### E2E тесты (Playwright)
-
-**Что тестировать:**
-- Критические user flows против реального backend
-- Auth flow
-- CRUD операции
-
-```typescript
-// tests/e2e/auth.spec.ts
-import { test, expect } from '@playwright/test';
-
-test.describe('Authentication', () => {
-  test('login with valid credentials', async ({ page }) => {
-    await page.goto('/login');
-    
-    await page.fill('[name="email"]', 'admin@example.com');
-    await page.fill('[name="password"]', 'admin123');
-    await page.click('button[type="submit"]');
-    
-    await expect(page).toHaveURL('/dashboard');
-    await expect(page.locator('text=Dashboard')).toBeVisible();
-  });
-  
-  test('logout', async ({ page }) => {
-    // Login first
-    await page.goto('/login');
-    await page.fill('[name="email"]', 'admin@example.com');
-    await page.fill('[name="password"]', 'admin123');
-    await page.click('button[type="submit"]');
-    await expect(page).toHaveURL('/dashboard');
-    
-    // Logout
-    await page.click('[data-testid="user-menu"]');
-    await page.click('text=Logout');
-    
-    await expect(page).toHaveURL('/login');
-  });
-});
-```
+- Все integration тесты, где есть запросы, должны использовать MSW.
+- Handlers лежат в `tests/mocks/handlers.ts` и должны быть переиспользуемыми.
 
 ### Запуск тестов
 
@@ -539,9 +318,9 @@ npm run test:e2e          # E2E тесты
 npm run test:e2e:ui       # E2E с UI
 ```
 
-### Конфигурация coverage
+### Конфигурация coverage (источник)
 
-```typescript
+```ts
 // vitest.config.ts
 export default defineConfig({
   test: {
@@ -568,208 +347,79 @@ export default defineConfig({
 
 ---
 
-## 🔄 CI/CD
+## 9) CI/CD (единые гейты качества)
 
-### Обзор пайплайнов
+### Обзор workflows
 
-| Workflow | Триггер | Назначение |
-|----------|---------|------------|
-| `ci.yml` | push, PR | Lint, Typecheck, Test, Build |
-| `release-please.yml` | push to main | Автоматическое версионирование |
-| `e2e.yml` | push to main, PR | E2E тесты с backend |
-| `deploy.yml` | release created | Deploy to Vercel/Netlify |
+| Workflow            | Триггер         | Назначение |
+|---------------------|-----------------|------------|
+| `ci.yml`            | push, PR        | Lint, Typecheck, Test, Build |
+| `e2e.yml`           | push to main, PR| E2E тесты с backend |
+| `release-please.yml`| push to main    | Автоматические релизы |
+| `deploy.yml`        | release created | Deploy to Vercel/Netlify |
 
-### CI Workflow (.github/workflows/ci.yml)
+### Quality gates для PR
 
-```yaml
-name: CI
+PR не должен мерджиться, если:
+- упал lint/typecheck/tests/build,
+- coverage ниже порога,
+- e2e упали (когда требуются для данного изменения/ветки),
+- нет тестов на новую логику/форму/хук.
 
-on:
-  push:
-    branches: [main]
-  pull_request:
+### E2E окружение
 
-jobs:
-  lint:
-    name: Lint & Typecheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
+E2E workflow поднимает PostgreSQL service и backend контейнер:
+- `postgres:16-alpine`
+- `ghcr.io/bissquit/incident-management:latest`
 
-  test:
-    name: Unit & Integration Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run test:coverage
-      
-      - name: Check coverage thresholds
-        run: |
-          npm run test:coverage -- --coverage.thresholds.statements=70
-      
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./coverage/lcov.info
-          fail_ci_if_error: true
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: [lint, test]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run build
-      
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: .next/
-          retention-days: 7
-```
-
-### E2E Workflow (.github/workflows/e2e.yml)
-
-```yaml
-name: E2E Tests
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-
-jobs:
-  e2e:
-    name: Playwright Tests
-    runs-on: ubuntu-latest
-    
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: statuspage
-          POSTGRES_PASSWORD: statuspage
-          POSTGRES_DB: statuspage
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Start backend
-        run: |
-          docker pull ghcr.io/bissquit/incident-management:latest
-          docker run -d --name backend \
-            --network host \
-            -e DATABASE_URL=postgresql://statuspage:statuspage@localhost:5432/statuspage \
-            -e JWT_SECRET_KEY=test-secret-key-for-ci \
-            ghcr.io/bissquit/incident-management:latest
-          
-          # Wait for backend
-          timeout 30 bash -c 'until curl -s http://localhost:8080/healthz; do sleep 1; done'
-      
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - run: npm ci
-      - run: npx playwright install --with-deps
-      
-      - name: Run E2E tests
-        run: npm run test:e2e
-        env:
-          NEXT_PUBLIC_API_URL: http://localhost:8080
-      
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 7
-```
-
-### Release Please Workflow (.github/workflows/release-please.yml)
-
-```yaml
-name: Release Please
-
-on:
-  push:
-    branches: [main]
-
-permissions:
-  contents: write
-  pull-requests: write
-
-jobs:
-  release-please:
-    name: Release Please
-    runs-on: ubuntu-latest
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
-
-    steps:
-      - name: Run Release Please
-        id: release
-        uses: googleapis/release-please-action@v4
-        with:
-          release-type: node
-
-  deploy:
-    name: Deploy
-    needs: release-please
-    if: ${{ needs.release-please.outputs.release_created == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      # Для Vercel
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-```
-
-### Требования к PR
-
-- ✅ Lint passed
-- ✅ Typecheck passed
-- ✅ Tests passed (coverage >= 70%)
-- ✅ Build successful
-- ✅ E2E tests passed (для main)
+Инвариант: образ backend должен соответствовать OpenAPI контракту, из которого генерируются типы фронта.
 
 ---
 
-## 🚀 Development
+## 10) UI/UX правила (которые нельзя нарушать)
+
+### Публичная страница
+
+- Цель: быстро показать текущий статус.
+- Производительность: SSR/SSG, минимум JS.
+- Mobile-first: обязательно.
+- Accessibility: WCAG 2.1 AA.
+
+Элементы:
+- Overall status indicator.
+- Список сервисов с текущим статусом.
+- Активные инциденты с timeline.
+- Запланированные maintenance.
+- История за последние 7 дней.
+
+### Dashboard
+
+- Layout: sidebar navigation + main content.
+- Таблицы: пагинация/сортировка/фильтры, если данных может быть много.
+- Формы: inline validation, понятные ошибки, disable при submit.
+- Feedback: toast notifications.
+
+### Статусы и цвета
+
+```ts
+const statusColors = {
+  operational: 'green',
+  degraded: 'yellow',
+  partial_outage: 'orange',
+  major_outage: 'red',
+  maintenance: 'blue',
+} as const;
+
+const severityColors = {
+  minor: 'yellow',
+  major: 'orange',
+  critical: 'red',
+} as const;
+```
+
+---
+
+## 11) Development: быстрый старт и команды
 
 ### Первоначальная настройка
 
@@ -806,54 +456,57 @@ npm run api:update    # Обновить OpenAPI спеку
 npm run api:generate  # Сгенерировать типы
 ```
 
-### Environment Variables
+### Environment variables
 
 ```bash
 # .env.local
-NEXT_PUBLIC_API_URL=http://localhost:8080  # Backend API URL
-```
-
-### Работа с API спекой
-
-При изменениях в backend API:
-
-```bash
-# 1. Обновить спеку
-npm run api:update
-
-# 2. Сгенерировать типы
-npm run api:generate
-
-# 3. Исправить ошибки TypeScript (если есть breaking changes)
-npm run typecheck
+NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
 
 ---
 
-## 📍 Roadmap
+## 12) Текущий статус и roadmap
 
-### Phase 1: Foundation ✅ → 🔜
+### Текущий статус (верхнеуровнево)
+
+| Компонент             | Статус     | Описание                      |
+|-----------------------|------------|-------------------------------|
+| Public Status Page    | 🔜 Planned | Отображение статусов сервисов |
+| Auth (Login/Logout)   | 🔜 Planned | JWT аутентификация            |
+| Dashboard Layout      | 🔜 Planned | Общий layout админки          |
+| Services Management   | 🔜 Planned | CRUD сервисов                 |
+| Groups Management     | 🔜 Planned | CRUD групп                    |
+| Events Management     | 🔜 Planned | CRUD событий                  |
+| Event Updates         | 🔜 Planned | Timeline обновлений           |
+| Templates             | 🔜 Planned | Управление шаблонами          |
+| Notification Channels | 🔜 Planned | Email, Telegram каналы        |
+| Subscriptions         | 🔜 Planned | Подписки на уведомления       |
+| User Profile          | 🔜 Planned | Настройки пользователя        |
+
+### Roadmap
+
+Phase 1: Foundation
 - [ ] Project setup (Next.js, Tailwind, shadcn/ui)
 - [ ] API client и генерация типов
 - [ ] Auth (login, logout, protected routes)
 - [ ] Base layout (header, footer)
 - [ ] Unit тесты для hooks и utils
 
-### Phase 2: CI/CD 🔜
+Phase 2: CI/CD
 - [ ] GitHub Actions: lint, typecheck, test
 - [ ] Coverage reporting (Codecov)
 - [ ] E2E pipeline с backend
 - [ ] Release Please
 - [ ] Deploy to Vercel/Netlify
 
-### Phase 3: Public Pages 🔜
+Phase 3: Public Pages
 - [ ] Status page (список сервисов, текущий статус)
 - [ ] Active incidents
 - [ ] Scheduled maintenance
 - [ ] History page
 - [ ] Integration тесты для status components
 
-### Phase 4: Dashboard — Read 🔜
+Phase 4: Dashboard — Read
 - [ ] Dashboard layout (sidebar)
 - [ ] Services list
 - [ ] Groups list
@@ -861,7 +514,7 @@ npm run typecheck
 - [ ] Event details с timeline
 - [ ] Integration тесты для dashboard
 
-### Phase 5: Dashboard — Write 🔜
+Phase 5: Dashboard — Write
 - [ ] Create/Edit/Delete services
 - [ ] Create/Edit/Delete groups
 - [ ] Create event (incident/maintenance)
@@ -869,12 +522,12 @@ npm run typecheck
 - [ ] Manage templates
 - [ ] E2E тесты для CRUD flows
 
-### Phase 6: User Settings 🔜
+Phase 6: User Settings
 - [ ] Profile settings
 - [ ] Notification channels (add, verify, enable/disable)
 - [ ] Subscriptions management
 
-### Phase 7: Polish 🔜
+Phase 7: Polish
 - [ ] Dark mode
 - [ ] Mobile optimization
 - [ ] Loading skeletons
@@ -883,132 +536,42 @@ npm run typecheck
 
 ---
 
-## ⚠️ Важные соглашения
+## 13) Как поддерживать актуальность CLAUDE.md
 
-### Code Style
+Обновлять CLAUDE.md нужно, если изменилось любое из:
+- структура каталогов,
+- команда/скрипт,
+- правила тестов или пороги coverage,
+- CI/CD гейты,
+- auth/security политика,
+- соглашения о паттернах.
 
-1. **Компоненты:** PascalCase, один компонент = один файл
-2. **Хуки:** camelCase, префикс `use`
-3. **Утилиты:** camelCase
-4. **Типы:** PascalCase, суффикс по смыслу (Props, State, etc.)
-
-### Безопасность
-
-1. **Токены:** НИКОГДА не хранить в localStorage
-2. **API URL:** только через environment variables
-3. **Sensitive data:** не логировать в console
-4. **User input:** всегда валидировать (Zod)
-
-### API Integration
-
-1. **Типы:** генерировать из OpenAPI, не писать вручную
-2. **Ошибки:** всегда обрабатывать, показывать пользователю
-3. **Loading states:** всегда показывать
-4. **Оптимистичные обновления:** использовать где уместно
-
-### Тестирование
-
-1. **Новый код = новые тесты** (coverage не должен падать)
-2. **Hooks и utils:** unit тесты обязательны
-3. **Forms и interactions:** integration тесты обязательны
-4. **Критические flows:** E2E тесты обязательны
-
-### Git
-
-1. **Commits:** conventional commits (feat:, fix:, etc.)
-2. **Branches:** feature/, fix/, docs/
-3. **PR:** описание + скриншоты для UI изменений
+Мини-чеклист для PR (если применимо):
+- [ ] CLAUDE.md актуализирован.
+- [ ] Roadmap/Текущий статус отражают прогресс.
 
 ---
 
-## 📝 Актуализация CLAUDE.md
+## 14) Как работать с Claude (шаблоны запросов)
 
-### Когда обновлять
+### Шаблон: новая фича/страница
 
-| Событие                          | Что обновить                                    |
-|----------------------------------|-------------------------------------------------|
-| Завершена задача из Roadmap      | Отметить ✅ в Roadmap, обновить "Текущий статус" |
-| Добавлен новый компонент         | Обновить структуру проекта (если значимый)      |
-| Изменён стек технологий          | Обновить таблицу "Технологический стек"         |
-| Изменены требования к тестам     | Обновить секцию "Тестирование"                  |
-| Добавлен новый CI workflow       | Обновить секцию "CI/CD"                         |
-| Изменена совместимость с backend | Обновить "Матрица совместимости"                |
-| Добавлены новые соглашения       | Обновить секцию "Важные соглашения"             |
+Дай Claude:
+- цель и пользовательский сценарий,
+- какие endpoints нужны,
+- список UI состояний (loading/empty/error/success),
+- требования к SSR/SEO,
+- Definition of Done для этой задачи (тесты и гейты).
 
-### Как обновлять
+### Шаблон: работа с API
 
-1. **После каждого мержа значимого PR** — проверить актуальность:
-   ```bash
-   # В PR checklist добавить:
-   - [ ] CLAUDE.md актуализирован (если нужно)
-   ```
+- Проверь наличие endpoint в OpenAPI.
+- Используй только сгенерированные типы.
+- Реализуй hook на TanStack Query.
+- Добавь integration тест через MSW.
 
-2. **При завершении Phase** — обновить статусы:
-   ```markdown
-   ### Phase 1: Foundation ✅
-   - [x] Project setup
-   - [x] API client
-   ...
-   ```
+### Шаблон: тесты
 
-3. **Раз в неделю** — ревью CLAUDE.md на актуальность
-
-### Формат обновления статусов
-
-```markdown
-# В секции "Текущий статус"
-| Public Status Page | ✅ Done | Отображение статусов сервисов |
-
-# В секции "Roadmap"
-### Phase 1: Foundation ✅
-- [x] Project setup (Next.js, Tailwind, shadcn/ui)
-- [x] API client и генерация типов
-```
-
-### Чеклист при обновлении
-
-- [ ] Статусы компонентов актуальны
-- [ ] Roadmap отражает текущий прогресс
-- [ ] Структура проекта соответствует реальности
-- [ ] CI/CD workflows описаны корректно
-- [ ] Требования к тестам актуальны
-- [ ] Матрица совместимости с backend верна
-
----
-
-## 💬 Как работать с Claude
-
-### При создании компонента:
-
-1. Опиши что компонент должен делать
-2. Укажи какие данные использует (API endpoint)
-3. Опиши желаемое поведение и состояния
-4. Укажи нужны ли тесты (по умолчанию — да)
-
-### При работе с API:
-
-1. Сначала проверь, есть ли endpoint в спеке
-2. Используй сгенерированные типы
-3. Оберни в custom hook с TanStack Query
-
-### При написании тестов:
-
-1. Unit: для чистых функций и хуков без API
-2. Integration: для компонентов с MSW
-3. E2E: только для критических flows
-
-### После завершения задачи:
-
-1. Обновить CLAUDE.md если нужно
-2. Указать что было сделано и что изменилось
-
-### Флаги:
-
-- `[COMPONENT]` — создать новый компонент
-- `[PAGE]` — создать новую страницу
-- `[HOOK]` — создать custom hook
-- `[FIX]` — исправить баг
-- `[REFACTOR]` — рефакторинг
-- `[TEST]` — написать тесты
-- `[CI]` — работа с CI/CD
-- `[DOCS]` — обновить документацию
+- Unit: чистые функции/валидации/маппинг.
+- Integration: формы + submit + ошибки.
+- E2E: только критические flows (auth/CRUD/permissions).
