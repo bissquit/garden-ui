@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-BACKEND_REPO_URL="${BACKEND_REPO_URL:-https://raw.githubusercontent.com/bissquit/incident-management/main}"
+BACKEND_REPO_URL="${BACKEND_REPO_URL:-https://raw.githubusercontent.com/bissquit/incident-garden/main}"
 OUTPUT_FILE="src/api/openapi.yaml"
 
 echo "Downloading OpenAPI spec from backend..."

@@ -498,12 +498,14 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 
 ### Roadmap
 
-Phase 1: Foundation
-- [ ] Project setup (Next.js, Tailwind, shadcn/ui)
-- [ ] API client и генерация типов
-- [ ] Auth (login, logout, protected routes)
-- [ ] Base layout (header, footer)
-- [ ] Unit тесты для hooks и utils
+Phase 1: Foundation ✅ **COMPLETED**
+- [x] Project setup (Next.js, Tailwind, shadcn/ui)
+- [x] API client и генерация типов
+- [x] Auth (login, logout, protected routes)
+- [x] Base layout (header, footer)
+- [x] Unit тесты для hooks и utils
+- [x] README.md с документацией
+- [x] Скрипт `npm run verify` для CI parity
 
 Phase 2: CI/CD
 - [ ] GitHub Actions: lint, typecheck, test

@@ -16,9 +16,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
+      include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'node_modules/',
         'tests/',
+        '.next/',
         '**/*.d.ts',
         '**/*.config.*',
         '**/types.generated.ts',
@@ -28,6 +30,7 @@ export default defineConfig({
         'src/components/layout/**', // Layout компоненты (пока без тестов)
         'src/api/client.ts', // API клиент (требует интеграционных тестов)
         'src/types/**', // Только типы
+        'middleware.ts', // Next.js middleware
       ],
       thresholds: {
         statements: 70,
