@@ -26,9 +26,9 @@ npm run api:generate  # Сгенерировать TypeScript типы
 
 **Матрица совместимости:**
 
-| Frontend | Backend    | Статус       |
-|----------|------------|--------------|
-| 1.x.x    | >= 1.0.0   | ✅ Совместимы |
+| Frontend | Backend  | Статус       |
+|----------|----------|--------------|
+| 1.x.x    | >= 1.0.0 | ✅ Совместимы |
 
 > При обновлении backend API — обновить спеку, сгенерировать типы, исправить ошибки TypeScript.
 
@@ -171,6 +171,12 @@ statuspage-ui/
 ├── scripts/
 │   ├── update-api.sh             # Скачать свежую OpenAPI спеку
 │   └── generate-types.sh         # Сгенерировать типы
+│
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                # Lint, Test, Build
+│       ├── release-please.yml    # Автоматические релизы
+│       └── e2e.yml               # E2E тесты
 │
 ├── .env.example
 ├── .env.local                    # Локальные переменные (не в git)
@@ -410,6 +416,19 @@ if (error instanceof ApiError) {
    /────────────\
 ```
 
+### Требования к покрытию
+
+| Тип | Минимум | Цель | Что покрывать |
+|-----|---------|------|---------------|
+| Unit | 70% | 85% | hooks, lib/, utils, валидации |
+| Integration | 50% | 70% | components/features/, формы |
+| E2E | — | 100% критических flows | auth, CRUD операции |
+
+**Правила:**
+- Новый код без тестов не мержится (CI проверяет coverage)
+- При падении coverage ниже минимума — CI падает
+- Критические компоненты (auth, forms) — 90%+ coverage
+
 ### Unit тесты (Vitest)
 
 **Что тестировать:**
@@ -520,6 +539,234 @@ npm run test:e2e          # E2E тесты
 npm run test:e2e:ui       # E2E с UI
 ```
 
+### Конфигурация coverage
+
+```typescript
+// vitest.config.ts
+export default defineConfig({
+  test: {
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      exclude: [
+        'node_modules/',
+        'tests/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        '**/types.generated.ts',
+      ],
+      thresholds: {
+        statements: 70,
+        branches: 70,
+        functions: 70,
+        lines: 70,
+      },
+    },
+  },
+});
+```
+
+---
+
+## 🔄 CI/CD
+
+### Обзор пайплайнов
+
+| Workflow | Триггер | Назначение |
+|----------|---------|------------|
+| `ci.yml` | push, PR | Lint, Typecheck, Test, Build |
+| `release-please.yml` | push to main | Автоматическое версионирование |
+| `e2e.yml` | push to main, PR | E2E тесты с backend |
+| `deploy.yml` | release created | Deploy to Vercel/Netlify |
+
+### CI Workflow (.github/workflows/ci.yml)
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+
+  test:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:coverage
+      
+      - name: Check coverage thresholds
+        run: |
+          npm run test:coverage -- --coverage.thresholds.statements=70
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: true
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: .next/
+          retention-days: 7
+```
+
+### E2E Workflow (.github/workflows/e2e.yml)
+
+```yaml
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  e2e:
+    name: Playwright Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: statuspage
+          POSTGRES_PASSWORD: statuspage
+          POSTGRES_DB: statuspage
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Start backend
+        run: |
+          docker pull ghcr.io/bissquit/incident-management:latest
+          docker run -d --name backend \
+            --network host \
+            -e DATABASE_URL=postgresql://statuspage:statuspage@localhost:5432/statuspage \
+            -e JWT_SECRET_KEY=test-secret-key-for-ci \
+            ghcr.io/bissquit/incident-management:latest
+          
+          # Wait for backend
+          timeout 30 bash -c 'until curl -s http://localhost:8080/healthz; do sleep 1; done'
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080
+      
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+```
+
+### Release Please Workflow (.github/workflows/release-please.yml)
+
+```yaml
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+
+    steps:
+      - name: Run Release Please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          release-type: node
+
+  deploy:
+    name: Deploy
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Для Vercel
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+```
+
+### Требования к PR
+
+- ✅ Lint passed
+- ✅ Typecheck passed
+- ✅ Tests passed (coverage >= 70%)
+- ✅ Build successful
+- ✅ E2E tests passed (для main)
+
 ---
 
 ## 🚀 Development
@@ -585,38 +832,49 @@ npm run typecheck
 
 ## 📍 Roadmap
 
-### Phase 1: Foundation
+### Phase 1: Foundation ✅ → 🔜
 - [ ] Project setup (Next.js, Tailwind, shadcn/ui)
-- [ ] API client и типы
+- [ ] API client и генерация типов
 - [ ] Auth (login, logout, protected routes)
 - [ ] Base layout (header, footer)
+- [ ] Unit тесты для hooks и utils
 
-### Phase 2: Public Pages
+### Phase 2: CI/CD 🔜
+- [ ] GitHub Actions: lint, typecheck, test
+- [ ] Coverage reporting (Codecov)
+- [ ] E2E pipeline с backend
+- [ ] Release Please
+- [ ] Deploy to Vercel/Netlify
+
+### Phase 3: Public Pages 🔜
 - [ ] Status page (список сервисов, текущий статус)
 - [ ] Active incidents
 - [ ] Scheduled maintenance
 - [ ] History page
+- [ ] Integration тесты для status components
 
-### Phase 3: Dashboard — Read
+### Phase 4: Dashboard — Read 🔜
 - [ ] Dashboard layout (sidebar)
 - [ ] Services list
 - [ ] Groups list
 - [ ] Events list
 - [ ] Event details с timeline
+- [ ] Integration тесты для dashboard
 
-### Phase 4: Dashboard — Write
+### Phase 5: Dashboard — Write 🔜
 - [ ] Create/Edit/Delete services
 - [ ] Create/Edit/Delete groups
 - [ ] Create event (incident/maintenance)
 - [ ] Add event updates
 - [ ] Manage templates
+- [ ] E2E тесты для CRUD flows
 
-### Phase 5: User Settings
+### Phase 6: User Settings 🔜
 - [ ] Profile settings
 - [ ] Notification channels (add, verify, enable/disable)
 - [ ] Subscriptions management
 
-### Phase 6: Polish
+### Phase 7: Polish 🔜
 - [ ] Dark mode
 - [ ] Mobile optimization
 - [ ] Loading skeletons
@@ -648,11 +906,73 @@ npm run typecheck
 3. **Loading states:** всегда показывать
 4. **Оптимистичные обновления:** использовать где уместно
 
+### Тестирование
+
+1. **Новый код = новые тесты** (coverage не должен падать)
+2. **Hooks и utils:** unit тесты обязательны
+3. **Forms и interactions:** integration тесты обязательны
+4. **Критические flows:** E2E тесты обязательны
+
 ### Git
 
 1. **Commits:** conventional commits (feat:, fix:, etc.)
 2. **Branches:** feature/, fix/, docs/
 3. **PR:** описание + скриншоты для UI изменений
+
+---
+
+## 📝 Актуализация CLAUDE.md
+
+### Когда обновлять
+
+| Событие                          | Что обновить                                    |
+|----------------------------------|-------------------------------------------------|
+| Завершена задача из Roadmap      | Отметить ✅ в Roadmap, обновить "Текущий статус" |
+| Добавлен новый компонент         | Обновить структуру проекта (если значимый)      |
+| Изменён стек технологий          | Обновить таблицу "Технологический стек"         |
+| Изменены требования к тестам     | Обновить секцию "Тестирование"                  |
+| Добавлен новый CI workflow       | Обновить секцию "CI/CD"                         |
+| Изменена совместимость с backend | Обновить "Матрица совместимости"                |
+| Добавлены новые соглашения       | Обновить секцию "Важные соглашения"             |
+
+### Как обновлять
+
+1. **После каждого мержа значимого PR** — проверить актуальность:
+   ```bash
+   # В PR checklist добавить:
+   - [ ] CLAUDE.md актуализирован (если нужно)
+   ```
+
+2. **При завершении Phase** — обновить статусы:
+   ```markdown
+   ### Phase 1: Foundation ✅
+   - [x] Project setup
+   - [x] API client
+   ...
+   ```
+
+3. **Раз в неделю** — ревью CLAUDE.md на актуальность
+
+### Формат обновления статусов
+
+```markdown
+# В секции "Текущий статус"
+| Public Status Page | ✅ Done | Отображение статусов сервисов |
+
+# В секции "Roadmap"
+### Phase 1: Foundation ✅
+- [x] Project setup (Next.js, Tailwind, shadcn/ui)
+- [x] API client и генерация типов
+```
+
+### Чеклист при обновлении
+
+- [ ] Статусы компонентов актуальны
+- [ ] Roadmap отражает текущий прогресс
+- [ ] Структура проекта соответствует реальности
+- [ ] CI/CD workflows описаны корректно
+- [ ] Требования к тестам актуальны
+- [ ] Матрица совместимости с backend верна
 
 ---
 
@@ -663,6 +983,7 @@ npm run typecheck
 1. Опиши что компонент должен делать
 2. Укажи какие данные использует (API endpoint)
 3. Опиши желаемое поведение и состояния
+4. Укажи нужны ли тесты (по умолчанию — да)
 
 ### При работе с API:
 
@@ -676,6 +997,11 @@ npm run typecheck
 2. Integration: для компонентов с MSW
 3. E2E: только для критических flows
 
+### После завершения задачи:
+
+1. Обновить CLAUDE.md если нужно
+2. Указать что было сделано и что изменилось
+
 ### Флаги:
 
 - `[COMPONENT]` — создать новый компонент
@@ -684,3 +1010,5 @@ npm run typecheck
 - `[FIX]` — исправить баг
 - `[REFACTOR]` — рефакторинг
 - `[TEST]` — написать тесты
+- `[CI]` — работа с CI/CD
+- `[DOCS]` — обновить документацию
