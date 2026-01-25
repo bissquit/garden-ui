@@ -1,6 +1,6 @@
-# StatusPage UI
+# Garden UI
 
-Web interface for StatusPage API. Provides public status page and admin dashboard for service status management.
+Web interface for Garden API. Provides public status page and admin dashboard for service status management.
 
 ## Features
 
@@ -35,8 +35,8 @@ Web interface for StatusPage API. Provides public status page and admin dashboar
 
 ```bash
 # Clone the repository
-git clone https://github.com/bissquit/statuspage-ui.git
-cd statuspage-ui
+git clone https://github.com/bissquit/garden-ui.git
+cd garden-ui
 
 # Install dependencies
 npm install
@@ -86,7 +86,7 @@ npm run api:generate  # Generate TypeScript types from OpenAPI
 ### Project Structure
 
 ```
-statuspage-ui/
+garden-ui/
 ├── src/
 │   ├── api/              # API client and OpenAPI types
 │   ├── app/              # Next.js App Router pages

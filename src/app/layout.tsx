@@ -6,7 +6,7 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'StatusPage',
+  title: 'Garden UI',
   description: 'Service status monitoring',
 };
 
