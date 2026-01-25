@@ -1,0 +1,102 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: garden-ui-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-statuspage}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-statuspage}
+      POSTGRES_DB: ${POSTGRES_DB:-statuspage}
+    ports:
+      - "${POSTGRES_PORT:-5452}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-statuspage} -d ${POSTGRES_DB:-statuspage}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - garden-ui-network
+
+  migrate:
+    image: ${BACKEND_IMAGE_NAME:-ghcr.io/bissquit/incident-garden}:${BACKEND_IMAGE_TAG:-latest}
+    container_name: garden-ui-migrate
+    user: root
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - migrations:/tmp/migrations
+    entrypoint: sh
+    command: -c "cp -r /app/migrations/* /tmp/migrations/ && chmod -R 755 /tmp/migrations/"
+    networks:
+      - garden-ui-network
+
+  migrate-apply:
+    image: migrate/migrate:v4.17.0
+    container_name: garden-ui-migrate-apply
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - migrations:/migrations:ro
+    command: [
+      "-path", "/migrations",
+      "-database", "postgresql://${POSTGRES_USER:-statuspage}:${POSTGRES_PASSWORD:-statuspage}@postgres:5432/${POSTGRES_DB:-statuspage}?sslmode=disable",
+      "up"
+    ]
+    networks:
+      - garden-ui-network
+
+  backend:
+    image: ${BACKEND_IMAGE_NAME:-ghcr.io/bissquit/incident-garden}:${BACKEND_IMAGE_TAG:-latest}
+    container_name: garden-ui-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate-apply:
+        condition: service_completed_successfully
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-statuspage}:${POSTGRES_PASSWORD:-statuspage}@postgres:5432/${POSTGRES_DB:-statuspage}?sslmode=disable
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+    networks:
+      - garden-ui-network
+
+  frontend:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+    container_name: garden-ui-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+    networks:
+      - garden-ui-network
+
+volumes:
+  postgres_data:
+  migrations:
+
+networks:
+  garden-ui-network:
+    driver: bridge

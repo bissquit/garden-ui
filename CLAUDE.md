@@ -509,10 +509,9 @@ Phase 1: Foundation ✅ **COMPLETED**
 
 Phase 2: CI/CD
 - [ ] GitHub Actions: lint, typecheck, test
-- [ ] Coverage reporting (Codecov)
-- [ ] E2E pipeline с backend
 - [ ] Release Please
-- [ ] Deploy to Vercel/Netlify
+- [ ] Dockerfile для фронтенда (multi-stage build)
+- [ ] Обновление docker-compose.yml (frontend + backend + postgres)
 
 Phase 3: Public Pages
 - [ ] Status page (список сервисов, текущий статус)
@@ -535,18 +534,20 @@ Phase 5: Dashboard — Write
 - [ ] Create event (incident/maintenance)
 - [ ] Add event updates
 - [ ] Manage templates
-- [ ] E2E тесты для CRUD flows
 
 Phase 6: User Settings
 - [ ] Profile settings
 - [ ] Notification channels (add, verify, enable/disable)
 - [ ] Subscriptions management
 
-Phase 7: Polish
+Phase 7: Polish & Production Ready
+- [ ] E2E тесты для критических flows (добавить в CI)
+- [ ] Codecov интеграция
 - [ ] Dark mode
 - [ ] Mobile optimization
 - [ ] Loading skeletons
 - [ ] Error boundaries
+- [ ] Preview deployments (опционально)
 - [ ] i18n (опционально)
 
 ---
