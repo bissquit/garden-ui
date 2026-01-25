@@ -425,6 +425,37 @@ const severityColors = {
 } as const;
 ```
 
+### Цветовые темы
+
+Проект поддерживает несколько предустановленных тем, которые пользователь может переключать в реальном времени:
+
+**Доступные темы:**
+- **Garden** (по умолчанию) — зеленая теплая палитра, идеально подходит для бренда Garden UI
+- **Ocean** — синяя прохладная палитра (оригинальная)
+- **Sunset** — оранжево-красная теплая палитра
+- **Forest** — темно-зеленая глубокая палитра
+
+**Режимы:** Light / Dark для каждой темы.
+
+**Реализация:**
+- Темы определены в `src/app/globals.css` через CSS переменные (HSL формат)
+- Переключение через хук `src/hooks/use-theme.ts`
+- UI компонент `src/components/layout/theme-switcher.tsx` в header
+- Сохранение выбора в localStorage
+
+**Как добавить новую тему:**
+1. Добавить CSS переменные в `globals.css`:
+   ```css
+   [data-theme="mytheme"] {
+     --primary: <hue> <saturation>% <lightness>%;
+     /* остальные переменные */
+   }
+   ```
+2. Обновить типы в `use-theme.ts`: добавить в тип `Theme`
+3. Добавить описание в `theme-switcher.tsx`: `themeLabels`, `themeIcons`, `themeDescriptions`
+
+**Важно:** Все компоненты должны использовать Tailwind классы (`bg-background`, `text-foreground`, `text-primary` и т.д.), а не жестко заданные цвета.
+
 ---
 
 ## 11) Development: быстрый старт и команды

@@ -78,6 +78,7 @@ services:
 
   frontend:
     build:
+      no_cache: true
       context: .
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}

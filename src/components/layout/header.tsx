@@ -11,7 +11,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Activity, LogOut, Settings, User } from 'lucide-react';
+import { Sprout, LogOut, Settings, User } from 'lucide-react';
+import { ThemeSwitcher } from './theme-switcher';
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -21,14 +22,16 @@ export function Header() {
     : '';
 
   return (
-    <header className="border-b bg-white">
+    <header className="border-b bg-background">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
-          <Activity className="h-6 w-6 text-primary" />
+          <Sprout className="h-6 w-6 text-primary" />
           <span>Garden UI</span>
         </Link>
 
         <nav className="flex items-center gap-4">
+          <ThemeSwitcher />
+
           {isAuthenticated ? (
             <>
               <Link href="/dashboard">

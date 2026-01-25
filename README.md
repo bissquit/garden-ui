@@ -10,6 +10,7 @@ Web interface for Garden API. Provides public status page and admin dashboard fo
 - 📱 **Responsive Design**: Mobile-first approach
 - 🧪 **Well Tested**: Unit, integration, and E2E tests
 - 🎨 **Modern Stack**: Next.js 14, TypeScript, Tailwind CSS, shadcn/ui
+- 🎨 **Theme System**: Multiple color themes (Garden, Ocean, Sunset, Forest) with light/dark modes
 
 ## Tech Stack
 
@@ -161,6 +162,27 @@ npm run test:e2e:ui
 - `user`: Basic user access
 - `operator`: Can manage services and events
 - `admin`: Full access to all features
+
+## Themes
+
+The application supports multiple color themes that users can switch on the fly:
+
+### Available Themes
+
+- **Garden** (default) - Warm green palette, perfect for the Garden UI brand
+- **Ocean** - Cool blue palette (original)
+- **Sunset** - Warm orange-red palette
+- **Forest** - Deep dark green palette
+
+Each theme supports both **light** and **dark** modes. Theme preference is saved in browser's localStorage.
+
+### Usage
+
+Click the palette icon (🎨) in the header to select a theme, and the sun/moon icon to toggle between light and dark modes.
+
+### Adding New Themes
+
+See [CLAUDE.md](./CLAUDE.md) section "Цветовые темы" for instructions on adding custom themes.
 
 ## Contributing
 
