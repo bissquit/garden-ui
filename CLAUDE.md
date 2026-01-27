@@ -539,10 +539,10 @@ Phase 1: Foundation ✅ **COMPLETED**
 - [x] Скрипт `npm run verify` для CI parity
 
 Phase 2: CI/CD
-- [ ] GitHub Actions: lint, typecheck, test
-- [ ] Release Please
-- [ ] Dockerfile для фронтенда (multi-stage build)
-- [ ] Обновление docker-compose.yml (frontend + backend + postgres)
+- [x] GitHub Actions: lint, typecheck, test
+- [x] Release Please
+- [x] Dockerfile для фронтенда (multi-stage build)
+- [x] Обновление docker-compose.yml (frontend + backend + postgres)
 
 Phase 3: Public Pages
 - [ ] Status page (список сервисов, текущий статус)
