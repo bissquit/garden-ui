@@ -231,6 +231,102 @@ export const handlers = [
     });
   }),
 
+  // Events (requires auth)
+  http.get(`${API_URL}/api/v1/events`, ({ request }) => {
+    const url = new URL(request.url);
+    const type = url.searchParams.get('type');
+    const status = url.searchParams.get('status');
+
+    let events = [...mockActiveEvents, ...mockHistoryEvents];
+
+    if (type) {
+      events = events.filter((e) => e.type === type);
+    }
+    if (status) {
+      events = events.filter((e) => e.status === status);
+    }
+
+    return HttpResponse.json({
+      data: events,
+    });
+  }),
+
+  http.get(`${API_URL}/api/v1/events/:id`, ({ params }) => {
+    const { id } = params;
+    const allEvents = [...mockActiveEvents, ...mockHistoryEvents];
+    const event = allEvents.find((e) => e.id === id);
+
+    if (!event) {
+      return HttpResponse.json(
+        { error: { message: 'Event not found' } },
+        { status: 404 }
+      );
+    }
+
+    return HttpResponse.json({
+      data: event,
+    });
+  }),
+
+  http.get(`${API_URL}/api/v1/events/:id/updates`, ({ params }) => {
+    const { id } = params;
+    // Return mock updates for e1 only
+    if (id === 'e1') {
+      return HttpResponse.json({
+        data: [
+          {
+            id: 'u1',
+            event_id: 'e1',
+            status: 'investigating',
+            message: 'We are investigating the issue.',
+            created_by: '1',
+            created_at: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+            updated_at: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+          },
+          {
+            id: 'u2',
+            event_id: 'e1',
+            status: 'identified',
+            message: 'Root cause identified: high database load.',
+            created_by: '1',
+            created_at: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+            updated_at: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+          },
+        ],
+      });
+    }
+
+    return HttpResponse.json({
+      data: [],
+    });
+  }),
+
+  // Templates (requires auth)
+  http.get(`${API_URL}/api/v1/templates`, () => {
+    return HttpResponse.json({
+      data: [
+        {
+          id: 't1',
+          slug: 'database-maintenance',
+          type: 'maintenance',
+          title_template: 'Database Maintenance',
+          body_template: 'Scheduled database maintenance for performance improvements.',
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+        },
+        {
+          id: 't2',
+          slug: 'api-incident',
+          type: 'incident',
+          title_template: 'API Service Disruption',
+          body_template: 'We are experiencing issues with the API service.',
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+        },
+      ],
+    });
+  }),
+
   // Health
   http.get(`${API_URL}/healthz`, () => {
     return HttpResponse.text('OK');
