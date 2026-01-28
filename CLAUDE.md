@@ -68,6 +68,10 @@ PR считается готовым, только если выполнено �
 Для быстрой классификации задач используй префиксы:
 `[COMPONENT]`, `[PAGE]`, `[HOOK]`, `[FIX]`, `[REFACTOR]`, `[TEST]`, `[CI]`, `[DOCS]`
 
+### Git workflow
+
+**ВАЖНО:** Можно просматривать историю и выполнять любые операции с git, кроме изменений истории (git commit, add, push, создание веток и тегов и так далее).
+
 ---
 
 ## 3) Технологический стек (фиксируем решения)
@@ -513,19 +517,20 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 
 ### Текущий статус (верхнеуровнево)
 
-| Компонент             | Статус     | Описание                      |
-|-----------------------|------------|-------------------------------|
-| Public Status Page    | 🔜 Planned | Отображение статусов сервисов |
-| Auth (Login/Logout)   | 🔜 Planned | JWT аутентификация            |
-| Dashboard Layout      | 🔜 Planned | Общий layout админки          |
-| Services Management   | 🔜 Planned | CRUD сервисов                 |
-| Groups Management     | 🔜 Planned | CRUD групп                    |
-| Events Management     | 🔜 Planned | CRUD событий                  |
-| Event Updates         | 🔜 Planned | Timeline обновлений           |
-| Templates             | 🔜 Planned | Управление шаблонами          |
-| Notification Channels | 🔜 Planned | Email, Telegram каналы        |
-| Subscriptions         | 🔜 Planned | Подписки на уведомления       |
-| User Profile          | 🔜 Planned | Настройки пользователя        |
+| Компонент             | Статус        | Описание                      |
+|-----------------------|---------------|-------------------------------|
+| Public Status Page    | ✅ Completed  | Отображение статусов сервисов |
+| History Page          | ✅ Completed  | История событий               |
+| Auth (Login/Logout)   | ✅ Completed  | JWT аутентификация            |
+| Dashboard Layout      | 🔜 Planned    | Общий layout админки          |
+| Services Management   | 🔜 Planned    | CRUD сервисов                 |
+| Groups Management     | 🔜 Planned    | CRUD групп                    |
+| Events Management     | 🔜 Planned    | CRUD событий                  |
+| Event Updates         | 🔜 Planned    | Timeline обновлений           |
+| Templates             | 🔜 Planned    | Управление шаблонами          |
+| Notification Channels | 🔜 Planned    | Email, Telegram каналы        |
+| Subscriptions         | 🔜 Planned    | Подписки на уведомления       |
+| User Profile          | 🔜 Planned    | Настройки пользователя        |
 
 ### Roadmap
 
@@ -538,18 +543,18 @@ Phase 1: Foundation ✅ **COMPLETED**
 - [x] README.md с документацией
 - [x] Скрипт `npm run verify` для CI parity
 
-Phase 2: CI/CD
+Phase 2: CI/CD ✅ **COMPLETED**
 - [x] GitHub Actions: lint, typecheck, test
 - [x] Release Please
 - [x] Dockerfile для фронтенда (multi-stage build)
 - [x] Обновление docker-compose.yml (frontend + backend + postgres)
 
-Phase 3: Public Pages
-- [ ] Status page (список сервисов, текущий статус)
-- [ ] Active incidents
-- [ ] Scheduled maintenance
-- [ ] History page
-- [ ] Integration тесты для status components
+Phase 3: Public Pages ✅ **COMPLETED**
+- [x] Status page (список сервисов, текущий статус)
+- [x] Active incidents
+- [x] Scheduled maintenance
+- [x] History page
+- [x] Integration тесты для status components
 
 Phase 4: Dashboard — Read
 - [ ] Dashboard layout (sidebar)

@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Sprout, LogOut, Settings, User } from 'lucide-react';
+import { Sprout, LogOut, Settings, User, History } from 'lucide-react';
 import { ThemeSwitcher } from './theme-switcher';
 
 export function Header() {
@@ -30,6 +30,14 @@ export function Header() {
         </Link>
 
         <nav className="flex items-center gap-4">
+          <Link
+            href="/history"
+            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+          >
+            <History className="h-4 w-4" />
+            <span className="hidden sm:inline">History</span>
+          </Link>
+
           <ThemeSwitcher />
 
           {isAuthenticated ? (
