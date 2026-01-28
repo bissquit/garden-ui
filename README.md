@@ -1,4 +1,4 @@
-# Garden UI
+# :deciduous_tree: Garden UI
 
 Web interface for Garden API. Provides public status page and admin dashboard for service status management.
 
