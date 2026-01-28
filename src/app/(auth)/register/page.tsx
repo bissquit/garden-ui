@@ -13,7 +13,7 @@ export default function RegisterPage() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Register</CardTitle>
           <CardDescription>
-            Create a new account for Garden UI
+            Create a new account for IncidentGarden
           </CardDescription>
         </CardHeader>
         <CardContent>
