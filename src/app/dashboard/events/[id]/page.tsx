@@ -1,42 +1,72 @@
 'use client';
 
-import { useAuth } from '@/hooks/use-auth';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import { useEvent, useEventUpdates } from '@/hooks/use-events';
-import { EventDetailsCard, EventTimeline } from '@/components/features/dashboard';
+import { useAddEventUpdate, useDeleteEvent } from '@/hooks/use-events-mutations';
+import { useAuth } from '@/hooks/use-auth';
+import {
+  EventDetailsCard,
+  EventTimeline,
+  EventUpdateForm,
+  DeleteConfirmationDialog,
+} from '@/components/features/dashboard';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft, Loader2, Trash2 } from 'lucide-react';
+import type { AddEventUpdateFormData } from '@/lib/validations/event';
 
 export default function EventDetailsPage() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const router = useRouter();
   const params = useParams();
+  const router = useRouter();
+  const { toast } = useToast();
+  const { user } = useAuth();
   const eventId = params.id as string;
 
-  const {
-    data: event,
-    isLoading: eventLoading,
-    isError: eventError,
-  } = useEvent(eventId);
+  const { data: event, isLoading: eventLoading, isError: eventError } = useEvent(eventId);
   const { data: updates, isLoading: updatesLoading } = useEventUpdates(eventId);
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, authLoading, router]);
+  const addUpdateMutation = useAddEventUpdate();
+  const deleteMutation = useDeleteEvent();
 
-  if (authLoading || eventLoading) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const isAdmin = user?.role === 'admin';
+
+  const handleAddUpdate = async (data: AddEventUpdateFormData) => {
+    try {
+      await addUpdateMutation.mutateAsync({ eventId, data });
+      toast({ title: 'Update posted successfully' });
+    } catch (error) {
+      toast({
+        title: 'Failed to post update',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteMutation.mutateAsync(eventId);
+      toast({ title: 'Event deleted successfully' });
+      router.push('/dashboard/events');
+    } catch (error) {
+      toast({
+        title: 'Failed to delete event',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (eventLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
-  }
-
-  if (!isAuthenticated) {
-    return null;
   }
 
   if (eventError || !event) {
@@ -53,15 +83,47 @@ export default function EventDetailsPage() {
     );
   }
 
+  const isResolved = event.status === 'resolved' || event.status === 'completed';
+
   return (
     <div className="space-y-6">
-      <Button variant="ghost" onClick={() => router.push('/dashboard/events')}>
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Events
-      </Button>
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={() => router.push('/dashboard/events')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Events
+        </Button>
+
+        {isAdmin && (
+          <Button
+            variant="destructive"
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Event
+          </Button>
+        )}
+      </div>
 
       <EventDetailsCard event={event} />
 
+      {/* Add Update Form - only show if not resolved */}
+      {!isResolved && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Post Update</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <EventUpdateForm
+              eventType={event.type}
+              currentStatus={event.status}
+              onSubmit={handleAddUpdate}
+              isLoading={addUpdateMutation.isPending}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Timeline */}
       <div>
         <h2 className="text-lg font-semibold mb-4">Timeline</h2>
         {updatesLoading ? (
@@ -72,6 +134,15 @@ export default function EventDetailsPage() {
           <EventTimeline updates={updates ?? []} />
         )}
       </div>
+
+      <DeleteConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDelete}
+        title="Delete Event"
+        description="Are you sure you want to delete this event? All updates will also be deleted. This action cannot be undone."
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

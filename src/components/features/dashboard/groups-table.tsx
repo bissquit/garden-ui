@@ -18,7 +18,7 @@ export function GroupsTable({ groups, serviceCount }: GroupsTableProps) {
     {
       key: 'name',
       header: 'Name',
-      cell: (group: ServiceGroup) => (
+      cell: (group: ServiceGroup & { actions?: React.ReactNode }) => (
         <div>
           <div className="font-medium">{group.name}</div>
           <div className="text-sm text-muted-foreground">{group.slug}</div>
@@ -28,7 +28,7 @@ export function GroupsTable({ groups, serviceCount }: GroupsTableProps) {
     {
       key: 'description',
       header: 'Description',
-      cell: (group: ServiceGroup) => (
+      cell: (group: ServiceGroup & { actions?: React.ReactNode }) => (
         <span className="text-muted-foreground">
           {group.description || '—'}
         </span>
@@ -38,26 +38,32 @@ export function GroupsTable({ groups, serviceCount }: GroupsTableProps) {
     {
       key: 'services',
       header: 'Services',
-      cell: (group: ServiceGroup) => (
+      cell: (group: ServiceGroup & { actions?: React.ReactNode }) => (
         <span>{serviceCount.get(group.id) ?? 0}</span>
       ),
     },
     {
       key: 'order',
       header: 'Order',
-      cell: (group: ServiceGroup) => (
+      cell: (group: ServiceGroup & { actions?: React.ReactNode }) => (
         <span className="text-muted-foreground">{group.order}</span>
       ),
     },
     {
       key: 'updated',
       header: 'Last Updated',
-      cell: (group: ServiceGroup) => (
+      cell: (group: ServiceGroup & { actions?: React.ReactNode }) => (
         <span className="text-muted-foreground text-sm">
           {formatEventDate(group.updated_at)}
         </span>
       ),
       className: 'hidden lg:table-cell',
+    },
+    {
+      key: 'actions',
+      header: '',
+      cell: (group: ServiceGroup & { actions?: React.ReactNode }) => group.actions ?? null,
+      className: 'w-24',
     },
   ];
 

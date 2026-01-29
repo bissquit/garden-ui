@@ -21,7 +21,7 @@ export function ServicesTable({ services, groups }: ServicesTableProps) {
     {
       key: 'name',
       header: 'Name',
-      cell: (service: Service) => (
+      cell: (service: Service & { actions?: React.ReactNode }) => (
         <div>
           <div className="font-medium">{service.name}</div>
           <div className="text-sm text-muted-foreground">{service.slug}</div>
@@ -31,7 +31,7 @@ export function ServicesTable({ services, groups }: ServicesTableProps) {
     {
       key: 'group',
       header: 'Group',
-      cell: (service: Service) => (
+      cell: (service: Service & { actions?: React.ReactNode }) => (
         <span className="text-muted-foreground">
           {service.group_id ? groupMap.get(service.group_id) ?? '—' : '—'}
         </span>
@@ -40,7 +40,7 @@ export function ServicesTable({ services, groups }: ServicesTableProps) {
     {
       key: 'status',
       header: 'Status',
-      cell: (service: Service) => {
+      cell: (service: Service & { actions?: React.ReactNode }) => {
         const config = serviceStatusConfig[service.status];
         return (
           <div className="flex items-center gap-2">
@@ -53,12 +53,18 @@ export function ServicesTable({ services, groups }: ServicesTableProps) {
     {
       key: 'updated',
       header: 'Last Updated',
-      cell: (service: Service) => (
+      cell: (service: Service & { actions?: React.ReactNode }) => (
         <span className="text-muted-foreground text-sm">
           {formatEventDate(service.updated_at)}
         </span>
       ),
       className: 'hidden md:table-cell',
+    },
+    {
+      key: 'actions',
+      header: '',
+      cell: (service: Service & { actions?: React.ReactNode }) => service.actions ?? null,
+      className: 'w-24',
     },
   ];
 
