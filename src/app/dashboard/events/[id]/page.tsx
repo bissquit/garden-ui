@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEvent, useEventUpdates } from '@/hooks/use-events';
 import { useAddEventUpdate, useDeleteEvent } from '@/hooks/use-events-mutations';
 import { useAuth } from '@/hooks/use-auth';
+import { useServices } from '@/hooks/use-public-status';
 import {
   EventDetailsCard,
   EventTimeline,
@@ -26,6 +27,7 @@ export default function EventDetailsPage() {
 
   const { data: event, isLoading: eventLoading, isError: eventError } = useEvent(eventId);
   const { data: updates, isLoading: updatesLoading } = useEventUpdates(eventId);
+  const { data: services } = useServices();
 
   const addUpdateMutation = useAddEventUpdate();
   const deleteMutation = useDeleteEvent();
@@ -104,7 +106,7 @@ export default function EventDetailsPage() {
         )}
       </div>
 
-      <EventDetailsCard event={event} />
+      <EventDetailsCard event={event} services={services ?? []} />
 
       {/* Add Update Form - only show if not resolved */}
       {!isResolved && (

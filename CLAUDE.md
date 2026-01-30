@@ -386,6 +386,20 @@ E2E workflow поднимает PostgreSQL service и backend контейнер
 
 Инвариант: образ backend должен соответствовать OpenAPI контракту, из которого генерируются типы фронта.
 
+Подготовка окружения для тестирования перед любой задачей:
+```shell
+JWT_SECRET_KEY=qwertyuiopasdfghjklzxcvbnmqwertyuioasdfghjklxcvbnm \
+  docker compose up -d
+```
+
+Удаление окружения после выполнения задачи и проведения всех тестов:
+```shell
+JWT_SECRET_KEY=qwertyuiopasdfghjklzxcvbnmqwertyuioasdfghjklxcvbnm \
+  docker compose down ;\
+  docker volume rm garden-ui_migration garden-ui_postgres_data ;\
+  docker image rm garden-ui-frontend:latest ghcr.io/bissquit/incident-garden:latest
+```
+
 ---
 
 ## 10) UI/UX правила (которые нельзя нарушать)

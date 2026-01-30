@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { publicClient } from '@/api/client';
 import type { User, TokenPair, Role } from '@/types';
 import { ApiError } from '@/lib/api-error';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextValue {
   user: User | null;
@@ -37,6 +38,7 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [tokens, setTokens] = useState<TokenPair | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,6 +56,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
       window.__AUTH_TOKEN__ = tokens?.access_token;
     }
   }, [tokens]);
+
+  // Обработка 401 ошибок (session expired)
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      // Очищаем состояние только если пользователь был залогинен
+      if (user) {
+        setUser(null);
+        setTokens(null);
+        if (typeof window !== 'undefined') {
+          window.__AUTH_TOKEN__ = undefined;
+        }
+
+        toast({
+          title: 'Session expired',
+          description: 'Please log in again',
+          variant: 'destructive',
+        });
+
+        router.push('/login');
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('auth:unauthorized', handleUnauthorized);
+      return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    }
+  }, [user, router, toast]);
 
   const login = useCallback(
     async (email: string, password: string) => {
