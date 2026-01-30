@@ -2,20 +2,27 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Wrench, Clock, Calendar } from 'lucide-react';
+import { AlertCircle, Wrench, Clock, Calendar, Server } from 'lucide-react';
 import { severityConfig, eventStatusConfig, formatEventDate } from '@/lib/status-utils';
 import { cn } from '@/lib/utils';
 import type { components } from '@/api/types.generated';
 
 type Event = components['schemas']['Event'];
+type Service = components['schemas']['Service'];
 
 interface EventDetailsCardProps {
   event: Event;
+  services?: Service[];
 }
 
-export function EventDetailsCard({ event }: EventDetailsCardProps) {
+export function EventDetailsCard({ event, services = [] }: EventDetailsCardProps) {
   const statusConfig = eventStatusConfig[event.status];
   const isIncident = event.type === 'incident';
+
+  // Фильтруем затронутые сервисы
+  const affectedServices = services.filter(
+    (s) => event.service_ids?.includes(s.id)
+  );
 
   return (
     <Card>
@@ -55,6 +62,35 @@ export function EventDetailsCard({ event }: EventDetailsCardProps) {
           <h4 className="text-sm font-medium mb-1">Description</h4>
           <p className="text-muted-foreground">{event.description}</p>
         </div>
+
+        {/* Affected Services */}
+        {affectedServices.length > 0 && (
+          <div>
+            <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+              <Server className="h-4 w-4" />
+              Affected Services
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {affectedServices.map((service) => (
+                <Badge key={service.id} variant="outline">
+                  {service.name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {event.service_ids && event.service_ids.length > 0 && affectedServices.length === 0 && (
+          <div>
+            <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+              <Server className="h-4 w-4" />
+              Affected Services
+            </h4>
+            <p className="text-sm text-muted-foreground">
+              {event.service_ids.length} service(s) affected
+            </p>
+          </div>
+        )}
 
         {/* Timestamps */}
         <div className="grid gap-4 md:grid-cols-2">

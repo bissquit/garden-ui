@@ -16,12 +16,26 @@ const authMiddleware: Middleware = {
   },
 };
 
+// Middleware для обработки 401 ответов
+const unauthorizedMiddleware: Middleware = {
+  async onResponse({ response }) {
+    if (response.status === 401) {
+      // Dispatch custom event для обработки в React
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+      }
+    }
+    return response;
+  },
+};
+
 // Публичный клиент (без авторизации)
 export const publicClient = createClient<paths>({ baseUrl });
 
 // Приватный клиент (с авторизацией)
 export const apiClient = createClient<paths>({ baseUrl });
 apiClient.use(authMiddleware);
+apiClient.use(unauthorizedMiddleware);
 
 // Типы для удобства
 export type ApiClient = typeof apiClient;
