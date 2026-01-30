@@ -155,12 +155,32 @@ export interface paths {
         get: operations["getService"];
         put?: never;
         post?: never;
-        /** Delete a service */
+        /**
+         * Archive a service (soft delete)
+         * @description Archives the service. Returns 409 if service has active events.
+         */
         delete: operations["deleteService"];
         options?: never;
         head?: never;
         /** Update a service */
         patch: operations["updateService"];
+        trace?: never;
+    };
+    "/api/v1/services/{slug}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore an archived service */
+        post: operations["restoreService"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/services/{slug}/tags": {
@@ -210,12 +230,32 @@ export interface paths {
         get: operations["getGroup"];
         put?: never;
         post?: never;
-        /** Delete a group */
+        /**
+         * Archive a group (soft delete)
+         * @description Archives the group. Returns 409 if group has services with active events.
+         */
         delete: operations["deleteGroup"];
         options?: never;
         head?: never;
         /** Update a group */
         patch: operations["updateGroup"];
+        trace?: never;
+    };
+    "/api/v1/groups/{slug}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore an archived group */
+        post: operations["restoreGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/events": {
@@ -230,9 +270,7 @@ export interface paths {
         put?: never;
         /**
          * Create an event
-         * @description Creates an incident or maintenance.
-         *     For incident, severity must be specified.
-         *     Status must correspond to the event type.
+         * @description Creates an incident or maintenance. Groups in group_ids are expanded to services.
          */
         post: operations["createEvent"];
         delete?: never;
@@ -277,6 +315,50 @@ export interface paths {
          * @description Also updates the event status
          */
         post: operations["addEventUpdate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{id}/services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add services to an event
+         * @description Adds services and/or groups. Groups are expanded to services.
+         */
+        post: operations["addServicesToEvent"];
+        /**
+         * Remove services from an event
+         * @description Removes services only, not group associations.
+         */
+        delete: operations["removeServicesFromEvent"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{id}/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get event service change history
+         * @description Returns chronological list of all service/group additions and removals.
+         */
+        get: operations["getEventServiceChanges"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -330,10 +412,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Preview a template
-         * @description Renders the template with provided data
-         */
+        /** Preview a template */
         post: operations["previewTemplate"];
         delete?: never;
         options?: never;
@@ -390,7 +469,7 @@ export interface paths {
         delete: operations["deleteChannel"];
         options?: never;
         head?: never;
-        /** Update a channel (enable/disable) */
+        /** Update a channel */
         patch: operations["updateChannel"];
         trace?: never;
     };
@@ -437,10 +516,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Current public status
-         * @description No authentication required
-         */
+        /** Current public status */
         get: operations["getPublicStatus"];
         put?: never;
         post?: never;
@@ -457,10 +533,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Event history
-         * @description No authentication required
-         */
+        /** Event history */
         get: operations["getStatusHistory"];
         put?: never;
         post?: never;
@@ -478,14 +551,12 @@ export interface components {
         ServiceStatus: "operational" | "degraded" | "partial_outage" | "major_outage" | "maintenance";
         /** @enum {string} */
         EventType: "incident" | "maintenance";
-        /**
-         * @description For incident: investigating, identified, monitoring, resolved
-         *     For maintenance: scheduled, in_progress, completed
-         * @enum {string}
-         */
+        /** @enum {string} */
         EventStatus: "investigating" | "identified" | "monitoring" | "resolved" | "scheduled" | "in_progress" | "completed";
         /** @enum {string} */
         Severity: "minor" | "major" | "critical";
+        /** @enum {string} */
+        ChangeAction: "added" | "removed";
         /** @enum {string} */
         ChannelType: "email" | "telegram";
         /** @enum {string} */
@@ -510,13 +581,14 @@ export interface components {
             slug: string;
             description?: string;
             status: components["schemas"]["ServiceStatus"];
-            /** Format: uuid */
-            group_id?: string | null;
+            group_ids: string[];
             order: number;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+            /** Format: date-time */
+            archived_at?: string | null;
         };
         ServiceGroup: {
             /** Format: uuid */
@@ -529,6 +601,8 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+            /** Format: date-time */
+            archived_at?: string | null;
         };
         Event: {
             /** Format: uuid */
@@ -536,7 +610,7 @@ export interface components {
             title: string;
             type: components["schemas"]["EventType"];
             status: components["schemas"]["EventStatus"];
-            severity?: components["schemas"]["Severity"];
+            severity?: components["schemas"]["Severity"] | null;
             description: string;
             /** Format: date-time */
             started_at?: string | null;
@@ -551,7 +625,8 @@ export interface components {
             template_id?: string | null;
             /** Format: uuid */
             created_by: string;
-            service_ids?: string[];
+            service_ids?: string[] | null;
+            group_ids?: string[] | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -565,6 +640,22 @@ export interface components {
             status: components["schemas"]["EventStatus"];
             message: string;
             notify_subscribers: boolean;
+            /** Format: uuid */
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        EventServiceChange: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            event_id: string;
+            action: components["schemas"]["ChangeAction"];
+            /** Format: uuid */
+            service_id?: string | null;
+            /** Format: uuid */
+            group_id?: string | null;
+            reason?: string;
             /** Format: uuid */
             created_by: string;
             /** Format: date-time */
@@ -601,7 +692,6 @@ export interface components {
             id: string;
             /** Format: uuid */
             user_id: string;
-            /** @description Empty array means subscription to all services */
             service_ids: string[];
             /** Format: date-time */
             created_at: string;
@@ -609,7 +699,6 @@ export interface components {
         TokenPair: {
             access_token: string;
             refresh_token: string;
-            /** @description Access token lifetime in seconds */
             expires_in: number;
         };
         RegisterRequest: {
@@ -632,8 +721,7 @@ export interface components {
             slug: string;
             description?: string;
             status?: components["schemas"]["ServiceStatus"];
-            /** Format: uuid */
-            group_id?: string | null;
+            group_ids?: string[];
             /** @default 0 */
             order: number;
             tags?: {
@@ -645,8 +733,7 @@ export interface components {
             slug: string;
             description?: string;
             status: components["schemas"]["ServiceStatus"];
-            /** Format: uuid */
-            group_id?: string | null;
+            group_ids?: string[];
             order?: number;
         };
         UpdateTagsRequest: {
@@ -671,7 +758,6 @@ export interface components {
             title: string;
             type: components["schemas"]["EventType"];
             status: components["schemas"]["EventStatus"];
-            /** @description Required for type=incident */
             severity?: components["schemas"]["Severity"];
             description: string;
             /** Format: date-time */
@@ -685,6 +771,16 @@ export interface components {
             /** Format: uuid */
             template_id?: string;
             service_ids?: string[];
+            group_ids?: string[];
+        };
+        AddServicesRequest: {
+            service_ids?: string[];
+            group_ids?: string[];
+            reason?: string;
+        };
+        RemoveServicesRequest: {
+            service_ids: string[];
+            reason?: string;
         };
         AddEventUpdateRequest: {
             status: components["schemas"]["EventStatus"];
@@ -712,14 +808,12 @@ export interface components {
         };
         CreateChannelRequest: {
             type: components["schemas"]["ChannelType"];
-            /** @description Email address or Telegram chat_id */
             target: string;
         };
         UpdateChannelRequest: {
             is_enabled: boolean;
         };
         UpdateSubscriptionRequest: {
-            /** @description Empty array for subscription to all services */
             service_ids?: string[];
         };
         UserResponse: {
@@ -754,6 +848,9 @@ export interface components {
         };
         EventUpdatesResponse: {
             data?: components["schemas"]["EventUpdate"][];
+        };
+        EventServiceChangesResponse: {
+            data?: components["schemas"]["EventServiceChange"][];
         };
         TemplateResponse: {
             data?: components["schemas"]["EventTemplate"];
@@ -798,9 +895,12 @@ export interface components {
             content: {
                 "application/json": {
                     error?: {
-                        /** @example validation error */
                         message?: string;
-                        details?: string;
+                        /** @description Validation error details. Array of field errors or error string. */
+                        details?: {
+                            field: string;
+                            message: string;
+                        }[] | string;
                     };
                 };
             };
@@ -813,7 +913,6 @@ export interface components {
             content: {
                 "application/json": {
                     error?: {
-                        /** @example missing authorization header */
                         message?: string;
                     };
                 };
@@ -827,7 +926,6 @@ export interface components {
             content: {
                 "application/json": {
                     error?: {
-                        /** @example insufficient permissions */
                         message?: string;
                     };
                 };
@@ -841,13 +939,12 @@ export interface components {
             content: {
                 "application/json": {
                     error?: {
-                        /** @example service not found */
                         message?: string;
                     };
                 };
             };
         };
-        /** @description Conflict (e.g., duplicate slug) */
+        /** @description Conflict */
         ConflictError: {
             headers: {
                 [name: string]: unknown;
@@ -855,7 +952,6 @@ export interface components {
             content: {
                 "application/json": {
                     error?: {
-                        /** @example slug already exists */
                         message?: string;
                     };
                 };
@@ -863,15 +959,10 @@ export interface components {
         };
     };
     parameters: {
-        /** @description Unique service slug */
         ServiceSlug: string;
-        /** @description Unique group slug */
         GroupSlug: string;
-        /** @description Event UUID */
         EventId: string;
-        /** @description Unique template slug */
         TemplateSlug: string;
-        /** @description Notification channel UUID */
         ChannelId: string;
     };
     requestBodies: never;
@@ -1049,8 +1140,11 @@ export interface operations {
     listServices: {
         parameters: {
             query?: {
+                /** @description Filter by group membership */
                 group_id?: string;
                 status?: components["schemas"]["ServiceStatus"];
+                /** @description Include archived services in the response */
+                include_archived?: boolean;
             };
             header?: never;
             path?: never;
@@ -1102,7 +1196,6 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Unique service slug */
                 slug: components["parameters"]["ServiceSlug"];
             };
             cookie?: never;
@@ -1126,14 +1219,13 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Unique service slug */
                 slug: components["parameters"]["ServiceSlug"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Service deleted */
+            /** @description Service archived */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -1143,6 +1235,7 @@ export interface operations {
             401: components["responses"]["UnauthorizedError"];
             403: components["responses"]["ForbiddenError"];
             404: components["responses"]["NotFoundError"];
+            409: components["responses"]["ConflictError"];
         };
     };
     updateService: {
@@ -1150,7 +1243,6 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Unique service slug */
                 slug: components["parameters"]["ServiceSlug"];
             };
             cookie?: never;
@@ -1176,12 +1268,37 @@ export interface operations {
             404: components["responses"]["NotFoundError"];
         };
     };
+    restoreService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: components["parameters"]["ServiceSlug"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Service restored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceResponse"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+            409: components["responses"]["ConflictError"];
+        };
+    };
     getServiceTags: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Unique service slug */
                 slug: components["parameters"]["ServiceSlug"];
             };
             cookie?: never;
@@ -1205,7 +1322,6 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Unique service slug */
                 slug: components["parameters"]["ServiceSlug"];
             };
             cookie?: never;
@@ -1232,7 +1348,10 @@ export interface operations {
     };
     listGroups: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Include archived groups in the response */
+                include_archived?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1283,7 +1402,6 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Unique group slug */
                 slug: components["parameters"]["GroupSlug"];
             };
             cookie?: never;
@@ -1307,14 +1425,13 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Unique group slug */
                 slug: components["parameters"]["GroupSlug"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Group deleted */
+            /** @description Group archived */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -1324,6 +1441,7 @@ export interface operations {
             401: components["responses"]["UnauthorizedError"];
             403: components["responses"]["ForbiddenError"];
             404: components["responses"]["NotFoundError"];
+            409: components["responses"]["ConflictError"];
         };
     };
     updateGroup: {
@@ -1331,7 +1449,6 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Unique group slug */
                 slug: components["parameters"]["GroupSlug"];
             };
             cookie?: never;
@@ -1355,6 +1472,32 @@ export interface operations {
             401: components["responses"]["UnauthorizedError"];
             403: components["responses"]["ForbiddenError"];
             404: components["responses"]["NotFoundError"];
+        };
+    };
+    restoreGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: components["parameters"]["GroupSlug"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Group restored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupResponse"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+            409: components["responses"]["ConflictError"];
         };
     };
     listEvents: {
@@ -1414,7 +1557,6 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Event UUID */
                 id: components["parameters"]["EventId"];
             };
             cookie?: never;
@@ -1440,7 +1582,6 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Event UUID */
                 id: components["parameters"]["EventId"];
             };
             cookie?: never;
@@ -1464,7 +1605,6 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Event UUID */
                 id: components["parameters"]["EventId"];
             };
             cookie?: never;
@@ -1490,7 +1630,6 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Event UUID */
                 id: components["parameters"]["EventId"];
             };
             cookie?: never;
@@ -1511,6 +1650,91 @@ export interface operations {
                 };
             };
             400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    addServicesToEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddServicesRequest"];
+            };
+        };
+        responses: {
+            /** @description Services added */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventResponse"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    removeServicesFromEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemoveServicesRequest"];
+            };
+        };
+        responses: {
+            /** @description Services removed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventResponse"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    getEventServiceChanges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Change history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventServiceChangesResponse"];
+                };
+            };
             401: components["responses"]["UnauthorizedError"];
             403: components["responses"]["ForbiddenError"];
             404: components["responses"]["NotFoundError"];
@@ -1570,7 +1794,6 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Unique template slug */
                 slug: components["parameters"]["TemplateSlug"];
             };
             cookie?: never;
@@ -1596,7 +1819,6 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Unique template slug */
                 slug: components["parameters"]["TemplateSlug"];
             };
             cookie?: never;
@@ -1696,7 +1918,6 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Notification channel UUID */
                 id: components["parameters"]["ChannelId"];
             };
             cookie?: never;
@@ -1720,7 +1941,6 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Notification channel UUID */
                 id: components["parameters"]["ChannelId"];
             };
             cookie?: never;
@@ -1750,7 +1970,6 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Notification channel UUID */
                 id: components["parameters"]["ChannelId"];
             };
             cookie?: never;

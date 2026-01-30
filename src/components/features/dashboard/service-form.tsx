@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
 import {
   createServiceSchema,
@@ -51,14 +52,14 @@ export function ServiceForm({ service, groups, onSubmit, isLoading }: ServiceFor
           slug: service.slug,
           description: service.description ?? '',
           status: service.status,
-          group_id: service.group_id ?? null,
+          group_ids: service.group_ids ?? [],
           order: service.order ?? 0,
         }
       : {
           name: '',
           slug: '',
           description: '',
-          group_id: null,
+          group_ids: [],
           order: 0,
         },
   });
@@ -155,28 +156,41 @@ export function ServiceForm({ service, groups, onSubmit, isLoading }: ServiceFor
 
         <FormField
           control={form.control}
-          name="group_id"
+          name="group_ids"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Group (optional)</FormLabel>
-              <Select
-                onValueChange={(v) => field.onChange(v === 'none' ? null : v)}
-                defaultValue={field.value ?? 'none'}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select group" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="none">No group</SelectItem>
-                  {groups.map((group) => (
-                    <SelectItem key={group.id} value={group.id}>
-                      {group.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormLabel>Groups (optional)</FormLabel>
+              <FormDescription>
+                Select one or more groups for this service
+              </FormDescription>
+              <div className="space-y-2 mt-2">
+                {groups.length > 0 ? (
+                  groups.map((group) => (
+                    <div key={group.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`group-${group.id}`}
+                        checked={field.value?.includes(group.id)}
+                        onCheckedChange={(checked) => {
+                          const current = field.value ?? [];
+                          if (checked) {
+                            field.onChange([...current, group.id]);
+                          } else {
+                            field.onChange(current.filter((id) => id !== group.id));
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor={`group-${group.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {group.name}
+                      </label>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No groups available</p>
+                )}
+              </div>
               <FormMessage />
             </FormItem>
           )}

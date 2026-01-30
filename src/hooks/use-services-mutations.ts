@@ -45,10 +45,32 @@ export function useDeleteService() {
 
   return useMutation({
     mutationFn: async (slug: string) => {
-      const { error } = await apiClient.DELETE('/api/v1/services/{slug}', {
+      const { error, response } = await apiClient.DELETE('/api/v1/services/{slug}', {
         params: { path: { slug } },
       });
-      if (error) throw new Error(error.error?.message || 'Failed to delete service');
+      if (error) {
+        if (response.status === 409) {
+          throw new Error('Cannot archive: service has active events');
+        }
+        throw new Error(error.error?.message || 'Failed to delete service');
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+    },
+  });
+}
+
+export function useRestoreService() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (slug: string) => {
+      const { data: result, error } = await apiClient.POST('/api/v1/services/{slug}/restore', {
+        params: { path: { slug } },
+      });
+      if (error) throw new Error(error.error?.message || 'Failed to restore service');
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services'] });

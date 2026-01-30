@@ -4,6 +4,7 @@ import { DataTable } from './data-table';
 import { EmptyState } from './empty-state';
 import { StatusIndicator } from '@/components/features/status';
 import { serviceStatusConfig, formatEventDate } from '@/lib/status-utils';
+import { Badge } from '@/components/ui/badge';
 import { Server } from 'lucide-react';
 import type { components } from '@/api/types.generated';
 
@@ -22,20 +23,37 @@ export function ServicesTable({ services, groups }: ServicesTableProps) {
       key: 'name',
       header: 'Name',
       cell: (service: Service & { actions?: React.ReactNode }) => (
-        <div>
-          <div className="font-medium">{service.name}</div>
+        <div className={service.archived_at ? 'opacity-60' : ''}>
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{service.name}</span>
+            {service.archived_at && (
+              <Badge variant="outline" className="text-muted-foreground">
+                Archived
+              </Badge>
+            )}
+          </div>
           <div className="text-sm text-muted-foreground">{service.slug}</div>
         </div>
       ),
     },
     {
-      key: 'group',
-      header: 'Group',
-      cell: (service: Service & { actions?: React.ReactNode }) => (
-        <span className="text-muted-foreground">
-          {service.group_id ? groupMap.get(service.group_id) ?? '—' : '—'}
-        </span>
-      ),
+      key: 'groups',
+      header: 'Groups',
+      cell: (service: Service & { actions?: React.ReactNode }) => {
+        const groupIds = service.group_ids ?? [];
+        if (groupIds.length === 0) {
+          return <span className="text-muted-foreground">—</span>;
+        }
+        return (
+          <div className="flex flex-wrap gap-1">
+            {groupIds.map((id) => (
+              <Badge key={id} variant="secondary">
+                {groupMap.get(id) ?? id}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
     },
     {
       key: 'status',
