@@ -7,11 +7,17 @@ type ServiceGroup = components['schemas']['ServiceGroup'];
 type Event = components['schemas']['Event'];
 
 // Hook for fetching services list
-export function useServices() {
+export function useServices(options?: { includeArchived?: boolean }) {
   return useQuery({
-    queryKey: ['services'],
+    queryKey: ['services', { includeArchived: options?.includeArchived }],
     queryFn: async (): Promise<Service[]> => {
-      const { data, error } = await publicClient.GET('/api/v1/services');
+      const { data, error } = await publicClient.GET('/api/v1/services', {
+        params: {
+          query: {
+            include_archived: options?.includeArchived,
+          },
+        },
+      });
       if (error) throw new Error('Failed to fetch services');
       return data?.data ?? [];
     },
@@ -21,11 +27,17 @@ export function useServices() {
 }
 
 // Hook for fetching groups list
-export function useGroups() {
+export function useGroups(options?: { includeArchived?: boolean }) {
   return useQuery({
-    queryKey: ['groups'],
+    queryKey: ['groups', { includeArchived: options?.includeArchived }],
     queryFn: async (): Promise<ServiceGroup[]> => {
-      const { data, error } = await publicClient.GET('/api/v1/groups');
+      const { data, error } = await publicClient.GET('/api/v1/groups', {
+        params: {
+          query: {
+            include_archived: options?.includeArchived,
+          },
+        },
+      });
       if (error) throw new Error('Failed to fetch groups');
       return data?.data ?? [];
     },

@@ -2,23 +2,27 @@
 
 import { useState } from 'react';
 import { useServices, useGroups } from '@/hooks/use-public-status';
-import { useDeleteService } from '@/hooks/use-services-mutations';
+import { useDeleteService, useRestoreService } from '@/hooks/use-services-mutations';
 import {
   ServicesTable,
   ServiceFormDialog,
   DeleteConfirmationDialog,
 } from '@/components/features/dashboard';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Pencil } from 'lucide-react';
+import { Loader2, Trash2, Pencil, RotateCcw } from 'lucide-react';
 import type { components } from '@/api/types.generated';
 
 type Service = components['schemas']['Service'];
 
 export default function ServicesPage() {
-  const { data: services, isLoading: servicesLoading } = useServices();
+  const [showArchived, setShowArchived] = useState(false);
+  const { data: services, isLoading: servicesLoading } = useServices({ includeArchived: showArchived });
   const { data: groups, isLoading: groupsLoading } = useGroups();
   const deleteMutation = useDeleteService();
+  const restoreMutation = useRestoreService();
   const { toast } = useToast();
 
   const [deleteTarget, setDeleteTarget] = useState<Service | null>(null);
@@ -30,11 +34,24 @@ export default function ServicesPage() {
 
     try {
       await deleteMutation.mutateAsync(deleteTarget.slug);
-      toast({ title: 'Service deleted successfully' });
+      toast({ title: 'Service archived successfully' });
       setDeleteTarget(null);
     } catch (error) {
       toast({
-        title: 'Failed to delete service',
+        title: 'Failed to archive service',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRestore = async (service: Service) => {
+    try {
+      await restoreMutation.mutateAsync(service.slug);
+      toast({ title: 'Service restored successfully' });
+    } catch (error) {
+      toast({
+        title: 'Failed to restore service',
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
@@ -44,7 +61,20 @@ export default function ServicesPage() {
   // Add action column to services
   const servicesWithActions = services?.map((service) => ({
     ...service,
-    actions: (
+    actions: service.archived_at ? (
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleRestore(service);
+        }}
+        disabled={restoreMutation.isPending}
+      >
+        <RotateCcw className="h-4 w-4 mr-1" />
+        Restore
+      </Button>
+    ) : (
       <div className="flex items-center gap-2">
         <ServiceFormDialog
           service={service}
@@ -78,6 +108,15 @@ export default function ServicesPage() {
         <ServiceFormDialog />
       </div>
 
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="show-archived"
+          checked={showArchived}
+          onCheckedChange={setShowArchived}
+        />
+        <Label htmlFor="show-archived">Show archived</Label>
+      </div>
+
       {isLoading ? (
         <div className="flex items-center justify-center min-h-[200px]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -93,8 +132,8 @@ export default function ServicesPage() {
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         onConfirm={handleDelete}
-        title="Delete Service"
-        description={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
+        title="Archive Service"
+        description={`Are you sure you want to archive "${deleteTarget?.name}"? You can restore it later.`}
         isLoading={deleteMutation.isPending}
       />
     </div>

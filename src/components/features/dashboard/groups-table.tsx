@@ -2,6 +2,7 @@
 
 import { DataTable } from './data-table';
 import { EmptyState } from './empty-state';
+import { Badge } from '@/components/ui/badge';
 import { FolderTree } from 'lucide-react';
 import { formatEventDate } from '@/lib/status-utils';
 import type { components } from '@/api/types.generated';
@@ -19,8 +20,15 @@ export function GroupsTable({ groups, serviceCount }: GroupsTableProps) {
       key: 'name',
       header: 'Name',
       cell: (group: ServiceGroup & { actions?: React.ReactNode }) => (
-        <div>
-          <div className="font-medium">{group.name}</div>
+        <div className={group.archived_at ? 'opacity-60' : ''}>
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{group.name}</span>
+            {group.archived_at && (
+              <Badge variant="outline" className="text-muted-foreground">
+                Archived
+              </Badge>
+            )}
+          </div>
           <div className="text-sm text-muted-foreground">{group.slug}</div>
         </div>
       ),

@@ -45,10 +45,32 @@ export function useDeleteGroup() {
 
   return useMutation({
     mutationFn: async (slug: string) => {
-      const { error } = await apiClient.DELETE('/api/v1/groups/{slug}', {
+      const { error, response } = await apiClient.DELETE('/api/v1/groups/{slug}', {
         params: { path: { slug } },
       });
-      if (error) throw new Error(error.error?.message || 'Failed to delete group');
+      if (error) {
+        if (response.status === 409) {
+          throw new Error('Cannot archive: group has active services');
+        }
+        throw new Error(error.error?.message || 'Failed to delete group');
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+    },
+  });
+}
+
+export function useRestoreGroup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (slug: string) => {
+      const { data: result, error } = await apiClient.POST('/api/v1/groups/{slug}/restore', {
+        params: { path: { slug } },
+      });
+      if (error) throw new Error(error.error?.message || 'Failed to restore group');
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['groups'] });

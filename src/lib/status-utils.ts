@@ -133,20 +133,34 @@ export function calculateOverallStatus(
   return { status: 'operational', label: 'All Systems Operational' };
 }
 
-// Group services by group_id
-export function groupServices<T extends { group_id?: string | null }>(
+// Group services by group_ids (M:N relationship - service can belong to multiple groups)
+export function groupServices<T extends { group_ids?: string[] }>(
   services: T[],
   groups: Array<{ id: string; name: string; order: number }>
 ): Array<{ group: { id: string; name: string } | null; services: T[] }> {
   const grouped = new Map<string | null, T[]>();
 
-  // Group services
+  // Initialize groups
+  grouped.set(null, []); // Ungrouped
+  for (const group of groups) {
+    grouped.set(group.id, []);
+  }
+
+  // Group services - service can appear in multiple groups
   for (const service of services) {
-    const key = service.group_id ?? null;
-    if (!grouped.has(key)) {
-      grouped.set(key, []);
+    const groupIds = service.group_ids ?? [];
+
+    if (groupIds.length === 0) {
+      // Service without groups goes to Ungrouped
+      grouped.get(null)!.push(service);
+    } else {
+      // Service appears in each of its groups
+      for (const groupId of groupIds) {
+        if (grouped.has(groupId)) {
+          grouped.get(groupId)!.push(service);
+        }
+      }
     }
-    grouped.get(key)!.push(service);
   }
 
   // Build result respecting group order

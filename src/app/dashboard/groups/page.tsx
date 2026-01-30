@@ -2,23 +2,27 @@
 
 import { useState, useMemo } from 'react';
 import { useServices, useGroups } from '@/hooks/use-public-status';
-import { useDeleteGroup } from '@/hooks/use-groups-mutations';
+import { useDeleteGroup, useRestoreGroup } from '@/hooks/use-groups-mutations';
 import {
   GroupsTable,
   GroupFormDialog,
   DeleteConfirmationDialog,
 } from '@/components/features/dashboard';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Pencil } from 'lucide-react';
+import { Loader2, Trash2, Pencil, RotateCcw } from 'lucide-react';
 import type { components } from '@/api/types.generated';
 
 type ServiceGroup = components['schemas']['ServiceGroup'];
 
 export default function GroupsPage() {
+  const [showArchived, setShowArchived] = useState(false);
   const { data: services } = useServices();
-  const { data: groups, isLoading } = useGroups();
+  const { data: groups, isLoading } = useGroups({ includeArchived: showArchived });
   const deleteMutation = useDeleteGroup();
+  const restoreMutation = useRestoreGroup();
   const { toast } = useToast();
 
   const [deleteTarget, setDeleteTarget] = useState<ServiceGroup | null>(null);
@@ -26,8 +30,8 @@ export default function GroupsPage() {
   const serviceCount = useMemo(() => {
     const map = new Map<string, number>();
     services?.forEach((service) => {
-      if (service.group_id) {
-        map.set(service.group_id, (map.get(service.group_id) ?? 0) + 1);
+      for (const groupId of service.group_ids ?? []) {
+        map.set(groupId, (map.get(groupId) ?? 0) + 1);
       }
     });
     return map;
@@ -38,11 +42,24 @@ export default function GroupsPage() {
 
     try {
       await deleteMutation.mutateAsync(deleteTarget.slug);
-      toast({ title: 'Group deleted successfully' });
+      toast({ title: 'Group archived successfully' });
       setDeleteTarget(null);
     } catch (error) {
       toast({
-        title: 'Failed to delete group',
+        title: 'Failed to archive group',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRestore = async (group: ServiceGroup) => {
+    try {
+      await restoreMutation.mutateAsync(group.slug);
+      toast({ title: 'Group restored successfully' });
+    } catch (error) {
+      toast({
+        title: 'Failed to restore group',
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
@@ -52,7 +69,20 @@ export default function GroupsPage() {
   // Add action column to groups
   const groupsWithActions = groups?.map((group) => ({
     ...group,
-    actions: (
+    actions: group.archived_at ? (
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleRestore(group);
+        }}
+        disabled={restoreMutation.isPending}
+      >
+        <RotateCcw className="h-4 w-4 mr-1" />
+        Restore
+      </Button>
+    ) : (
       <div className="flex items-center gap-2">
         <GroupFormDialog
           group={group}
@@ -86,6 +116,15 @@ export default function GroupsPage() {
         <GroupFormDialog />
       </div>
 
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="show-archived-groups"
+          checked={showArchived}
+          onCheckedChange={setShowArchived}
+        />
+        <Label htmlFor="show-archived-groups">Show archived</Label>
+      </div>
+
       {isLoading ? (
         <div className="flex items-center justify-center min-h-[200px]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -98,8 +137,8 @@ export default function GroupsPage() {
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         onConfirm={handleDelete}
-        title="Delete Group"
-        description={`Are you sure you want to delete "${deleteTarget?.name}"? Services in this group will become ungrouped.`}
+        title="Archive Group"
+        description={`Are you sure you want to archive "${deleteTarget?.name}"? Services in this group will become ungrouped. You can restore it later.`}
         isLoading={deleteMutation.isPending}
       />
     </div>

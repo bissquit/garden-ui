@@ -22,7 +22,7 @@ export const createServiceSchema = z.object({
     .regex(slugPattern, 'Slug must contain only lowercase letters, numbers, and hyphens'),
   description: z.string().optional(),
   status: serviceStatusEnum.optional(),
-  group_id: z.string().uuid().nullable().optional(),
+  group_ids: z.array(z.string().uuid()).optional().default([]),
   order: z.number().int().default(0),
 });
 
@@ -38,7 +38,7 @@ export const updateServiceSchema = z.object({
     .regex(slugPattern, 'Slug must contain only lowercase letters, numbers, and hyphens'),
   description: z.string().optional(),
   status: serviceStatusEnum,
-  group_id: z.string().uuid().nullable().optional(),
+  group_ids: z.array(z.string().uuid()).optional().default([]),
   order: z.number().int().optional(),
 });
 

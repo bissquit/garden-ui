@@ -81,11 +81,11 @@ describe('calculateOverallStatus', () => {
 });
 
 describe('groupServices', () => {
-  it('groups services by group_id', () => {
+  it('groups services by group_ids', () => {
     const services = [
-      { group_id: 'g1', name: 'S1' },
-      { group_id: 'g1', name: 'S2' },
-      { group_id: null, name: 'S3' },
+      { group_ids: ['g1'], name: 'S1' },
+      { group_ids: ['g1'], name: 'S2' },
+      { group_ids: [], name: 'S3' },
     ];
     const groups = [{ id: 'g1', name: 'Group 1', order: 0 }];
 
@@ -100,8 +100,8 @@ describe('groupServices', () => {
 
   it('respects group order', () => {
     const services = [
-      { group_id: 'g1', name: 'S1' },
-      { group_id: 'g2', name: 'S2' },
+      { group_ids: ['g1'], name: 'S1' },
+      { group_ids: ['g2'], name: 'S2' },
     ];
     const groups = [
       { id: 'g2', name: 'Second', order: 1 },
@@ -116,8 +116,8 @@ describe('groupServices', () => {
 
   it('puts ungrouped services at the end', () => {
     const services = [
-      { group_id: null, name: 'Ungrouped' },
-      { group_id: 'g1', name: 'Grouped' },
+      { group_ids: [], name: 'Ungrouped' },
+      { group_ids: ['g1'], name: 'Grouped' },
     ];
     const groups = [{ id: 'g1', name: 'Group', order: 0 }];
 
@@ -134,11 +134,33 @@ describe('groupServices', () => {
   });
 
   it('handles empty groups array', () => {
-    const services = [{ group_id: null, name: 'S1' }];
+    const services = [{ group_ids: [], name: 'S1' }];
     const result = groupServices(services, []);
 
     expect(result).toHaveLength(1);
     expect(result[0].group).toBeNull();
+  });
+
+  it('allows service to appear in multiple groups', () => {
+    const services = [
+      { group_ids: ['g1', 'g2'], name: 'Multi-group Service' },
+      { group_ids: ['g1'], name: 'Group 1 Only' },
+    ];
+    const groups = [
+      { id: 'g1', name: 'Group 1', order: 0 },
+      { id: 'g2', name: 'Group 2', order: 1 },
+    ];
+
+    const result = groupServices(services, groups);
+
+    expect(result).toHaveLength(2);
+    // Group 1 should have both services
+    expect(result[0].group?.name).toBe('Group 1');
+    expect(result[0].services).toHaveLength(2);
+    // Group 2 should have only the multi-group service
+    expect(result[1].group?.name).toBe('Group 2');
+    expect(result[1].services).toHaveLength(1);
+    expect(result[1].services[0].name).toBe('Multi-group Service');
   });
 });
 
