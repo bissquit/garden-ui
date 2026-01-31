@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEvents, useEvent, useEventUpdates } from './use-events';
+import { useEvents, useEvent, useEventUpdates, useEventServiceChanges } from './use-events';
 import type { ReactNode } from 'react';
 
 // Mock API client
@@ -195,5 +195,74 @@ describe('useEventUpdates', () => {
 
     expect(result.current.fetchStatus).toBe('idle');
     expect(apiClient.GET).not.toHaveBeenCalled();
+  });
+});
+
+const mockServiceChanges = [
+  {
+    id: 'c1',
+    event_id: 'e1',
+    service_id: 's1',
+    action: 'added',
+    reason: 'Service affected by incident',
+    created_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'c2',
+    event_id: 'e1',
+    service_id: 's2',
+    action: 'removed',
+    reason: 'Service recovered',
+    created_at: '2026-01-01T01:00:00Z',
+  },
+];
+
+describe('useEventServiceChanges', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('fetches event service changes successfully', async () => {
+    vi.mocked(apiClient.GET).mockResolvedValueOnce({
+      data: { data: mockServiceChanges },
+      error: null,
+    } as any);
+
+    const { result } = renderHook(() => useEventServiceChanges('e1'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data).toEqual(mockServiceChanges);
+    expect(apiClient.GET).toHaveBeenCalledWith('/api/v1/events/{id}/changes', {
+      params: { path: { id: 'e1' } },
+    });
+  });
+
+  it('does not fetch when eventId is empty', async () => {
+    const { result } = renderHook(() => useEventServiceChanges(''), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.fetchStatus).toBe('idle');
+    expect(apiClient.GET).not.toHaveBeenCalled();
+  });
+
+  it('handles fetch error', async () => {
+    vi.mocked(apiClient.GET).mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Not found' },
+    } as any);
+
+    const { result } = renderHook(() => useEventServiceChanges('e1'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
   });
 });

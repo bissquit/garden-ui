@@ -78,6 +78,58 @@ describe('createEventSchema', () => {
       expect(result.error.errors.some((e) => e.path.includes('status'))).toBe(true);
     }
   });
+
+  it('should accept valid group_ids', () => {
+    const eventWithGroups = {
+      title: 'Test Incident',
+      type: 'incident' as const,
+      status: 'investigating' as const,
+      severity: 'minor' as const,
+      description: 'Test description',
+      group_ids: ['123e4567-e89b-12d3-a456-426614174000'],
+    };
+
+    const result = createEventSchema.safeParse(eventWithGroups);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.group_ids).toEqual(['123e4567-e89b-12d3-a456-426614174000']);
+    }
+  });
+
+  it('should default group_ids to empty array', () => {
+    const eventWithoutGroups = {
+      title: 'Test Incident',
+      type: 'incident' as const,
+      status: 'investigating' as const,
+      severity: 'minor' as const,
+      description: 'Test description',
+    };
+
+    const result = createEventSchema.safeParse(eventWithoutGroups);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.group_ids).toEqual([]);
+    }
+  });
+
+  it('should accept both service_ids and group_ids', () => {
+    const eventWithBoth = {
+      title: 'Test Incident',
+      type: 'incident' as const,
+      status: 'investigating' as const,
+      severity: 'minor' as const,
+      description: 'Test description',
+      service_ids: ['123e4567-e89b-12d3-a456-426614174001'],
+      group_ids: ['123e4567-e89b-12d3-a456-426614174002'],
+    };
+
+    const result = createEventSchema.safeParse(eventWithBoth);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.service_ids).toEqual(['123e4567-e89b-12d3-a456-426614174001']);
+      expect(result.data.group_ids).toEqual(['123e4567-e89b-12d3-a456-426614174002']);
+    }
+  });
 });
 
 describe('addEventUpdateSchema', () => {

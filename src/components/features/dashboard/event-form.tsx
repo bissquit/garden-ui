@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -22,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Info } from 'lucide-react';
 import {
   createEventSchema,
   type CreateEventFormData,
@@ -31,9 +32,11 @@ import { eventStatusConfig, severityConfig } from '@/lib/status-utils';
 import type { components } from '@/api/types.generated';
 
 type Service = components['schemas']['Service'];
+type ServiceGroup = components['schemas']['ServiceGroup'];
 
 interface EventFormProps {
   services: Service[];
+  groups: ServiceGroup[];
   onSubmit: (data: CreateEventFormData) => void;
   isLoading?: boolean;
 }
@@ -41,7 +44,7 @@ interface EventFormProps {
 const incidentStatuses = ['investigating', 'identified', 'monitoring', 'resolved'];
 const maintenanceStatuses = ['scheduled', 'in_progress', 'completed'];
 
-export function EventForm({ services, onSubmit, isLoading }: EventFormProps) {
+export function EventForm({ services, groups, onSubmit, isLoading }: EventFormProps) {
   const form = useForm<CreateEventFormData>({
     resolver: zodResolver(createEventSchema),
     defaultValues: {
@@ -52,11 +55,46 @@ export function EventForm({ services, onSubmit, isLoading }: EventFormProps) {
       description: '',
       notify_subscribers: false,
       service_ids: [],
+      group_ids: [],
     },
   });
 
   const watchType = form.watch('type');
   const statuses = watchType === 'incident' ? incidentStatuses : maintenanceStatuses;
+
+  // Watch selected services and groups for preview
+  const watchedServiceIds = form.watch('service_ids');
+  const watchedGroupIds = form.watch('group_ids');
+
+  const selectedServiceIds = useMemo(
+    () => watchedServiceIds ?? [],
+    [watchedServiceIds]
+  );
+  const selectedGroupIds = useMemo(
+    () => watchedGroupIds ?? [],
+    [watchedGroupIds]
+  );
+
+  // Calculate total affected services
+  const totalAffectedServices = useMemo(() => {
+    const serviceSet = new Set(selectedServiceIds);
+
+    // Add services from selected groups
+    for (const groupId of selectedGroupIds) {
+      for (const service of services) {
+        if (service.group_ids?.includes(groupId)) {
+          serviceSet.add(service.id);
+        }
+      }
+    }
+
+    return serviceSet.size;
+  }, [selectedServiceIds, selectedGroupIds, services]);
+
+  // Get service count in a group
+  const getServicesCountInGroup = (groupId: string) => {
+    return services.filter(s => s.group_ids?.includes(groupId)).length;
+  };
 
   // Reset status when type changes
   const handleTypeChange = (type: 'incident' | 'maintenance') => {
@@ -215,10 +253,58 @@ export function EventForm({ services, onSubmit, isLoading }: EventFormProps) {
 
         <FormField
           control={form.control}
+          name="group_ids"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Affected Groups</FormLabel>
+              <FormDescription>
+                Select groups — all their services will be added automatically
+              </FormDescription>
+              <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                {groups.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No groups available</p>
+                ) : (
+                  groups.map((group) => (
+                    <div key={group.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`event-group-${group.id}`}
+                        checked={field.value?.includes(group.id)}
+                        onCheckedChange={(checked) => {
+                          const current = field.value ?? [];
+                          if (checked) {
+                            field.onChange([...current, group.id]);
+                          } else {
+                            field.onChange(current.filter((id) => id !== group.id));
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor={`event-group-${group.id}`}
+                        className="text-sm font-medium leading-none cursor-pointer"
+                      >
+                        {group.name}
+                        <span className="text-muted-foreground ml-1">
+                          ({getServicesCountInGroup(group.id)} services)
+                        </span>
+                      </label>
+                    </div>
+                  ))
+                )}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="service_ids"
           render={() => (
             <FormItem>
-              <FormLabel>Affected Services</FormLabel>
+              <FormLabel>Additional Services</FormLabel>
+              <FormDescription>
+                Select individual services (in addition to groups)
+              </FormDescription>
               <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
                 {services.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No services available</p>
@@ -256,6 +342,16 @@ export function EventForm({ services, onSubmit, isLoading }: EventFormProps) {
             </FormItem>
           )}
         />
+
+        {/* Preview of total affected services */}
+        {(selectedServiceIds.length > 0 || selectedGroupIds.length > 0) && (
+          <div className="flex items-center gap-2 text-sm bg-muted p-3 rounded-md">
+            <Info className="h-4 w-4 text-muted-foreground" />
+            <span>
+              <strong>Total affected:</strong> {totalAffectedServices} service{totalAffectedServices !== 1 ? 's' : ''}
+            </span>
+          </div>
+        )}
 
         <FormField
           control={form.control}
