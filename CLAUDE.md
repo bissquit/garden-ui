@@ -1,12 +1,12 @@
 # CLAUDE.md — Garden UI
 
-## ОБЯЗАТЕЛЬНО: После любых изменений проекта
+## ⚠️ ПОСЛЕ ЛЮБОГО ИЗМЕНЕНИЯ КОДА
 
 ```
-ПОСЛЕ КАЖДОГО ИЗМЕНЕНИЯ КОДА обнови этот файл:
-- Добавь новые файлы в CODEMAP
-- Обнови STATUS если завершена задача
-- Обнови HOOKS/COMPONENTS если добавлены новые
+1. Обнови CODEMAP — добавь новые файлы/компоненты
+2. Обнови STATUS — если завершена задача/фаза
+3. npm run verify — должен проходить
+4. Этот файл = источник истины о проекте
 ```
 
 ---
@@ -14,17 +14,27 @@
 ## 1. QUICK REFERENCE
 
 ```bash
-# Команды
 npm run dev              # Dev server :3000
 npm run verify           # lint + typecheck + test:coverage + build (CI parity)
-npm run test:run         # Unit/Integration тесты
+npm run test:run         # Unit/Integration
 npm run test:e2e         # E2E Playwright
 npm run api:update       # Скачать OpenAPI спеку из backend
 npm run api:generate     # Сгенерировать TypeScript типы
+```
 
-# Окружение для тестов
-JWT_SECRET_KEY=qwertyuiopasdfghjklzxcvbnmqwertyuioasdfghjklxcvbnm docker compose up -d
-JWT_SECRET_KEY=qwertyuiopasdfghjklzxcvbnmqwertyuioasdfghjklxcvbnm docker compose down && \
+**Backend:** https://github.com/bissquit/incident-garden
+**Compatibility:** Frontend 1.x.x ↔ Backend >= 1.0.0
+
+### Test Environment
+
+```bash
+# Up:
+JWT_SECRET_KEY=qwertyuiopasdfghjklzxcvbnmqwertyuioasdfghjklxcvbnm \
+  docker compose up -d
+
+# Down + cleanup:
+JWT_SECRET_KEY=qwertyuiopasdfghjklzxcvbnmqwertyuioasdfghjklxcvbnm \
+  docker compose down && \
   docker volume rm garden-ui_migrations garden-ui_postgres_data && \
   docker image rm garden-ui-frontend:latest ghcr.io/bissquit/incident-garden:latest
 ```
@@ -56,7 +66,7 @@ src/
 │       └── templates/page.tsx # CRUD templates
 │
 ├── components/
-│   ├── ui/                    # shadcn/ui (20 components)
+│   ├── ui/                    # shadcn/ui primitives
 │   ├── layout/                # header, footer, dashboard-sidebar, theme-switcher
 │   └── features/
 │       ├── auth/              # LoginForm
@@ -99,7 +109,9 @@ src/
 
 ## 3. STATUS
 
-| Phase              | Status | Notes                                                |
+**Current:** Phase 5 ✅ | **Version:** 1.0.0
+
+| Phase              | Status | Scope                                                |
 |--------------------|--------|------------------------------------------------------|
 | 1. Foundation      | ✅      | Next.js, Tailwind, shadcn, API client, Auth          |
 | 2. CI/CD           | ✅      | GitHub Actions, Dockerfile, docker-compose           |
@@ -109,30 +121,70 @@ src/
 | 6. User Settings   | 🔜     | Profile, Channels, Subscriptions                     |
 | 7. Polish          | 🔜     | E2E in CI, Dark mode, Mobile, Error boundaries       |
 
-**Current version:** 1.0.0
-**Backend compatibility:** >= 1.0.0
+### Phase 6 Tasks
+- [ ] Profile settings page
+- [ ] Notification channels (add, verify, enable/disable)
+- [ ] Subscriptions management
+
+### Phase 7 Tasks
+- [ ] E2E тесты в CI для критических flows
+- [ ] Mobile optimization
+- [ ] Loading skeletons
+- [ ] Error boundaries
+- [ ] i18n (опционально)
 
 ---
 
-## 4. ARCHITECTURE RULES (нарушение = дизайн-баг)
+## 4. ARCHITECTURE
 
-### Layer Boundaries
+### Layer Boundaries (нарушение = дизайн-баг)
+
+| Layer                  | Responsibility                                 | Forbidden                  |
+|------------------------|------------------------------------------------|----------------------------|
+| `app/`                 | routing, composition                           | business logic, HTTP calls |
+| `components/features/` | UI + hooks usage                               | direct API calls           |
+| `hooks/`               | TanStack Query (queryKey, queryFn, invalidate) | UI logic                   |
+| `api/`                 | client setup, auth middleware                  | business logic             |
+| `lib/`                 | pure functions, Zod, mappings                  | React, side effects        |
+
+### Patterns (применяй всегда)
+
+- **Feature module:** фича = компоненты + hooks + validations + tests в одном домене
+- **Container/Presentational:** логика в хуках, UI в компонентах
+- **Single source of truth:** server state только в TanStack Query, без дублирования
+- **SSR boundary:** публичные страницы SSR, интерактив — client components точечно
+
+### Required UI States
+
+Каждый компонент с данными **обязан** реализовать:
 ```
-Pages (app/)         → Только routing/composition, БЕЗ бизнес-логики, БЕЗ HTTP
-Feature Components   → UI + используют hooks
-Hooks (hooks/)       → TanStack Query (queryKey, queryFn, invalidate)
-API (api/)           → Единое место для клиента и auth
-Lib (lib/)           → Чистые функции, Zod, маппинги
+loading | error | empty | success
 ```
 
-### Обязательные UI состояния
+### Dangerous Actions
+
+- Удаление/отключение → **DeleteConfirmationDialog**
+- Долгие операции → **disabled button + spinner**
+
+---
+
+## 5. TASK ALGORITHM (обязательная последовательность)
+
 ```
-Каждый компонент с данными: loading | error | empty | success
-Опасные действия: DeleteConfirmationDialog
-Долгие операции: disabled button + spinner
+1. CODEMAP        → найти связанные файлы, не дублировать
+2. openapi.yaml   → endpoint существует? типы сгенерированы?
+3. lib/validations → Zod schema (createXxxSchema, updateXxxSchema)
+4. hooks/         → TanStack Query по паттерну (секция 6)
+5. components/    → UI с 4 состояниями (loading/error/empty/success)
+6. tests/         → unit для lib/hooks, integration для форм
+7. npm run verify → lint + typecheck + test + build
+8. CLAUDE.md      → обновить CODEMAP и STATUS
 ```
 
-### API Pattern (всегда так)
+---
+
+## 6. API PATTERN
+
 ```typescript
 // hooks/use-xxx.ts
 export function useXxx() {
@@ -159,12 +211,14 @@ export function useCreateXxx() {
 }
 ```
 
-### Validation Pattern (всегда так)
+---
+
+## 7. VALIDATION PATTERN
+
 ```typescript
 // lib/validations/xxx.ts
 export const createXxxSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  // ...
 });
 export type CreateXxxInput = z.infer<typeof createXxxSchema>;
 
@@ -176,144 +230,149 @@ const form = useForm<CreateXxxInput>({
 
 ---
 
-## 5. TASK EXECUTION CHECKLIST
+## 8. TASK CHECKLIST
 
-### Перед началом
-- [ ] Прочитай CODEMAP — найди связанные файлы
-- [ ] Проверь существующие hooks/validations — не дублируй
-- [ ] Endpoint есть в openapi.yaml? Типы в types.generated.ts?
+### Before
+- [ ] Read CODEMAP — find related files
+- [ ] Check existing hooks/validations — don't duplicate
+- [ ] Endpoint exists in openapi.yaml? Types in types.generated.ts?
 
-### Реализация
-- [ ] Типы из types.generated.ts + Zod на границах
-- [ ] Hook с TanStack Query (pattern выше)
+### Implementation
+- [ ] Types from types.generated.ts + Zod at boundaries
+- [ ] Hook with TanStack Query (pattern from section 6)
 - [ ] UI: loading/error/empty/success states
-- [ ] Опасные действия: confirmation dialog
+- [ ] Dangerous actions: confirmation dialog
 
-### После реализации
+### Definition of Done (блокирует PR)
+- [ ] Нет HTTP из компонентов напрямую
+- [ ] Все 4 UI состояния реализованы
+- [ ] Типы из types.generated.ts (не ручные)
+- [ ] Тесты добавлены по матрице (секция 9)
 - [ ] `npm run verify` проходит
-- [ ] Тест добавлен (unit для utils/validations, integration для форм)
-- [ ] **ОБНОВИ CLAUDE.md** — добавь в CODEMAP, обнови STATUS
+- [ ] **CLAUDE.md обновлён** (CODEMAP, STATUS)
 
 ---
 
-## 6. TESTING MATRIX
+## 9. TESTING MATRIX
 
-| Слой                          | Что тестировать  | Инструмент               |
-|-------------------------------|------------------|--------------------------|
-| lib/* (utils, validations)    | Unit обязательно | Vitest                   |
-| hooks/*                       | Unit обязательно | Vitest + MSW             |
-| components/features/* (формы) | Integration      | Vitest + Testing Library |
-| Auth flow, CRUD               | E2E критичные    | Playwright               |
+| Layer                         | Test Type   | Tool                     | Required      |
+|-------------------------------|-------------|--------------------------|---------------|
+| `lib/*` (utils, validations)  | Unit        | Vitest                   | ✅ обязательно |
+| `hooks/*`                     | Unit        | Vitest + MSW             | ✅ обязательно |
+| `components/features/*` forms | Integration | Vitest + Testing Library | ✅ обязательно |
+| Auth flow, CRUD               | E2E         | Playwright               | критичные     |
 
-**Coverage thresholds:** 70% (statements, branches, functions, lines)
-
-**Test file location:** рядом с исходником `xxx.test.ts(x)`
+**Coverage threshold:** 70% (statements, branches, functions, lines)
+**Test location:** рядом с исходником `xxx.test.ts(x)`
 
 ---
 
-## 7. ERROR HANDLING
+## 10. ERROR HANDLING
 
 ```typescript
-// Централизованно в lib/api-error.ts
+// lib/api-error.ts
 class ApiError extends Error {
-  status: number;
-  static fromResponse(status, error) { ... }
+  constructor(public status: number, message: string, public details?: unknown) {
+    super(message);
+  }
+  static fromResponse(status: number, error: unknown): ApiError { /* ... */ }
   get isUnauthorized() { return this.status === 401; }
   get isForbidden() { return this.status === 403; }
+  get isServerError() { return this.status >= 500; }
 }
+```
 
-// Обработка в UI:
-// 401 → logout + redirect /login
-// 403 → "Access denied" message
-// 5xx → user-friendly message + retry option
+**UI Handling:**
+
+| Status | Action                                      |
+|--------|---------------------------------------------|
+| 401    | logout + redirect `/login` (via middleware) |
+| 403    | "Access denied" message (no redirect)       |
+| 5xx    | user-friendly message + retry option        |
+
+---
+
+## 11. AUTH
+
+**Storage:** access_token в памяти (`window.__AUTH_TOKEN__`), **НИКОГДА** в localStorage
+**Roles:** user < operator < admin | Dashboard requires operator+
+
+**Flow:**
+```
+login → tokens в state → apiClient middleware добавляет header
+401 → middleware dispatches 'auth:unauthorized' → logout → redirect /login
+```
+
+**Full Sequence:**
+1. `POST /api/v1/auth/login` → `{ user, tokens }` → save to state → redirect /dashboard
+2. Request: `Authorization: Bearer <access_token>`
+3. On 401: `POST /api/v1/auth/refresh` → update tokens → retry
+4. Logout: `POST /api/v1/auth/logout` → clear state → redirect /login
+
+---
+
+## 12. SECURITY RULES
+
+- **Tokens:** только в памяти, НИКОГДА localStorage/sessionStorage (XSS risk)
+- **Sensitive data:** не логировать, не выводить в console
+- **User input:** всегда валидировать Zod на границах
+- **API URL:** только через `NEXT_PUBLIC_API_URL`
+- **Credentials:** не коммитить `.env`, использовать `.env.example`
+
+---
+
+## 13. STYLING
+
+- **Framework:** Tailwind CSS + shadcn/ui
+- **Themes:** Garden (default), Ocean, Sunset, Forest — каждая Light/Dark
+- **Colors:** ТОЛЬКО Tailwind классы (`bg-background`, `text-foreground`, `text-primary`)
+- **Status colors:** `serviceStatusConfig` из `lib/status-utils.ts`
+
+---
+
+## 14. NAMING CONVENTIONS
+
+| Type       | Pattern               | Example                                           |
+|------------|-----------------------|---------------------------------------------------|
+| Components | `PascalCase.tsx`      | `ServiceForm.tsx` → `export function ServiceForm` |
+| Hooks      | `use-xxx.ts`          | `use-services.ts` → `export function useServices` |
+| Utils      | `kebab-case.ts`       | `api-error.ts` → `export class ApiError`          |
+| Types      | `PascalCase` + suffix | `CreateServiceInput`, `ServiceFormProps`          |
+| Files/dirs | `kebab-case`          | `service-form.tsx`, `use-auth.tsx`                |
+
+---
+
+## 15. ADDING NEW ENTITY
+
+```
+1. lib/validations/xxx.ts         — Zod schema
+2. hooks/use-xxx.ts               — useXxx, useXxxById
+3. hooks/use-xxx-mutations.ts     — useCreateXxx, useUpdateXxx, useDeleteXxx
+4. components/features/dashboard/xxx-table.tsx
+5. components/features/dashboard/xxx-form.tsx
+6. components/features/dashboard/xxx-form-dialog.tsx
+7. app/dashboard/xxx/page.tsx
+8. Tests рядом с каждым файлом
+9. CLAUDE.md — обновить CODEMAP и STATUS
 ```
 
 ---
 
-## 8. AUTH
-
-```
-Storage: access_token в памяти (window.__AUTH_TOKEN__), НИКОГДА в localStorage
-Flow: login → tokens в state → apiClient middleware добавляет header
-401: apiClient middleware диспатчит 'auth:unauthorized' event → logout
-```
-
-**Roles:** user < operator < admin
-**Dashboard:** требует operator или admin
-
----
-
-## 9. STYLING
-
-```
-Framework: Tailwind CSS + shadcn/ui
-Themes: Garden (default), Ocean, Sunset, Forest — каждая Light/Dark
-Colors: ТОЛЬКО через Tailwind классы (bg-background, text-foreground, text-primary)
-Статусы: serviceStatusConfig в lib/status-utils.ts
-```
-
----
-
-## 10. FILE NAMING
-
-```
-Components: PascalCase (ServiceForm.tsx → export function ServiceForm)
-Hooks: camelCase с use- (use-services.ts → export function useServices)
-Utils: camelCase (format-date.ts → export function formatDate)
-Files/dirs: kebab-case
-Types: PascalCase + суффикс (CreateServiceInput, ServiceFormProps)
-```
-
----
-
-## 11. WHEN ADDING NEW ENTITY
-
-1. **Validation:** `lib/validations/xxx.ts` — Zod schema
-2. **Hook queries:** `hooks/use-xxx.ts` — useXxx, useXxxById
-3. **Hook mutations:** `hooks/use-xxx-mutations.ts` — useCreateXxx, useUpdateXxx, useDeleteXxx
-4. **Table:** `components/features/dashboard/xxx-table.tsx`
-5. **Form:** `components/features/dashboard/xxx-form.tsx`
-6. **Dialog:** `components/features/dashboard/xxx-form-dialog.tsx`
-7. **Page:** `app/dashboard/xxx/page.tsx`
-8. **Tests:** рядом с каждым файлом
-9. **CLAUDE.md:** обнови CODEMAP и STATUS
-
----
-
-## 12. GIT RULES
-
-```
-НЕ делать: commit, push, создание веток, изменение истории
-МОЖНО: read-only операции (status, log, diff, blame)
-```
-
----
-
-## 13. DONT
+## 16. DON'T
 
 - `any` без комментария почему
 - HTTP вызовы из компонентов напрямую
-- Ручные типы вместо generated
+- Ручные типы вместо types.generated.ts
 - localStorage для токенов
 - Хардкод цветов вместо Tailwind классов
-- Создание файлов без необходимости
-- Забывать обновить CLAUDE.md
+- git commit/push/branch (read-only allowed)
+- Создавать файлы без необходимости
+- **Забывать обновить CLAUDE.md**
 
 ---
 
-## 14. ENV
+## 17. ENV
 
 ```bash
-# .env.local
 NEXT_PUBLIC_API_URL=http://localhost:8080
-```
-
----
-
-## 15. BACKEND
-
-```
-Repo: https://github.com/bissquit/incident-garden
-API spec: api/openapi/openapi.yaml
-Update: npm run api:update && npm run api:generate
 ```
