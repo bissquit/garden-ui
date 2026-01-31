@@ -17,3 +17,9 @@ export { GroupFormDialog } from './group-form-dialog';
 export { EventForm } from './event-form';
 export { EventFormDialog } from './event-form-dialog';
 export { EventUpdateForm } from './event-update-form';
+// Template components
+export { TemplatesTable } from './templates-table';
+export { TemplateForm } from './template-form';
+export { TemplateFormDialog } from './template-form-dialog';
+// Service tags
+export { ServiceTagsEditor } from './service-tags-editor';

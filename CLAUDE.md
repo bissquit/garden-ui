@@ -62,6 +62,7 @@ src/
 │   └── dashboard/             # Protected (operator/admin)
 │       ├── page.tsx           # Overview
 │       ├── services/page.tsx  # CRUD services
+│       ├── services/[slug]/page.tsx  # Service details + tags
 │       ├── groups/page.tsx    # CRUD groups
 │       ├── events/page.tsx    # Events list + filters
 │       ├── events/[id]/page.tsx  # Event detail + timeline
@@ -77,15 +78,18 @@ src/
 │       │                      # HistoryList, HistoryDayGroup
 │       └── dashboard/         # DataTable, EmptyState, DeleteConfirmationDialog,
 │                              # ServicesTable, ServiceForm, ServiceFormDialog,
+│                              # ServiceTagsEditor,
 │                              # GroupsTable, GroupForm, GroupFormDialog,
 │                              # EventsTable, EventsFilters, EventForm, EventFormDialog,
 │                              # EventDetailsCard, EventTimeline, EventChangesTimeline,
-│                              # EventServicesManager, EventUpdateForm
+│                              # EventServicesManager, EventUpdateForm,
+│                              # TemplatesTable, TemplateForm, TemplateFormDialog
 │
 ├── hooks/
 │   ├── use-auth.tsx           # Auth context: login, logout, hasRole, hasMinRole
 │   ├── use-public-status.ts   # useServices, useGroups, usePublicStatus, useStatusHistory
 │   ├── use-services-mutations.ts  # useCreateService, useUpdateService, useDeleteService, useRestoreService
+│   ├── use-service-tags.ts    # useServiceTags, useUpdateServiceTags
 │   ├── use-groups-mutations.ts    # useCreateGroup, useUpdateGroup, useDeleteGroup, useRestoreGroup
 │   ├── use-events.ts          # useEvents, useEvent, useEventUpdates, useEventServiceChanges
 │   ├── use-events-mutations.ts    # useCreateEvent, useAddEventUpdate, useDeleteEvent, useAddServicesToEvent, useRemoveServicesFromEvent
@@ -132,7 +136,7 @@ tests/
 | 2. CI/CD           | ✅      | GitHub Actions, Dockerfile, docker-compose           |
 | 3. Public Pages    | ✅      | Status page, History, SSR                            |
 | 4. Dashboard Read  | ✅      | Services/Groups/Events lists, Event detail           |
-| 5. Dashboard Write | ✅      | CRUD all entities, Event updates, Service management |
+| 5. Dashboard Write | ✅      | CRUD all entities, Event updates, Service management, Templates, Service Tags |
 | 6. User Settings   | 🔜     | Profile, Channels, Subscriptions                     |
 | 7. Polish          | 🔄     | E2E in CI, Dark mode, Mobile, Error boundaries       |
 
