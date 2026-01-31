@@ -48,7 +48,11 @@ export function Header() {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Button
+                    variant="ghost"
+                    className="relative h-8 w-8 rounded-full"
+                    data-testid="user-menu"
+                  >
                     <Avatar className="h-8 w-8">
                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
@@ -84,6 +88,7 @@ export function Header() {
                   <DropdownMenuItem
                     className="cursor-pointer text-red-600 focus:text-red-600"
                     onClick={() => logout()}
+                    data-testid="logout-button"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     Logout

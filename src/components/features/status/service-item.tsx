@@ -15,7 +15,10 @@ export function ServiceItem({ service }: ServiceItemProps) {
   const config = serviceStatusConfig[service.status];
 
   return (
-    <div className="flex items-center justify-between py-3 px-4 hover:bg-muted/50 rounded-md transition-colors">
+    <div
+      className="flex items-center justify-between py-3 px-4 hover:bg-muted/50 rounded-md transition-colors"
+      data-testid="service-item"
+    >
       <div className="flex items-center gap-3">
         <span className="font-medium text-foreground">{service.name}</span>
         {service.description && (

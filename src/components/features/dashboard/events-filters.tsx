@@ -40,7 +40,7 @@ export function EventsFilters() {
         value={type || 'all'}
         onValueChange={(v) => updateFilter('type', v)}
       >
-        <SelectTrigger className="w-[150px]">
+        <SelectTrigger className="w-[150px]" data-testid="filter-type">
           <SelectValue placeholder="Type" />
         </SelectTrigger>
         <SelectContent>
@@ -54,7 +54,7 @@ export function EventsFilters() {
         value={status || 'all'}
         onValueChange={(v) => updateFilter('status', v)}
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-[180px]" data-testid="filter-status">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent>

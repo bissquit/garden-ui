@@ -17,7 +17,9 @@
 npm run dev              # Dev server :3000
 npm run verify           # lint + typecheck + test:coverage + build (CI parity)
 npm run test:run         # Unit/Integration
-npm run test:e2e         # E2E Playwright
+npm run test:e2e         # E2E Playwright (headless)
+npm run test:e2e:ui      # E2E Playwright с интерактивным UI
+npm run test:e2e:headed  # E2E Playwright с браузером
 npm run api:update       # Скачать OpenAPI спеку из backend
 npm run api:generate     # Сгенерировать TypeScript типы
 ```
@@ -103,13 +105,26 @@ src/
 │       └── template.ts        # template schemas
 │
 └── types/index.ts             # Role, User, TokenPair, AuthState
+
+tests/
+└── e2e/                       # Playwright E2E tests
+    ├── fixtures.ts            # Test fixtures, helpers, test user credentials
+    ├── auth.spec.ts           # Login, logout, protected routes
+    ├── services.spec.ts       # Services CRUD, archive/restore
+    ├── groups.spec.ts         # Groups CRUD, archive/restore
+    ├── events.spec.ts         # Events CRUD, updates, services management
+    └── public-status.spec.ts  # Public status page, history
+
+.github/workflows/
+├── ci.yml                     # Lint, typecheck, unit tests, build
+└── e2e.yml                    # E2E tests with backend container
 ```
 
 ---
 
 ## 3. STATUS
 
-**Current:** Phase 5 ✅ | **Version:** 1.0.0
+**Current:** Phase 7 (in progress) | **Version:** 1.0.0
 
 | Phase              | Status | Scope                                                |
 |--------------------|--------|------------------------------------------------------|
@@ -119,7 +134,7 @@ src/
 | 4. Dashboard Read  | ✅      | Services/Groups/Events lists, Event detail           |
 | 5. Dashboard Write | ✅      | CRUD all entities, Event updates, Service management |
 | 6. User Settings   | 🔜     | Profile, Channels, Subscriptions                     |
-| 7. Polish          | 🔜     | E2E in CI, Dark mode, Mobile, Error boundaries       |
+| 7. Polish          | 🔄     | E2E in CI, Dark mode, Mobile, Error boundaries       |
 
 ### Phase 6 Tasks
 - [ ] Profile settings page
@@ -127,7 +142,7 @@ src/
 - [ ] Subscriptions management
 
 ### Phase 7 Tasks
-- [ ] E2E тесты в CI для критических flows
+- [x] E2E тесты в CI для критических flows
 - [ ] Mobile optimization
 - [ ] Loading skeletons
 - [ ] Error boundaries

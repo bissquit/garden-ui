@@ -24,7 +24,7 @@ export function ServiceList({ services, groups }: ServiceListProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="services-list">
       {grouped.map(({ group, services: groupServices }) => (
         <ServiceGroup
           key={group?.id ?? 'ungrouped'}

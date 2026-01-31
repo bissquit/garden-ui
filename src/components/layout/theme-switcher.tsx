@@ -47,7 +47,7 @@ export function ThemeSwitcher() {
   const themes: Theme[] = ['garden', 'ocean', 'sunset', 'forest'];
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" data-testid="theme-switcher">
       {/* Theme selector */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

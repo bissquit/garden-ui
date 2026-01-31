@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Pencil, RotateCcw } from 'lucide-react';
+import { Loader2, Trash2, Pencil, RotateCcw, Plus } from 'lucide-react';
 import type { components } from '@/api/types.generated';
 
 type ServiceGroup = components['schemas']['ServiceGroup'];
@@ -78,6 +78,7 @@ export default function GroupsPage() {
           handleRestore(group);
         }}
         disabled={restoreMutation.isPending}
+        data-testid="restore-button"
       >
         <RotateCcw className="h-4 w-4 mr-1" />
         Restore
@@ -87,7 +88,7 @@ export default function GroupsPage() {
         <GroupFormDialog
           group={group}
           trigger={
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" data-testid="edit-button">
               <Pencil className="h-4 w-4" />
             </Button>
           }
@@ -99,6 +100,7 @@ export default function GroupsPage() {
             e.stopPropagation();
             setDeleteTarget(group);
           }}
+          data-testid="delete-button"
         >
           <Trash2 className="h-4 w-4 text-destructive" />
         </Button>
@@ -113,7 +115,12 @@ export default function GroupsPage() {
           <h1 className="text-2xl font-bold">Groups</h1>
           <p className="text-muted-foreground">Organize services into groups</p>
         </div>
-        <GroupFormDialog />
+        <GroupFormDialog trigger={
+          <Button data-testid="create-group-button">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Group
+          </Button>
+        } />
       </div>
 
       <div className="flex items-center space-x-2">
@@ -121,6 +128,7 @@ export default function GroupsPage() {
           id="show-archived-groups"
           checked={showArchived}
           onCheckedChange={setShowArchived}
+          data-testid="show-archived-toggle"
         />
         <Label htmlFor="show-archived-groups">Show archived</Label>
       </div>

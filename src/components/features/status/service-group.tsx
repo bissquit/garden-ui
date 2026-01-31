@@ -15,7 +15,7 @@ export function ServiceGroup({ groupName, services }: ServiceGroupProps) {
   const sorted = [...services].sort((a, b) => a.order - b.order);
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1" data-testid="service-group">
       {groupName && (
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-4 py-2">
           {groupName}

@@ -12,7 +12,7 @@ interface HistoryDayGroupProps {
 
 export function HistoryDayGroup({ date, events }: HistoryDayGroupProps) {
   return (
-    <div>
+    <div data-testid="history-day-group">
       <h3 className="text-sm font-semibold text-muted-foreground mb-3">
         {date}
       </h3>

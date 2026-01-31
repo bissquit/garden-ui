@@ -22,7 +22,7 @@ export function ActiveIncidents({ events }: ActiveIncidentsProps) {
       <h2 className="text-lg font-semibold text-foreground mb-4">
         Active Incidents
       </h2>
-      <div className="space-y-4">
+      <div className="space-y-4" data-testid="active-incidents-list">
         {activeIncidents.map((event) => (
           <EventCard key={event.id} event={event} />
         ))}
