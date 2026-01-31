@@ -23,7 +23,8 @@ export const createEventSchema = z
     scheduled_start_at: z.string().datetime().optional(),
     scheduled_end_at: z.string().datetime().optional(),
     notify_subscribers: z.boolean().default(false),
-    service_ids: z.array(z.string().uuid()).optional(),
+    service_ids: z.array(z.string().uuid()).optional().default([]),
+    group_ids: z.array(z.string().uuid()).optional().default([]),
   })
   .refine(
     (data) => {

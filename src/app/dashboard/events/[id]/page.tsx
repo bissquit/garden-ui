@@ -5,11 +5,13 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEvent, useEventUpdates } from '@/hooks/use-events';
 import { useAddEventUpdate, useDeleteEvent } from '@/hooks/use-events-mutations';
 import { useAuth } from '@/hooks/use-auth';
-import { useServices } from '@/hooks/use-public-status';
+import { useServices, useGroups } from '@/hooks/use-public-status';
 import {
   EventDetailsCard,
   EventTimeline,
   EventUpdateForm,
+  EventServicesManager,
+  EventChangesTimeline,
   DeleteConfirmationDialog,
 } from '@/components/features/dashboard';
 import { Button } from '@/components/ui/button';
@@ -28,6 +30,7 @@ export default function EventDetailsPage() {
   const { data: event, isLoading: eventLoading, isError: eventError } = useEvent(eventId);
   const { data: updates, isLoading: updatesLoading } = useEventUpdates(eventId);
   const { data: services } = useServices();
+  const { data: groups } = useGroups();
 
   const addUpdateMutation = useAddEventUpdate();
   const deleteMutation = useDeleteEvent();
@@ -106,7 +109,20 @@ export default function EventDetailsPage() {
         )}
       </div>
 
-      <EventDetailsCard event={event} services={services ?? []} />
+      <EventDetailsCard event={event} services={services ?? []} groups={groups ?? []} />
+
+      {/* Services Manager - only show if not resolved */}
+      {!isResolved && (
+        <Card>
+          <CardContent className="pt-6">
+            <EventServicesManager
+              event={event}
+              services={services ?? []}
+              groups={groups ?? []}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Add Update Form - only show if not resolved */}
       {!isResolved && (
@@ -136,6 +152,17 @@ export default function EventDetailsPage() {
           <EventTimeline updates={updates ?? []} />
         )}
       </div>
+
+      {/* Change History */}
+      <Card>
+        <CardContent className="pt-6">
+          <EventChangesTimeline
+            eventId={eventId}
+            services={services ?? []}
+            groups={groups ?? []}
+          />
+        </CardContent>
+      </Card>
 
       <DeleteConfirmationDialog
         open={showDeleteDialog}

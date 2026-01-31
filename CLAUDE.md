@@ -396,7 +396,7 @@ JWT_SECRET_KEY=qwertyuiopasdfghjklzxcvbnmqwertyuioasdfghjklxcvbnm \
 ```shell
 JWT_SECRET_KEY=qwertyuiopasdfghjklzxcvbnmqwertyuioasdfghjklxcvbnm \
   docker compose down ;\
-  docker volume rm garden-ui_migration garden-ui_postgres_data ;\
+  docker volume rm garden-ui_migrations garden-ui_postgres_data ;\
   docker image rm garden-ui-frontend:latest ghcr.io/bissquit/incident-garden:latest
 ```
 

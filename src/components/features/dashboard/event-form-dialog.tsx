@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { EventForm } from './event-form';
 import { useCreateEvent } from '@/hooks/use-events-mutations';
-import { useServices } from '@/hooks/use-public-status';
+import { useServices, useGroups } from '@/hooks/use-public-status';
 import { useToast } from '@/hooks/use-toast';
 import { Plus } from 'lucide-react';
 import type { CreateEventFormData } from '@/lib/validations/event';
@@ -24,6 +24,7 @@ export function EventFormDialog({ trigger }: EventFormDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const { data: services } = useServices();
+  const { data: groups } = useGroups();
 
   const createMutation = useCreateEvent();
 
@@ -57,6 +58,7 @@ export function EventFormDialog({ trigger }: EventFormDialogProps) {
         </DialogHeader>
         <EventForm
           services={services ?? []}
+          groups={groups ?? []}
           onSubmit={handleSubmit}
           isLoading={createMutation.isPending}
         />

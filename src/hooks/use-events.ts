@@ -4,6 +4,7 @@ import type { components } from '@/api/types.generated';
 
 type Event = components['schemas']['Event'];
 type EventUpdate = components['schemas']['EventUpdate'];
+type EventServiceChange = components['schemas']['EventServiceChange'];
 type EventType = components['schemas']['EventType'];
 type EventStatus = components['schemas']['EventStatus'];
 
@@ -60,6 +61,22 @@ export function useEventUpdates(eventId: string) {
       });
 
       if (error) throw new Error('Failed to fetch event updates');
+      return data?.data ?? [];
+    },
+    enabled: !!eventId,
+  });
+}
+
+// Hook for fetching event service changes (audit trail)
+export function useEventServiceChanges(eventId: string) {
+  return useQuery({
+    queryKey: ['event-changes', eventId],
+    queryFn: async (): Promise<EventServiceChange[]> => {
+      const { data, error } = await apiClient.GET('/api/v1/events/{id}/changes', {
+        params: { path: { id: eventId } },
+      });
+
+      if (error) throw new Error('Failed to fetch service changes');
       return data?.data ?? [];
     },
     enabled: !!eventId,

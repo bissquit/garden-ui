@@ -9,19 +9,26 @@ import type { components } from '@/api/types.generated';
 
 type Event = components['schemas']['Event'];
 type Service = components['schemas']['Service'];
+type ServiceGroup = components['schemas']['ServiceGroup'];
 
 interface EventDetailsCardProps {
   event: Event;
   services?: Service[];
+  groups?: ServiceGroup[];
 }
 
-export function EventDetailsCard({ event, services = [] }: EventDetailsCardProps) {
+export function EventDetailsCard({ event, services = [], groups = [] }: EventDetailsCardProps) {
   const statusConfig = eventStatusConfig[event.status];
   const isIncident = event.type === 'incident';
 
-  // Фильтруем затронутые сервисы
+  // Filter affected services
   const affectedServices = services.filter(
     (s) => event.service_ids?.includes(s.id)
+  );
+
+  // Filter selected groups
+  const selectedGroups = groups.filter(
+    (g) => event.group_ids?.includes(g.id)
   );
 
   return (
@@ -63,12 +70,26 @@ export function EventDetailsCard({ event, services = [] }: EventDetailsCardProps
           <p className="text-muted-foreground">{event.description}</p>
         </div>
 
+        {/* Selected Groups */}
+        {selectedGroups.length > 0 && (
+          <div>
+            <h4 className="text-sm font-medium mb-2">Selected Groups</h4>
+            <div className="flex flex-wrap gap-2">
+              {selectedGroups.map((group) => (
+                <Badge key={group.id} variant="secondary">
+                  {group.name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Affected Services */}
         {affectedServices.length > 0 && (
           <div>
             <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
               <Server className="h-4 w-4" />
-              Affected Services
+              Affected Services ({affectedServices.length})
             </h4>
             <div className="flex flex-wrap gap-2">
               {affectedServices.map((service) => (
