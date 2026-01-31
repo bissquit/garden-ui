@@ -46,7 +46,7 @@ export function EventFormDialog({ trigger }: EventFormDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button>
+          <Button data-testid="create-event-button">
             <Plus className="mr-2 h-4 w-4" />
             Create Event
           </Button>

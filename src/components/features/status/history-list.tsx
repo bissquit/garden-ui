@@ -28,7 +28,7 @@ export function HistoryList({ events }: HistoryListProps) {
   const grouped = groupEventsByDay(sorted);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-testid="history-list">
       {Array.from(grouped.entries()).map(([date, dayEvents]) => (
         <HistoryDayGroup key={date} date={date} events={dayEvents} />
       ))}

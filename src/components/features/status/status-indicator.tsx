@@ -26,7 +26,7 @@ export function StatusIndicator({
   };
 
   return (
-    <span className="relative flex">
+    <span className="relative flex" data-testid="status-indicator">
       {pulse && status !== 'operational' && (
         <span
           className={cn(

@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Pencil, RotateCcw } from 'lucide-react';
+import { Loader2, Trash2, Pencil, RotateCcw, Plus } from 'lucide-react';
 import type { components } from '@/api/types.generated';
 
 type Service = components['schemas']['Service'];
@@ -70,6 +70,7 @@ export default function ServicesPage() {
           handleRestore(service);
         }}
         disabled={restoreMutation.isPending}
+        data-testid="restore-button"
       >
         <RotateCcw className="h-4 w-4 mr-1" />
         Restore
@@ -79,7 +80,7 @@ export default function ServicesPage() {
         <ServiceFormDialog
           service={service}
           trigger={
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" data-testid="edit-button">
               <Pencil className="h-4 w-4" />
             </Button>
           }
@@ -91,6 +92,7 @@ export default function ServicesPage() {
             e.stopPropagation();
             setDeleteTarget(service);
           }}
+          data-testid="delete-button"
         >
           <Trash2 className="h-4 w-4 text-destructive" />
         </Button>
@@ -105,7 +107,12 @@ export default function ServicesPage() {
           <h1 className="text-2xl font-bold">Services</h1>
           <p className="text-muted-foreground">Manage your services</p>
         </div>
-        <ServiceFormDialog />
+        <ServiceFormDialog trigger={
+          <Button data-testid="create-service-button">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Service
+          </Button>
+        } />
       </div>
 
       <div className="flex items-center space-x-2">
@@ -113,6 +120,7 @@ export default function ServicesPage() {
           id="show-archived"
           checked={showArchived}
           onCheckedChange={setShowArchived}
+          data-testid="show-archived-toggle"
         />
         <Label htmlFor="show-archived">Show archived</Label>
       </div>
