@@ -14,21 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: garden
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
 
@@ -44,25 +29,15 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Start backend
+      - name: Start backend with docker-compose
         run: |
-          docker run -d --name backend \
-            --network host \
-            -e DATABASE_URL=postgres://postgres:postgres@localhost:5432/garden?sslmode=disable \
-            -e JWT_SECRET_KEY=testsecretkey123456789012345678901234567890 \
-            -e LOG_LEVEL=info \
-            ghcr.io/bissquit/incident-garden:1.4.1
+          docker compose -f docker-compose.ci.yml up -d --wait
+          echo "Backend is ready!"
 
-          # Wait for backend to be ready
-          echo "Waiting for backend to start..."
-          for i in {1..30}; do
-            if curl -s http://localhost:8080/healthz > /dev/null 2>&1; then
-              echo "Backend is ready!"
-              break
-            fi
-            echo "Waiting... ($i/30)"
-            sleep 2
-          done
+      - name: Show container logs (debug)
+        if: failure()
+        run: |
+          docker compose -f docker-compose.ci.yml logs
 
       - name: Create test users
         run: |
@@ -76,14 +51,12 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"email":"admin@test.com","password":"AdminPassword123"}' || true
 
-          # Set admin role for admin user via direct DB update (using psql in docker)
-          docker run --rm --network host postgres:16-alpine \
-            psql "postgres://postgres:postgres@localhost:5432/garden?sslmode=disable" \
+          # Set admin role for admin user
+          docker exec ci-postgres psql -U postgres -d garden \
             -c "UPDATE users SET role = 'admin' WHERE email = 'admin@test.com';" || true
 
           # Set operator role for operator user
-          docker run --rm --network host postgres:16-alpine \
-            psql "postgres://postgres:postgres@localhost:5432/garden?sslmode=disable" \
+          docker exec ci-postgres psql -U postgres -d garden \
             -c "UPDATE users SET role = 'operator' WHERE email = 'operator@test.com';" || true
 
       - name: Build application
@@ -96,6 +69,18 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8080
           CI: true
+
+      - name: Show container logs on failure
+        if: failure()
+        run: |
+          echo "=== Backend logs ==="
+          docker compose -f docker-compose.ci.yml logs backend
+          echo "=== Postgres logs ==="
+          docker compose -f docker-compose.ci.yml logs postgres
+
+      - name: Stop containers
+        if: always()
+        run: docker compose -f docker-compose.ci.yml down -v
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

@@ -121,7 +121,10 @@ tests/
 
 .github/workflows/
 ├── ci.yml                     # Lint, typecheck, unit tests, build
-└── e2e.yml                    # E2E tests with backend container
+└── e2e.yml                    # E2E tests with docker-compose.ci.yml
+
+docker-compose.yml             # Local development: postgres + migrate + backend + frontend
+docker-compose.ci.yml          # CI environment: postgres + migrate + backend (no frontend)
 ```
 
 ---

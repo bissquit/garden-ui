@@ -1,0 +1,84 @@
+# CI environment: postgres + migrations + backend
+# Frontend is built and run separately by Playwright
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ci-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: garden
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d garden"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - ci-network
+
+  migrate:
+    image: ghcr.io/bissquit/incident-garden:1.4.1
+    container_name: ci-migrate
+    user: root
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - migrations:/tmp/migrations
+    entrypoint: sh
+    command: -c "cp -r /app/migrations/* /tmp/migrations/ && chmod -R 755 /tmp/migrations/"
+    networks:
+      - ci-network
+
+  migrate-apply:
+    image: migrate/migrate:v4.17.0
+    container_name: ci-migrate-apply
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - migrations:/migrations:ro
+    command: [
+      "-path", "/migrations",
+      "-database", "postgresql://postgres:postgres@postgres:5432/garden?sslmode=disable",
+      "up"
+    ]
+    networks:
+      - ci-network
+
+  backend:
+    image: ghcr.io/bissquit/incident-garden:1.4.1
+    container_name: ci-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate-apply:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/garden?sslmode=disable
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      JWT_SECRET_KEY: testsecretkey123456789012345678901234567890
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      start_period: 5s
+      retries: 10
+    networks:
+      - ci-network
+
+volumes:
+  migrations:
+
+networks:
+  ci-network:
+    driver: bridge
