@@ -1,5 +1,8 @@
 # CI environment: postgres + migrations + backend
 # Frontend is built and run separately by Playwright
+#
+# Backend version is controlled by BACKEND_IMAGE_TAG variable.
+# Set it in .env file or pass via environment.
 
 services:
   postgres:
@@ -20,7 +23,7 @@ services:
       - ci-network
 
   migrate:
-    image: ghcr.io/bissquit/incident-garden:1.4.1
+    image: ${BACKEND_IMAGE_NAME:-ghcr.io/bissquit/incident-garden}:${BACKEND_IMAGE_TAG:?BACKEND_IMAGE_TAG is required}
     container_name: ci-migrate
     user: root
     depends_on:
@@ -50,7 +53,7 @@ services:
       - ci-network
 
   backend:
-    image: ghcr.io/bissquit/incident-garden:1.4.1
+    image: ${BACKEND_IMAGE_NAME:-ghcr.io/bissquit/incident-garden}:${BACKEND_IMAGE_TAG:?BACKEND_IMAGE_TAG is required}
     container_name: ci-backend
     depends_on:
       postgres:
