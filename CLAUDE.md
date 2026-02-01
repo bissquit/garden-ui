@@ -84,7 +84,8 @@ src/
 │                              # EventDetailsCard, EventTimeline, EventChangesTimeline,
 │                              # EventServicesManager, EventUpdateForm,
 │                              # TemplatesTable, TemplateForm, TemplateFormDialog,
-│                              # ChannelsTable, ChannelForm, ChannelFormDialog
+│                              # ChannelsTable, ChannelForm, ChannelFormDialog,
+│                              # SubscriptionEditor
 │
 ├── hooks/
 │   ├── use-auth.tsx           # Auth context: login, logout, hasRole, hasMinRole
@@ -98,6 +99,8 @@ src/
 │   ├── use-templates-mutations.ts # useCreateTemplate, useDeleteTemplate
 │   ├── use-channels.ts        # useChannels
 │   ├── use-channels-mutations.ts  # useCreateChannel, useUpdateChannel, useDeleteChannel, useVerifyChannel
+│   ├── use-subscriptions.ts   # useSubscription
+│   ├── use-subscriptions-mutations.ts # useUpdateSubscription, useDeleteSubscription
 │   └── use-theme.ts           # Theme switching (Garden/Ocean/Sunset/Forest)
 │
 ├── lib/
@@ -110,7 +113,8 @@ src/
 │       ├── group.ts           # createGroupSchema, updateGroupSchema
 │       ├── event.ts           # createEventSchema, createEventUpdateSchema
 │       ├── template.ts        # template schemas
-│       └── channel.ts         # createChannelSchema (email/telegram validation)
+│       ├── channel.ts         # createChannelSchema (email/telegram validation)
+│       └── subscription.ts    # updateSubscriptionSchema
 │
 └── types/index.ts             # Role, User, TokenPair, AuthState
 
@@ -150,7 +154,7 @@ docker-compose.ci.yml          # CI environment: postgres + migrate + backend (n
 ### Phase 6 Tasks
 - [ ] Profile settings page
 - [x] Notification channels — hooks + UI components (ChannelsTable, ChannelForm, ChannelFormDialog)
-- [ ] Subscriptions management
+- [x] Subscriptions — hooks + UI component (SubscriptionEditor)
 - [ ] Settings page integration (объединение channels + subscriptions + profile)
 
 ### Phase 7 Tasks
@@ -162,6 +166,11 @@ docker-compose.ci.yml          # CI environment: postgres + migrate + backend (n
 - [ ] i18n (опционально)
 
 ### Recent Changes
+- **2026-02-01:** Phase 6 — Subscriptions (Этап 2)
+  - Добавлены hooks: useSubscription, useUpdateSubscription, useDeleteSubscription
+  - Добавлена валидация: updateSubscriptionSchema
+  - Добавлен компонент: SubscriptionEditor (выбор сервисов с группировкой)
+  - Покрытие тестами: 100% для hooks и validations
 - **2026-02-01:** Phase 6 — Notification Channels (Этап 1)
   - Добавлены hooks: useChannels, useCreateChannel, useUpdateChannel, useDeleteChannel, useVerifyChannel
   - Добавлена валидация: createChannelSchema (email/telegram)
