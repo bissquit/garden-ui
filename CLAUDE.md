@@ -83,7 +83,8 @@ src/
 │                              # EventsTable, EventsFilters, EventForm, EventFormDialog,
 │                              # EventDetailsCard, EventTimeline, EventChangesTimeline,
 │                              # EventServicesManager, EventUpdateForm,
-│                              # TemplatesTable, TemplateForm, TemplateFormDialog
+│                              # TemplatesTable, TemplateForm, TemplateFormDialog,
+│                              # ChannelsTable, ChannelForm, ChannelFormDialog
 │
 ├── hooks/
 │   ├── use-auth.tsx           # Auth context: login, logout, hasRole, hasMinRole
@@ -95,6 +96,8 @@ src/
 │   ├── use-events-mutations.ts    # useCreateEvent, useAddEventUpdate, useDeleteEvent, useAddServicesToEvent, useRemoveServicesFromEvent
 │   ├── use-templates.ts       # useTemplates
 │   ├── use-templates-mutations.ts # useCreateTemplate, useDeleteTemplate
+│   ├── use-channels.ts        # useChannels
+│   ├── use-channels-mutations.ts  # useCreateChannel, useUpdateChannel, useDeleteChannel, useVerifyChannel
 │   └── use-theme.ts           # Theme switching (Garden/Ocean/Sunset/Forest)
 │
 ├── lib/
@@ -106,7 +109,8 @@ src/
 │       ├── service.ts         # createServiceSchema, updateServiceSchema
 │       ├── group.ts           # createGroupSchema, updateGroupSchema
 │       ├── event.ts           # createEventSchema, createEventUpdateSchema
-│       └── template.ts        # template schemas
+│       ├── template.ts        # template schemas
+│       └── channel.ts         # createChannelSchema (email/telegram validation)
 │
 └── types/index.ts             # Role, User, TokenPair, AuthState
 
@@ -140,13 +144,14 @@ docker-compose.ci.yml          # CI environment: postgres + migrate + backend (n
 | 3. Public Pages    | ✅      | Status page, History, SSR                                                     |
 | 4. Dashboard Read  | ✅      | Services/Groups/Events lists, Event detail                                    |
 | 5. Dashboard Write | ✅      | CRUD all entities, Event updates, Service management, Templates, Service Tags |
-| 6. User Settings   | 🔜     | Profile, Channels, Subscriptions                                              |
+| 6. User Settings   | 🔄     | Profile, Channels, Subscriptions                                              |
 | 7. Polish          | 🔄     | E2E in CI, Dark mode, Mobile, Error boundaries                                |
 
 ### Phase 6 Tasks
 - [ ] Profile settings page
-- [ ] Notification channels (add, verify, enable/disable)
+- [x] Notification channels — hooks + UI components (ChannelsTable, ChannelForm, ChannelFormDialog)
 - [ ] Subscriptions management
+- [ ] Settings page integration (объединение channels + subscriptions + profile)
 
 ### Phase 7 Tasks
 - [x] E2E тесты в CI для критических flows
@@ -157,6 +162,11 @@ docker-compose.ci.yml          # CI environment: postgres + migrate + backend (n
 - [ ] i18n (опционально)
 
 ### Recent Changes
+- **2026-02-01:** Phase 6 — Notification Channels (Этап 1)
+  - Добавлены hooks: useChannels, useCreateChannel, useUpdateChannel, useDeleteChannel, useVerifyChannel
+  - Добавлена валидация: createChannelSchema (email/telegram)
+  - Добавлены компоненты: ChannelsTable, ChannelForm, ChannelFormDialog
+  - Покрытие тестами: 100% для hooks и validations
 - **2026-02-01:** Подготовка к HTTP-only cookies
   - Убран `window.__AUTH_TOKEN__` и ручное управление токенами
   - Добавлен `credentials: 'include'` в API clients
