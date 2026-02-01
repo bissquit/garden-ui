@@ -169,6 +169,7 @@ export function ServiceForm({ service, groups, onSubmit, isLoading }: ServiceFor
                     <div key={group.id} className="flex items-center space-x-2">
                       <Checkbox
                         id={`group-${group.id}`}
+                        data-testid="group-checkbox"
                         checked={field.value?.includes(group.id)}
                         onCheckedChange={(checked) => {
                           const current = field.value ?? [];

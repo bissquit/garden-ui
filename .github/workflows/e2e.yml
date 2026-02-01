@@ -51,12 +51,12 @@ jobs:
             -e DATABASE_URL=postgres://postgres:postgres@localhost:5432/garden?sslmode=disable \
             -e JWT_SECRET_KEY=testsecretkey123456789012345678901234567890 \
             -e LOG_LEVEL=info \
-            ghcr.io/bissquit/incident-garden:1.3.0
+            ghcr.io/bissquit/incident-garden:1.4.1
 
           # Wait for backend to be ready
           echo "Waiting for backend to start..."
           for i in {1..30}; do
-            if curl -s http://localhost:8080/api/v1/health > /dev/null 2>&1; then
+            if curl -s http://localhost:8080/healthz > /dev/null 2>&1; then
               echo "Backend is ready!"
               break
             fi
@@ -66,10 +66,25 @@ jobs:
 
       - name: Create test users
         run: |
-          # Create operator user
+          # Create operator user (password must match fixtures.ts: TestPassword123)
           curl -X POST http://localhost:8080/api/v1/auth/register \
             -H "Content-Type: application/json" \
-            -d '{"email":"operator@test.com","password":"TestPassword123!"}' || true
+            -d '{"email":"operator@test.com","password":"TestPassword123"}' || true
+
+          # Create admin user (password must match fixtures.ts: AdminPassword123)
+          curl -X POST http://localhost:8080/api/v1/auth/register \
+            -H "Content-Type: application/json" \
+            -d '{"email":"admin@test.com","password":"AdminPassword123"}' || true
+
+          # Set admin role for admin user via direct DB update (using psql in docker)
+          docker run --rm --network host postgres:16-alpine \
+            psql "postgres://postgres:postgres@localhost:5432/garden?sslmode=disable" \
+            -c "UPDATE users SET role = 'admin' WHERE email = 'admin@test.com';" || true
+
+          # Set operator role for operator user
+          docker run --rm --network host postgres:16-alpine \
+            psql "postgres://postgres:postgres@localhost:5432/garden?sslmode=disable" \
+            -c "UPDATE users SET role = 'operator' WHERE email = 'operator@test.com';" || true
 
       - name: Build application
         run: npm run build

@@ -9,8 +9,8 @@ import {
   type ReactNode,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import { publicClient } from '@/api/client';
-import type { User, TokenPair, Role } from '@/types';
+import { apiClient, publicClient } from '@/api/client';
+import type { User, Role } from '@/types';
 import { ApiError } from '@/lib/api-error';
 import { useToast } from '@/hooks/use-toast';
 
@@ -40,22 +40,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
-  const [tokens, setTokens] = useState<TokenPair | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Восстановление сессии при загрузке
   useEffect(() => {
-    // В реальном приложении можно попробовать восстановить сессию
-    // Пока просто помечаем, что загрузка завершена
-    setIsLoading(false);
-  }, []);
+    const checkSession = async () => {
+      try {
+        const { data, error } = await apiClient.GET('/api/v1/me');
+        if (!error && data?.data) {
+          setUser(data.data as User);
+        }
+      } catch {
+        // Not authenticated, that's ok
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  // Обновляем глобальный токен для API клиента
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.__AUTH_TOKEN__ = tokens?.access_token;
-    }
-  }, [tokens]);
+    checkSession();
+  }, []);
 
   // Обработка 401 ошибок (session expired)
   useEffect(() => {
@@ -63,10 +66,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Очищаем состояние только если пользователь был залогинен
       if (user) {
         setUser(null);
-        setTokens(null);
-        if (typeof window !== 'undefined') {
-          window.__AUTH_TOKEN__ = undefined;
-        }
 
         toast({
           title: 'Session expired',
@@ -98,12 +97,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       const loginData = data.data;
-      if (!loginData?.user || !loginData?.tokens) {
+      if (!loginData?.user) {
         throw new Error('Invalid response from server');
       }
 
       setUser(loginData.user as User);
-      setTokens(loginData.tokens as TokenPair);
+      // Токены теперь в cookies, устанавливаются сервером автоматически
 
       router.push('/dashboard');
     },
@@ -111,24 +110,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 
   const logout = useCallback(async () => {
-    if (tokens?.refresh_token) {
-      try {
-        await publicClient.POST('/api/v1/auth/logout', {
-          body: { refresh_token: tokens.refresh_token },
-        });
-      } catch {
-        // Ignore errors during logout
-      }
+    try {
+      // Send empty refresh_token - backend will use HTTP-only cookie instead
+      await apiClient.POST('/api/v1/auth/logout', {
+        body: { refresh_token: '' },
+      });
+    } catch {
+      // Ignore errors during logout
     }
 
     setUser(null);
-    setTokens(null);
-    if (typeof window !== 'undefined') {
-      window.__AUTH_TOKEN__ = undefined;
-    }
 
     router.push('/login');
-  }, [tokens, router]);
+  }, [router]);
 
   const hasRole = useCallback(
     (role: Role): boolean => {
@@ -147,7 +141,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const value: AuthContextValue = {
     user,
-    isAuthenticated: !!user && !!tokens,
+    isAuthenticated: !!user,
     isLoading,
     login,
     logout,

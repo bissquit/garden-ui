@@ -268,6 +268,7 @@ export function EventForm({ services, groups, onSubmit, isLoading }: EventFormPr
                     <div key={group.id} className="flex items-center space-x-2">
                       <Checkbox
                         id={`event-group-${group.id}`}
+                        data-testid="event-group-checkbox"
                         checked={field.value?.includes(group.id)}
                         onCheckedChange={(checked) => {
                           const current = field.value ?? [];

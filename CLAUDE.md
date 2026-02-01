@@ -48,7 +48,7 @@ JWT_SECRET_KEY=qwertyuiopasdfghjklzxcvbnmqwertyuioasdfghjklxcvbnm \
 ```
 src/
 ├── api/
-│   ├── client.ts              # publicClient (no auth), apiClient (with auth middleware)
+│   ├── client.ts              # publicClient, apiClient (both with credentials: 'include')
 │   ├── openapi.yaml           # OpenAPI spec (source: backend)
 │   └── types.generated.ts     # DO NOT EDIT - generated types
 │
@@ -130,15 +130,15 @@ tests/
 
 **Current:** Phase 7 (in progress) | **Version:** 1.0.0
 
-| Phase              | Status | Scope                                                |
-|--------------------|--------|------------------------------------------------------|
-| 1. Foundation      | ✅      | Next.js, Tailwind, shadcn, API client, Auth          |
-| 2. CI/CD           | ✅      | GitHub Actions, Dockerfile, docker-compose           |
-| 3. Public Pages    | ✅      | Status page, History, SSR                            |
-| 4. Dashboard Read  | ✅      | Services/Groups/Events lists, Event detail           |
+| Phase              | Status | Scope                                                                         |
+|--------------------|--------|-------------------------------------------------------------------------------|
+| 1. Foundation      | ✅      | Next.js, Tailwind, shadcn, API client, Auth                                   |
+| 2. CI/CD           | ✅      | GitHub Actions, Dockerfile, docker-compose                                    |
+| 3. Public Pages    | ✅      | Status page, History, SSR                                                     |
+| 4. Dashboard Read  | ✅      | Services/Groups/Events lists, Event detail                                    |
 | 5. Dashboard Write | ✅      | CRUD all entities, Event updates, Service management, Templates, Service Tags |
-| 6. User Settings   | 🔜     | Profile, Channels, Subscriptions                     |
-| 7. Polish          | 🔄     | E2E in CI, Dark mode, Mobile, Error boundaries       |
+| 6. User Settings   | 🔜     | Profile, Channels, Subscriptions                                              |
+| 7. Polish          | 🔄     | E2E in CI, Dark mode, Mobile, Error boundaries                                |
 
 ### Phase 6 Tasks
 - [ ] Profile settings page
@@ -147,10 +147,19 @@ tests/
 
 ### Phase 7 Tasks
 - [x] E2E тесты в CI для критических flows
+- [x] HTTP-only cookies authentication (frontend готов, ожидает backend)
 - [ ] Mobile optimization
 - [ ] Loading skeletons
 - [ ] Error boundaries
 - [ ] i18n (опционально)
+
+### Recent Changes
+- **2026-02-01:** Подготовка к HTTP-only cookies
+  - Убран `window.__AUTH_TOKEN__` и ручное управление токенами
+  - Добавлен `credentials: 'include'` в API clients
+  - Session restore через `GET /api/v1/me` при загрузке
+  - E2E fixtures упрощены (убраны interceptors)
+  - ⚠️ E2E тесты пока не будут проходить до обновления backend
 
 ---
 
@@ -313,26 +322,28 @@ class ApiError extends Error {
 
 ## 11. AUTH
 
-**Storage:** access_token в памяти (`window.__AUTH_TOKEN__`), **НИКОГДА** в localStorage
+**Storage:** HTTP-only cookies (access_token, refresh_token), управляются backend
 **Roles:** user < operator < admin | Dashboard requires operator+
 
 **Flow:**
 ```
-login → tokens в state → apiClient middleware добавляет header
+login → server sets HTTP-only cookies → credentials: 'include' автоматически отправляет cookies
 401 → middleware dispatches 'auth:unauthorized' → logout → redirect /login
 ```
 
 **Full Sequence:**
-1. `POST /api/v1/auth/login` → `{ user, tokens }` → save to state → redirect /dashboard
-2. Request: `Authorization: Bearer <access_token>`
-3. On 401: `POST /api/v1/auth/refresh` → update tokens → retry
-4. Logout: `POST /api/v1/auth/logout` → clear state → redirect /login
+1. `POST /api/v1/auth/login` → `{ user }` → server sets cookies → redirect /dashboard
+2. Session restore: `GET /api/v1/me` → проверка сессии при загрузке
+3. Request: cookies отправляются автоматически с `credentials: 'include'`
+4. On 401: server refreshes tokens if possible, иначе → logout
+5. Logout: `POST /api/v1/auth/logout` → server clears cookies → redirect /login
 
 ---
 
 ## 12. SECURITY RULES
 
-- **Tokens:** только в памяти, НИКОГДА localStorage/sessionStorage (XSS risk)
+- **Tokens:** HTTP-only cookies (управляются backend), НИКОГДА localStorage/sessionStorage (XSS risk)
+- **Credentials:** `credentials: 'include'` в API clients для автоматической отправки cookies
 - **Sensitive data:** не логировать, не выводить в console
 - **User input:** всегда валидировать Zod на границах
 - **API URL:** только через `NEXT_PUBLIC_API_URL`

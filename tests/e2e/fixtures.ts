@@ -4,29 +4,29 @@ import { test as base, type Page } from '@playwright/test';
 // These users should be created in the backend before running tests
 export const testOperator = {
   email: 'operator@test.com',
-  password: 'TestPassword123!',
+  password: 'TestPassword123',
 };
 
 export const testAdmin = {
   email: 'admin@test.com',
-  password: 'AdminPassword123!',
+  password: 'AdminPassword123',
 };
 
-// Helper to login
-async function loginAsOperator(page: Page): Promise<void> {
+// Helper to login as admin (required for CRUD operations in backend 1.4.0+)
+async function loginAsAdmin(page: Page): Promise<void> {
   await page.goto('/login');
-  await page.getByLabel(/email/i).fill(testOperator.email);
-  await page.getByLabel(/password/i).fill(testOperator.password);
+  await page.getByLabel(/email/i).fill(testAdmin.email);
+  await page.getByLabel(/password/i).fill(testAdmin.password);
   await page.getByRole('button', { name: /sign in/i }).click();
   await page.waitForURL('/dashboard');
 }
 
-// Extended test with authenticated page fixture
+// Extended test with authenticated page fixture (uses admin for CRUD permissions)
 export const test = base.extend<{
   authenticatedPage: Page;
 }>({
   authenticatedPage: async ({ page }, use) => {
-    await loginAsOperator(page);
+    await loginAsAdmin(page);
     await use(page);
   },
 });
