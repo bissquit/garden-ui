@@ -10,23 +10,28 @@ const authRoutes = ['/login', '/register'];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Проверяем наличие токена (в реальности нужна более надежная проверка)
-  // Так как токен хранится в памяти (window.__AUTH_TOKEN__), middleware не может его проверить
-  // Поэтому используем cookie-based подход или проверку в client component
+  // Check for access_token cookie
+  const hasToken = request.cookies.has('access_token');
 
-  // Для простоты пока пропускаем все запросы
-  // В production должна быть проверка JWT токена из cookie или header
-
-  // Если это защищенный маршрут и нет токена - редирект на login
+  // Check if this is a protected route
   const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route)
   );
 
-  // Если это auth маршрут и есть токен - редирект на dashboard
+  // Check if this is an auth route (login/register)
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
-  // В текущей реализации защита происходит на уровне client components
-  // через useAuth hook и AuthProvider
+  // If accessing protected route without token, redirect to login
+  if (isProtectedRoute && !hasToken) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('from', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // If accessing auth route with token, redirect to dashboard
+  if (isAuthRoute && hasToken) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
 
   return NextResponse.next();
 }

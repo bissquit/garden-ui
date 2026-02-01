@@ -3,14 +3,23 @@ import type { paths } from './types.generated';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-// Middleware для добавления auth header
-const authMiddleware: Middleware = {
-  async onRequest({ request }) {
-    const token =
-      typeof window !== 'undefined' ? window.__AUTH_TOKEN__ : null;
+// Helper to get cookie value by name
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? match[2] : null;
+}
 
-    if (token) {
-      request.headers.set('Authorization', `Bearer ${token}`);
+// Middleware для добавления CSRF token к мутирующим запросам
+const csrfMiddleware: Middleware = {
+  async onRequest({ request }) {
+    const method = request.method.toUpperCase();
+    // Add CSRF token for state-changing requests
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      const csrfToken = getCookie('csrf_token');
+      if (csrfToken) {
+        request.headers.set('X-CSRF-Token', csrfToken);
+      }
     }
     return request;
   },
@@ -29,20 +38,19 @@ const unauthorizedMiddleware: Middleware = {
   },
 };
 
-// Публичный клиент (без авторизации)
-export const publicClient = createClient<paths>({ baseUrl });
+// Публичный клиент
+export const publicClient = createClient<paths>({
+  baseUrl,
+  credentials: 'include',
+});
 
-// Приватный клиент (с авторизацией)
-export const apiClient = createClient<paths>({ baseUrl });
-apiClient.use(authMiddleware);
+// Приватный клиент (с обработкой 401)
+export const apiClient = createClient<paths>({
+  baseUrl,
+  credentials: 'include',
+});
+apiClient.use(csrfMiddleware);
 apiClient.use(unauthorizedMiddleware);
 
 // Типы для удобства
 export type ApiClient = typeof apiClient;
-
-// Расширяем Window для хранения токена
-declare global {
-  interface Window {
-    __AUTH_TOKEN__?: string;
-  }
-}

@@ -15,9 +15,13 @@ vi.mock('@/api/client', () => ({
   publicClient: {
     POST: vi.fn(),
   },
+  apiClient: {
+    GET: vi.fn(),
+    POST: vi.fn(),
+  },
 }));
 
-import { publicClient } from '@/api/client';
+import { publicClient, apiClient } from '@/api/client';
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <AuthProvider>{children}</AuthProvider>
@@ -26,9 +30,12 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 describe('useAuth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    if (typeof window !== 'undefined') {
-      window.__AUTH_TOKEN__ = undefined;
-    }
+    // Mock apiClient.GET for session check
+    vi.mocked(apiClient.GET).mockResolvedValue({
+      data: null,
+      error: { error: 'Unauthorized' },
+      response: { status: 401 } as any,
+    } as any);
   });
 
   it('starts with unauthenticated state', async () => {
@@ -42,7 +49,7 @@ describe('useAuth', () => {
     expect(result.current.user).toBeNull();
   });
 
-  it('login sets user and tokens', async () => {
+  it('login sets user', async () => {
     const mockUser = {
       id: '1',
       email: 'test@example.com',
@@ -50,14 +57,9 @@ describe('useAuth', () => {
       created_at: '2026-01-01',
       updated_at: '2026-01-01',
     };
-    const mockTokens = {
-      access_token: 'test-token',
-      refresh_token: 'test-refresh',
-      expires_in: 900,
-    };
 
     vi.mocked(publicClient.POST).mockResolvedValueOnce({
-      data: { data: { user: mockUser, tokens: mockTokens } },
+      data: { data: { user: mockUser } },
       response: { status: 200 },
     } as any);
 
@@ -83,14 +85,9 @@ describe('useAuth', () => {
       created_at: '2026-01-01',
       updated_at: '2026-01-01',
     };
-    const mockTokens = {
-      access_token: 'test-token',
-      refresh_token: 'test-refresh',
-      expires_in: 900,
-    };
 
     vi.mocked(publicClient.POST).mockResolvedValueOnce({
-      data: { data: { user: mockUser, tokens: mockTokens } },
+      data: { data: { user: mockUser } },
       response: { status: 200 },
     } as any);
 

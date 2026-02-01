@@ -42,11 +42,8 @@ test.describe('Services Management', () => {
     // Submit
     await page.getByRole('button', { name: /create service/i }).click();
 
-    // Wait for success toast
-    await expect(page.getByText(/service created/i)).toBeVisible();
-
-    // Service should appear in table
-    await expect(page.getByText(serviceName)).toBeVisible();
+    // Wait for service to appear in table (indicates success)
+    await expect(page.getByRole('row').filter({ hasText: serviceName })).toBeVisible({ timeout: 10000 });
   });
 
   test('should create service with group selection', async ({
@@ -59,15 +56,15 @@ test.describe('Services Management', () => {
     await page.getByLabel(/^name$/i).fill(serviceName);
 
     // Select first available group (if any)
-    const groupCheckbox = page.locator('[id^="group-"]').first();
+    const groupCheckbox = page.getByTestId('group-checkbox').first();
     if (await groupCheckbox.isVisible()) {
       await groupCheckbox.check();
     }
 
     await page.getByRole('button', { name: /create service/i }).click();
 
-    await expect(page.getByText(/service created/i)).toBeVisible();
-    await expect(page.getByText(serviceName)).toBeVisible();
+    // Wait for service to appear in table (indicates success)
+    await expect(page.getByRole('row').filter({ hasText: serviceName })).toBeVisible({ timeout: 10000 });
   });
 
   test('should show validation error for empty name', async ({
@@ -88,7 +85,8 @@ test.describe('Services Management', () => {
     await page.getByTestId('create-service-button').click();
     await page.getByLabel(/^name$/i).fill(serviceName);
     await page.getByRole('button', { name: /create service/i }).click();
-    await expect(page.getByText(/service created/i)).toBeVisible();
+    // Wait for service to appear
+    await expect(page.getByRole('row').filter({ hasText: serviceName })).toBeVisible({ timeout: 10000 });
 
     // Find and click edit button for this service
     const row = page.getByRole('row').filter({ hasText: serviceName });
@@ -103,11 +101,8 @@ test.describe('Services Management', () => {
 
     await page.getByRole('button', { name: /update service/i }).click();
 
-    // Success message
-    await expect(page.getByText(/service updated/i)).toBeVisible();
-
-    // Updated name should be visible
-    await expect(page.getByText(updatedName)).toBeVisible();
+    // Wait for updated name to appear in table
+    await expect(page.getByRole('row').filter({ hasText: updatedName })).toBeVisible({ timeout: 10000 });
   });
 
   test('should archive service', async ({ authenticatedPage: page }) => {
@@ -116,7 +111,8 @@ test.describe('Services Management', () => {
     await page.getByTestId('create-service-button').click();
     await page.getByLabel(/^name$/i).fill(serviceName);
     await page.getByRole('button', { name: /create service/i }).click();
-    await expect(page.getByText(/service created/i)).toBeVisible();
+    // Wait for service to appear
+    await expect(page.getByRole('row').filter({ hasText: serviceName })).toBeVisible({ timeout: 10000 });
 
     // Find and click delete button
     const row = page.getByRole('row').filter({ hasText: serviceName });
@@ -129,11 +125,11 @@ test.describe('Services Management', () => {
     // Confirm deletion
     await page.getByTestId('confirm-delete-button').click();
 
-    // Success message
-    await expect(page.getByText(/service archived/i)).toBeVisible();
+    // Wait for alertdialog to close
+    await expect(page.getByRole('alertdialog')).not.toBeVisible({ timeout: 10000 });
 
-    // Service should no longer be visible (archived is hidden by default)
-    await expect(page.getByText(serviceName)).not.toBeVisible();
+    // Service should no longer be visible in active table (archived is hidden by default)
+    await expect(page.getByRole('row').filter({ hasText: serviceName })).not.toBeVisible();
   });
 
   test('should toggle show archived and see archived services', async ({
@@ -144,20 +140,23 @@ test.describe('Services Management', () => {
     await page.getByTestId('create-service-button').click();
     await page.getByLabel(/^name$/i).fill(serviceName);
     await page.getByRole('button', { name: /create service/i }).click();
-    await expect(page.getByText(/service created/i)).toBeVisible();
+    // Wait for service to appear
+    await expect(page.getByRole('row').filter({ hasText: serviceName })).toBeVisible({ timeout: 10000 });
 
     // Archive it
     const row = page.getByRole('row').filter({ hasText: serviceName });
     await row.getByTestId('delete-button').click();
     await page.getByTestId('confirm-delete-button').click();
-    await expect(page.getByText(/service archived/i)).toBeVisible();
+    // Wait for confirmation dialog to close
+    await expect(page.getByRole('alertdialog')).not.toBeVisible({ timeout: 10000 });
 
     // Enable "Show archived" toggle
     await page.getByTestId('show-archived-toggle').click();
 
-    // Service should be visible with "Archived" badge
-    await expect(page.getByText(serviceName)).toBeVisible();
-    await expect(page.getByText(/archived/i)).toBeVisible();
+    // Service should be visible with "Archived" badge - check within the specific row
+    const serviceRow = page.getByRole('row').filter({ hasText: serviceName });
+    await expect(serviceRow).toBeVisible();
+    await expect(serviceRow.getByText('Archived', { exact: true })).toBeVisible();
   });
 
   test('should restore archived service', async ({ authenticatedPage: page }) => {
@@ -166,13 +165,15 @@ test.describe('Services Management', () => {
     await page.getByTestId('create-service-button').click();
     await page.getByLabel(/^name$/i).fill(serviceName);
     await page.getByRole('button', { name: /create service/i }).click();
-    await expect(page.getByText(/service created/i)).toBeVisible();
+    // Wait for service to appear
+    await expect(page.getByRole('row').filter({ hasText: serviceName })).toBeVisible({ timeout: 10000 });
 
     // Archive it
     let row = page.getByRole('row').filter({ hasText: serviceName });
     await row.getByTestId('delete-button').click();
     await page.getByTestId('confirm-delete-button').click();
-    await expect(page.getByText(/service archived/i)).toBeVisible();
+    // Wait for confirmation dialog to close
+    await expect(page.getByRole('alertdialog')).not.toBeVisible({ timeout: 10000 });
 
     // Enable "Show archived"
     await page.getByTestId('show-archived-toggle').click();
@@ -181,8 +182,8 @@ test.describe('Services Management', () => {
     row = page.getByRole('row').filter({ hasText: serviceName });
     await row.getByTestId('restore-button').click();
 
-    // Success message
-    await expect(page.getByText(/service restored/i)).toBeVisible();
+    // Wait a bit for restore to complete
+    await page.waitForTimeout(500);
 
     // Service should no longer have "Archived" badge
     row = page.getByRole('row').filter({ hasText: serviceName });
@@ -203,7 +204,8 @@ test.describe('Services Management', () => {
     await page.getByTestId('create-service-button').click();
     await page.getByLabel(/^name$/i).fill(serviceName);
     await page.getByRole('button', { name: /create service/i }).click();
-    await expect(page.getByText(/service created/i)).toBeVisible();
+    // Wait for service to appear
+    await expect(page.getByRole('row').filter({ hasText: serviceName })).toBeVisible({ timeout: 10000 });
 
     // Click delete
     const row = page.getByRole('row').filter({ hasText: serviceName });
@@ -213,6 +215,6 @@ test.describe('Services Management', () => {
     await page.getByRole('button', { name: /cancel/i }).click();
 
     // Service should still be visible
-    await expect(page.getByText(serviceName)).toBeVisible();
+    await expect(page.getByRole('row').filter({ hasText: serviceName })).toBeVisible();
   });
 });

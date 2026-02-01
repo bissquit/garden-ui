@@ -5,7 +5,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { LoginForm } from '@/components/features/auth/login-form';
 
@@ -14,7 +13,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <h1 className="text-2xl font-bold">Sign in</h1>
           <CardDescription>
             Enter your email and password to access your account
           </CardDescription>
