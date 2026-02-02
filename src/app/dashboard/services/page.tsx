@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuth } from '@/hooks/use-auth';
 import { useServices, useGroups } from '@/hooks/use-public-status';
 import { useDeleteService, useRestoreService } from '@/hooks/use-services-mutations';
 import {
@@ -19,6 +20,9 @@ import type { components } from '@/api/types.generated';
 type Service = components['schemas']['Service'];
 
 export default function ServicesPage() {
+  const { hasMinRole } = useAuth();
+  const canEdit = hasMinRole('operator');
+
   const [showArchived, setShowArchived] = useState(false);
   const { data: services, isLoading: servicesLoading } = useServices({ includeArchived: showArchived });
   const { data: groups, isLoading: groupsLoading } = useGroups();
@@ -62,48 +66,50 @@ export default function ServicesPage() {
   // Add action column to services
   const servicesWithActions = services?.map((service) => ({
     ...service,
-    actions: service.archived_at ? (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleRestore(service);
-        }}
-        disabled={restoreMutation.isPending}
-        data-testid="restore-button"
-      >
-        <RotateCcw className="h-4 w-4 mr-1" />
-        Restore
-      </Button>
-    ) : (
-      <div className="flex items-center gap-2">
-        <ServiceFormDialog
-          service={service}
-          trigger={
-            <Button variant="ghost" size="icon" data-testid="edit-button">
-              <Pencil className="h-4 w-4" />
-            </Button>
-          }
-        />
-        <Button variant="ghost" size="icon" asChild data-testid="settings-button">
-          <Link href={`/dashboard/services/${service.slug}`}>
-            <Settings className="h-4 w-4" />
-          </Link>
-        </Button>
+    actions: canEdit ? (
+      service.archived_at ? (
         <Button
           variant="ghost"
-          size="icon"
+          size="sm"
           onClick={(e) => {
             e.stopPropagation();
-            setDeleteTarget(service);
+            handleRestore(service);
           }}
-          data-testid="delete-button"
+          disabled={restoreMutation.isPending}
+          data-testid="restore-button"
         >
-          <Trash2 className="h-4 w-4 text-destructive" />
+          <RotateCcw className="h-4 w-4 mr-1" />
+          Restore
         </Button>
-      </div>
-    ),
+      ) : (
+        <div className="flex items-center gap-2">
+          <ServiceFormDialog
+            service={service}
+            trigger={
+              <Button variant="ghost" size="icon" data-testid="edit-button">
+                <Pencil className="h-4 w-4" />
+              </Button>
+            }
+          />
+          <Button variant="ghost" size="icon" asChild data-testid="settings-button">
+            <Link href={`/dashboard/services/${service.slug}`}>
+              <Settings className="h-4 w-4" />
+            </Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteTarget(service);
+            }}
+            data-testid="delete-button"
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+      )
+    ) : null,
   }));
 
   return (
@@ -113,12 +119,14 @@ export default function ServicesPage() {
           <h1 className="text-2xl font-bold">Services</h1>
           <p className="text-muted-foreground">Manage your services</p>
         </div>
-        <ServiceFormDialog trigger={
-          <Button data-testid="create-service-button">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Service
-          </Button>
-        } />
+        {canEdit && (
+          <ServiceFormDialog trigger={
+            <Button data-testid="create-service-button">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Service
+            </Button>
+          } />
+        )}
       </div>
 
       <div className="flex items-center space-x-2">

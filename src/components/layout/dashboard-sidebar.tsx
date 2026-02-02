@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
+import type { Role } from '@/types';
 import {
   LayoutDashboard,
   Server,
@@ -13,21 +15,24 @@ import {
 } from 'lucide-react';
 
 const navigation = [
-  { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Services', href: '/dashboard/services', icon: Server },
-  { name: 'Groups', href: '/dashboard/groups', icon: FolderTree },
-  { name: 'Events', href: '/dashboard/events', icon: AlertCircle },
-  { name: 'Templates', href: '/dashboard/templates', icon: FileText },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+  { name: 'Overview', href: '/dashboard', icon: LayoutDashboard, minRole: 'operator' as Role },
+  { name: 'Services', href: '/dashboard/services', icon: Server, minRole: 'operator' as Role },
+  { name: 'Groups', href: '/dashboard/groups', icon: FolderTree, minRole: 'operator' as Role },
+  { name: 'Events', href: '/dashboard/events', icon: AlertCircle, minRole: 'operator' as Role },
+  { name: 'Templates', href: '/dashboard/templates', icon: FileText, minRole: 'operator' as Role },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings, minRole: 'user' as Role },
 ];
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const { hasMinRole } = useAuth();
+
+  const visibleNavigation = navigation.filter((item) => hasMinRole(item.minRole));
 
   return (
     <aside className="w-64 border-r bg-card min-h-[calc(100vh-4rem)]">
       <nav className="p-4 space-y-1">
-        {navigation.map((item) => {
+        {visibleNavigation.map((item) => {
           const isActive =
             pathname === item.href ||
             (item.href !== '/dashboard' && pathname.startsWith(item.href));

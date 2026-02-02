@@ -19,7 +19,7 @@ import type { components } from '@/api/types.generated';
 type EventTemplate = components['schemas']['EventTemplate'];
 
 export default function TemplatesPage() {
-  const { isAuthenticated, isLoading: authLoading, hasRole } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, hasMinRole } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -28,7 +28,7 @@ export default function TemplatesPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<EventTemplate | null>(null);
 
-  const isAdmin = hasRole('admin');
+  const canEdit = hasMinRole('operator');
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -67,7 +67,7 @@ export default function TemplatesPage() {
   // Add action column to templates
   const templatesWithActions = templates?.map((template) => ({
     ...template,
-    actions: isAdmin ? (
+    actions: canEdit ? (
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
@@ -93,7 +93,7 @@ export default function TemplatesPage() {
             Event templates for quick creation
           </p>
         </div>
-        {isAdmin && (
+        {canEdit && (
           <TemplateFormDialog
             trigger={
               <Button data-testid="create-template-button">

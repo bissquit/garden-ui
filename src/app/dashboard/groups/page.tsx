@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useAuth } from '@/hooks/use-auth';
 import { useServices, useGroups } from '@/hooks/use-public-status';
 import { useDeleteGroup, useRestoreGroup } from '@/hooks/use-groups-mutations';
 import {
@@ -18,6 +19,9 @@ import type { components } from '@/api/types.generated';
 type ServiceGroup = components['schemas']['ServiceGroup'];
 
 export default function GroupsPage() {
+  const { hasMinRole } = useAuth();
+  const canEdit = hasMinRole('operator');
+
   const [showArchived, setShowArchived] = useState(false);
   const { data: services } = useServices();
   const { data: groups, isLoading } = useGroups({ includeArchived: showArchived });
@@ -69,43 +73,45 @@ export default function GroupsPage() {
   // Add action column to groups
   const groupsWithActions = groups?.map((group) => ({
     ...group,
-    actions: group.archived_at ? (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleRestore(group);
-        }}
-        disabled={restoreMutation.isPending}
-        data-testid="restore-button"
-      >
-        <RotateCcw className="h-4 w-4 mr-1" />
-        Restore
-      </Button>
-    ) : (
-      <div className="flex items-center gap-2">
-        <GroupFormDialog
-          group={group}
-          trigger={
-            <Button variant="ghost" size="icon" data-testid="edit-button">
-              <Pencil className="h-4 w-4" />
-            </Button>
-          }
-        />
+    actions: canEdit ? (
+      group.archived_at ? (
         <Button
           variant="ghost"
-          size="icon"
+          size="sm"
           onClick={(e) => {
             e.stopPropagation();
-            setDeleteTarget(group);
+            handleRestore(group);
           }}
-          data-testid="delete-button"
+          disabled={restoreMutation.isPending}
+          data-testid="restore-button"
         >
-          <Trash2 className="h-4 w-4 text-destructive" />
+          <RotateCcw className="h-4 w-4 mr-1" />
+          Restore
         </Button>
-      </div>
-    ),
+      ) : (
+        <div className="flex items-center gap-2">
+          <GroupFormDialog
+            group={group}
+            trigger={
+              <Button variant="ghost" size="icon" data-testid="edit-button">
+                <Pencil className="h-4 w-4" />
+              </Button>
+            }
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteTarget(group);
+            }}
+            data-testid="delete-button"
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+      )
+    ) : null,
   }));
 
   return (
@@ -115,12 +121,14 @@ export default function GroupsPage() {
           <h1 className="text-2xl font-bold">Groups</h1>
           <p className="text-muted-foreground">Organize services into groups</p>
         </div>
-        <GroupFormDialog trigger={
-          <Button data-testid="create-group-button">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Group
-          </Button>
-        } />
+        {canEdit && (
+          <GroupFormDialog trigger={
+            <Button data-testid="create-group-button">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Group
+            </Button>
+          } />
+        )}
       </div>
 
       <div className="flex items-center space-x-2">
