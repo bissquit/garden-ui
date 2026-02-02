@@ -66,7 +66,8 @@ src/
 │       ├── groups/page.tsx    # CRUD groups
 │       ├── events/page.tsx    # Events list + filters
 │       ├── events/[id]/page.tsx  # Event detail + timeline
-│       └── templates/page.tsx # CRUD templates
+│       ├── templates/page.tsx # CRUD templates
+│       └── settings/page.tsx  # User settings (profile, channels, subscriptions)
 │
 ├── components/
 │   ├── ui/                    # shadcn/ui primitives
@@ -148,14 +149,14 @@ docker-compose.ci.yml          # CI environment: postgres + migrate + backend (n
 | 3. Public Pages    | ✅      | Status page, History, SSR                                                     |
 | 4. Dashboard Read  | ✅      | Services/Groups/Events lists, Event detail                                    |
 | 5. Dashboard Write | ✅      | CRUD all entities, Event updates, Service management, Templates, Service Tags |
-| 6. User Settings   | 🔄     | Profile, Channels, Subscriptions                                              |
+| 6. User Settings   | ✅      | Profile, Channels, Subscriptions                                              |
 | 7. Polish          | 🔄     | E2E in CI, Dark mode, Mobile, Error boundaries                                |
 
-### Phase 6 Tasks
-- [ ] Profile settings page
+### Phase 6 Tasks ✅
+- [x] Profile section (read-only: email, role)
 - [x] Notification channels — hooks + UI components (ChannelsTable, ChannelForm, ChannelFormDialog)
 - [x] Subscriptions — hooks + UI component (SubscriptionEditor)
-- [ ] Settings page integration (объединение channels + subscriptions + profile)
+- [x] Settings page `/dashboard/settings` — объединение profile + channels + subscriptions
 
 ### Phase 7 Tasks
 - [x] E2E тесты в CI для критических flows
@@ -166,16 +167,18 @@ docker-compose.ci.yml          # CI environment: postgres + migrate + backend (n
 - [ ] i18n (опционально)
 
 ### Recent Changes
+- **2026-02-02:** Phase 6 завершена — Settings Page (Этап 3)
+  - Создана страница `/dashboard/settings` с секциями: Profile, Channels, Subscriptions
+  - Добавлена ссылка Settings в dashboard sidebar
+  - Обновлены экспорты в `components/features/dashboard/index.ts`
 - **2026-02-01:** Phase 6 — Subscriptions (Этап 2)
   - Добавлены hooks: useSubscription, useUpdateSubscription, useDeleteSubscription
   - Добавлена валидация: updateSubscriptionSchema
   - Добавлен компонент: SubscriptionEditor (выбор сервисов с группировкой)
-  - Покрытие тестами: 100% для hooks и validations
 - **2026-02-01:** Phase 6 — Notification Channels (Этап 1)
   - Добавлены hooks: useChannels, useCreateChannel, useUpdateChannel, useDeleteChannel, useVerifyChannel
   - Добавлена валидация: createChannelSchema (email/telegram)
   - Добавлены компоненты: ChannelsTable, ChannelForm, ChannelFormDialog
-  - Покрытие тестами: 100% для hooks и validations
 - **2026-02-01:** Подготовка к HTTP-only cookies
   - Убран `window.__AUTH_TOKEN__` и ручное управление токенами
   - Добавлен `credentials: 'include'` в API clients

@@ -9,6 +9,7 @@ import {
   FolderTree,
   AlertCircle,
   FileText,
+  Settings,
 } from 'lucide-react';
 
 const navigation = [
@@ -17,6 +18,7 @@ const navigation = [
   { name: 'Groups', href: '/dashboard/groups', icon: FolderTree },
   { name: 'Events', href: '/dashboard/events', icon: AlertCircle },
   { name: 'Templates', href: '/dashboard/templates', icon: FileText },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
 export function DashboardSidebar() {
