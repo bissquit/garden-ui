@@ -59,15 +59,18 @@ src/
 │   ├── (auth)/
 │   │   ├── login/page.tsx
 │   │   └── register/page.tsx
-│   └── dashboard/             # Protected (operator/admin)
-│       ├── page.tsx           # Overview
-│       ├── services/page.tsx  # CRUD services
-│       ├── services/[slug]/page.tsx  # Service details + tags
-│       ├── groups/page.tsx    # CRUD groups
-│       ├── events/page.tsx    # Events list + filters
-│       ├── events/[id]/page.tsx  # Event detail + timeline
-│       ├── templates/page.tsx # CRUD templates
-│       └── settings/page.tsx  # User settings (profile, channels, subscriptions)
+│   ├── dashboard/             # Protected (operator/admin only)
+│   │   ├── layout.tsx         # Guard: operator+ required
+│   │   ├── page.tsx           # Overview
+│   │   ├── services/page.tsx  # CRUD services
+│   │   ├── services/[slug]/page.tsx  # Service details + tags
+│   │   ├── groups/page.tsx    # CRUD groups
+│   │   ├── events/page.tsx    # Events list + filters
+│   │   ├── events/[id]/page.tsx  # Event detail + timeline
+│   │   └── templates/page.tsx # CRUD templates
+│   └── settings/              # Protected (any authenticated user)
+│       ├── layout.tsx         # Guard: any role
+│       └── page.tsx           # Profile, Channels, Subscriptions
 │
 ├── components/
 │   ├── ui/                    # shadcn/ui primitives
@@ -167,6 +170,16 @@ docker-compose.ci.yml          # CI environment: postgres + migrate + backend (n
 - [ ] i18n (опционально)
 
 ### Recent Changes
+- **2026-02-02:** Рефакторинг навигации и разделение прав доступа
+  - Перенесён Settings из `/dashboard/settings` в `/settings` (отдельный маршрут)
+  - Создан `src/app/settings/layout.tsx` с auth guard для любой роли
+  - Создан `src/app/settings/page.tsx` (Profile + Channels + Subscriptions)
+  - Удалён `src/app/dashboard/settings/` (старый маршрут)
+  - Убран Settings из dashboard-sidebar (теперь только operator+ разделы)
+  - Исправлен User Menu в header: одна ссылка Settings → /settings
+  - Скрыта кнопка Dashboard в header для роли user
+  - Редирект после логина: user → `/`, operator/admin → `/dashboard`
+  - Dashboard layout: user редиректится на `/` вместо `/settings`
 - **2026-02-02:** Phase 6 завершена — Settings Page (Этап 3)
   - Создана страница `/dashboard/settings` с секциями: Profile, Channels, Subscriptions
   - Добавлена ссылка Settings в dashboard sidebar

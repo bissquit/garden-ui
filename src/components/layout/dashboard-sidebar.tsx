@@ -11,7 +11,6 @@ import {
   FolderTree,
   AlertCircle,
   FileText,
-  Settings,
 } from 'lucide-react';
 
 const navigation = [
@@ -20,7 +19,6 @@ const navigation = [
   { name: 'Groups', href: '/dashboard/groups', icon: FolderTree, minRole: 'operator' as Role },
   { name: 'Events', href: '/dashboard/events', icon: AlertCircle, minRole: 'operator' as Role },
   { name: 'Templates', href: '/dashboard/templates', icon: FileText, minRole: 'operator' as Role },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings, minRole: 'user' as Role },
 ];
 
 export function DashboardSidebar() {
