@@ -23,3 +23,9 @@ export { TemplateForm } from './template-form';
 export { TemplateFormDialog } from './template-form-dialog';
 // Service tags
 export { ServiceTagsEditor } from './service-tags-editor';
+// Channels
+export { ChannelsTable } from './channels-table';
+export { ChannelForm } from './channel-form';
+export { ChannelFormDialog } from './channel-form-dialog';
+// Subscriptions
+export { SubscriptionEditor } from './subscription-editor';
