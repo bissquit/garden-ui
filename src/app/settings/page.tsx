@@ -1,8 +1,6 @@
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import { useChannels } from '@/hooks/use-channels';
 import {
   ChannelsTable,
@@ -14,28 +12,8 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2, User, AlertCircle } from 'lucide-react';
 
 export default function SettingsPage() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const router = useRouter();
-
+  const { user } = useAuth();
   const { data: channels, isLoading: channelsLoading, isError: channelsError } = useChannels();
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, authLoading, router]);
-
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
 
   return (
     <div className="space-y-8">

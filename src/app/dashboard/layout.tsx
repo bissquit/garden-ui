@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Header } from '@/components/layout/header';
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar';
@@ -13,7 +13,6 @@ export default function DashboardLayout({
 }) {
   const { user, isLoading, hasMinRole } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (isLoading) return;
@@ -24,16 +23,11 @@ export default function DashboardLayout({
       return;
     }
 
-    // Settings is accessible to all authenticated users
-    if (pathname === '/dashboard/settings') {
-      return;
-    }
-
-    // Other dashboard pages require operator+
+    // Dashboard requires operator+
     if (!hasMinRole('operator')) {
-      router.replace('/dashboard/settings');
+      router.replace('/');
     }
-  }, [user, isLoading, hasMinRole, pathname, router]);
+  }, [user, isLoading, hasMinRole, router]);
 
   // Loading state
   if (isLoading) {
@@ -49,8 +43,8 @@ export default function DashboardLayout({
     return null;
   }
 
-  // No permission for this page — don't render content
-  if (pathname !== '/dashboard/settings' && !hasMinRole('operator')) {
+  // No permission — don't render content
+  if (!hasMinRole('operator')) {
     return null;
   }
 
