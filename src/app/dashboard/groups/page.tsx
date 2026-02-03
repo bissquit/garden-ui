@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Pencil, RotateCcw, Plus } from 'lucide-react';
+import { Loader2, Archive, Pencil, RotateCcw, Plus } from 'lucide-react';
 import type { components } from '@/api/types.generated';
 
 type ServiceGroup = components['schemas']['ServiceGroup'];
@@ -107,7 +107,7 @@ export default function GroupsPage() {
             }}
             data-testid="delete-button"
           >
-            <Trash2 className="h-4 w-4 text-destructive" />
+            <Archive className="h-4 w-4 text-muted-foreground" />
           </Button>
         </div>
       )
@@ -156,6 +156,7 @@ export default function GroupsPage() {
         title="Archive Group"
         description={`Are you sure you want to archive "${deleteTarget?.name}"? Services in this group will become ungrouped. You can restore it later.`}
         isLoading={deleteMutation.isPending}
+        confirmText="Archive"
       />
     </div>
   );

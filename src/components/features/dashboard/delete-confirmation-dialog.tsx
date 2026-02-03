@@ -19,6 +19,7 @@ interface DeleteConfirmationDialogProps {
   title: string;
   description: string;
   isLoading?: boolean;
+  confirmText?: string;
 }
 
 export function DeleteConfirmationDialog({
@@ -28,6 +29,7 @@ export function DeleteConfirmationDialog({
   title,
   description,
   isLoading,
+  confirmText = 'Delete',
 }: DeleteConfirmationDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -45,7 +47,7 @@ export function DeleteConfirmationDialog({
             data-testid="confirm-delete-button"
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Delete
+            {confirmText}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
