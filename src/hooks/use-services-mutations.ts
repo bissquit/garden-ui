@@ -10,10 +10,15 @@ export function useCreateService() {
 
   return useMutation({
     mutationFn: async (data: CreateServiceRequest) => {
-      const { data: result, error } = await apiClient.POST('/api/v1/services', {
+      const { data: result, error, response } = await apiClient.POST('/api/v1/services', {
         body: data,
       });
-      if (error) throw new Error(error.error?.message || 'Failed to create service');
+      if (error) {
+        if (response.status === 409) {
+          throw new Error('Service with this slug already exists');
+        }
+        throw new Error(error.error?.message || 'Failed to create service');
+      }
       return result;
     },
     onSuccess: () => {
@@ -27,11 +32,16 @@ export function useUpdateService() {
 
   return useMutation({
     mutationFn: async ({ slug, data }: { slug: string; data: UpdateServiceRequest }) => {
-      const { data: result, error } = await apiClient.PATCH('/api/v1/services/{slug}', {
+      const { data: result, error, response } = await apiClient.PATCH('/api/v1/services/{slug}', {
         params: { path: { slug } },
         body: data,
       });
-      if (error) throw new Error(error.error?.message || 'Failed to update service');
+      if (error) {
+        if (response.status === 409) {
+          throw new Error('Service with this slug already exists');
+        }
+        throw new Error(error.error?.message || 'Failed to update service');
+      }
       return result;
     },
     onSuccess: () => {
