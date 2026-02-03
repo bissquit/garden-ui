@@ -117,10 +117,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = useCallback(async () => {
     try {
-      // Send empty refresh_token - backend will use HTTP-only cookie instead
-      await apiClient.POST('/api/v1/auth/logout', {
-        body: { refresh_token: '' },
-      });
+      await apiClient.POST('/api/v1/auth/logout', {});
     } catch {
       // Ignore errors during logout
     }

@@ -64,7 +64,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Log in to the system */
+        /**
+         * Log in to the system
+         * @description Authenticates user and sets HTTP-only cookies for tokens.
+         *
+         *     **Cookies set:**
+         *     - `access_token` - JWT access token (HttpOnly, Secure, SameSite=Lax)
+         *     - `refresh_token` - JWT refresh token (HttpOnly, Secure, SameSite=Strict, Path=/api/v1/auth)
+         *     - `csrf_token` - CSRF token for subsequent requests (readable by JavaScript)
+         */
         post: operations["login"];
         delete?: never;
         options?: never;
@@ -81,7 +89,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Refresh tokens */
+        /**
+         * Refresh tokens
+         * @description Refreshes authentication tokens using the refresh_token cookie.
+         *     New tokens are set via Set-Cookie headers.
+         *
+         *     **For cookie-based auth:** No request body needed, refresh_token is read from cookie.
+         *     **For API clients:** Can pass refresh_token in request body.
+         */
         post: operations["refreshTokens"];
         delete?: never;
         options?: never;
@@ -98,7 +113,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Log out from the system */
+        /**
+         * Log out from the system
+         * @description Invalidates the refresh token and clears all authentication cookies.
+         *
+         *     **For cookie-based auth:** No request body needed, refresh_token is read from cookie.
+         *     **For API clients:** Can pass refresh_token in request body.
+         */
         post: operations["logout"];
         delete?: never;
         options?: never;
@@ -822,7 +843,6 @@ export interface components {
         LoginResponse: {
             data?: {
                 user?: components["schemas"]["User"];
-                tokens?: components["schemas"]["TokenPair"];
             };
         };
         ServiceResponse: {
@@ -1057,9 +1077,11 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Login successful */
+            /** @description Login successful. Tokens are set via Set-Cookie headers. */
             200: {
                 headers: {
+                    /** @description Authentication cookies (access_token, refresh_token, csrf_token) */
+                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -1076,20 +1098,20 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "application/json": components["schemas"]["RefreshRequest"];
             };
         };
         responses: {
-            /** @description Tokens refreshed */
-            200: {
+            /** @description Tokens refreshed. New tokens are set via Set-Cookie headers. */
+            204: {
                 headers: {
+                    /** @description New authentication cookies */
+                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["TokenPair"];
-                };
+                content?: never;
             };
             401: components["responses"]["UnauthorizedError"];
         };
@@ -1101,15 +1123,17 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "application/json": components["schemas"]["RefreshRequest"];
             };
         };
         responses: {
-            /** @description Logout successful */
+            /** @description Logout successful. Cookies are cleared via Set-Cookie headers. */
             204: {
                 headers: {
+                    /** @description Cleared authentication cookies (Max-Age=0) */
+                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
