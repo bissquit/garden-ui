@@ -2,6 +2,7 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 import { useEvents } from '@/hooks/use-events';
 import {
   EventsTable,
@@ -16,6 +17,8 @@ type EventStatus = components['schemas']['EventStatus'];
 
 function EventsPageContent() {
   const searchParams = useSearchParams();
+  const { hasMinRole } = useAuth();
+  const canEdit = hasMinRole('operator');
 
   const type = searchParams.get('type') as EventType | null;
   const status = searchParams.get('status') as EventStatus | null;
@@ -32,7 +35,7 @@ function EventsPageContent() {
           <h1 className="text-2xl font-bold">Events</h1>
           <p className="text-muted-foreground">View incidents and maintenance</p>
         </div>
-        <EventFormDialog />
+        {canEdit && <EventFormDialog />}
       </div>
 
       <EventsFilters />
