@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Pencil, RotateCcw, Plus, Settings } from 'lucide-react';
+import { Loader2, Archive, Pencil, RotateCcw, Plus, Settings } from 'lucide-react';
 import Link from 'next/link';
 import type { components } from '@/api/types.generated';
 
@@ -105,7 +105,7 @@ export default function ServicesPage() {
             }}
             data-testid="delete-button"
           >
-            <Trash2 className="h-4 w-4 text-destructive" />
+            <Archive className="h-4 w-4 text-muted-foreground" />
           </Button>
         </div>
       )
@@ -157,6 +157,7 @@ export default function ServicesPage() {
         title="Archive Service"
         description={`Are you sure you want to archive "${deleteTarget?.name}"? You can restore it later.`}
         isLoading={deleteMutation.isPending}
+        confirmText="Archive"
       />
     </div>
   );

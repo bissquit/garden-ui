@@ -170,6 +170,10 @@ docker-compose.ci.yml          # CI environment: postgres + migrate + backend (n
 - [ ] i18n (опционально)
 
 ### Recent Changes
+- **2026-02-03:** Исправлены иконки и тексты для операций архивирования Services/Groups
+  - Заменена иконка Trash2 на Archive для Services и Groups
+  - Добавлен prop confirmText в DeleteConfirmationDialog
+  - Кнопка подтверждения теперь показывает "Archive" вместо "Delete"
 - **2026-02-02:** Рефакторинг навигации и разделение прав доступа
   - Перенесён Settings из `/dashboard/settings` в `/settings` (отдельный маршрут)
   - Создан `src/app/settings/layout.tsx` с auth guard для любой роли
