@@ -101,10 +101,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error('Invalid response from server');
       }
 
-      setUser(loginData.user as User);
+      const loggedInUser = loginData.user as User;
+      setUser(loggedInUser);
       // Токены теперь в cookies, устанавливаются сервером автоматически
 
-      router.push('/dashboard');
+      // Редирект в зависимости от роли
+      if (loggedInUser.role === 'operator' || loggedInUser.role === 'admin') {
+        router.push('/dashboard');
+      } else {
+        router.push('/');
+      }
     },
     [router]
   );
