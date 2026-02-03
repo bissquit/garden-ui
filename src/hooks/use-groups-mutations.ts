@@ -10,10 +10,15 @@ export function useCreateGroup() {
 
   return useMutation({
     mutationFn: async (data: CreateGroupRequest) => {
-      const { data: result, error } = await apiClient.POST('/api/v1/groups', {
+      const { data: result, error, response } = await apiClient.POST('/api/v1/groups', {
         body: data,
       });
-      if (error) throw new Error(error.error?.message || 'Failed to create group');
+      if (error) {
+        if (response.status === 409) {
+          throw new Error('Group with this slug already exists');
+        }
+        throw new Error(error.error?.message || 'Failed to create group');
+      }
       return result;
     },
     onSuccess: () => {
@@ -27,11 +32,16 @@ export function useUpdateGroup() {
 
   return useMutation({
     mutationFn: async ({ slug, data }: { slug: string; data: UpdateGroupRequest }) => {
-      const { data: result, error } = await apiClient.PATCH('/api/v1/groups/{slug}', {
+      const { data: result, error, response } = await apiClient.PATCH('/api/v1/groups/{slug}', {
         params: { path: { slug } },
         body: data,
       });
-      if (error) throw new Error(error.error?.message || 'Failed to update group');
+      if (error) {
+        if (response.status === 409) {
+          throw new Error('Group with this slug already exists');
+        }
+        throw new Error(error.error?.message || 'Failed to update group');
+      }
       return result;
     },
     onSuccess: () => {
