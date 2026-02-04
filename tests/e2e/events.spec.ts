@@ -179,8 +179,8 @@ test.describe('Events Management', () => {
     // Should navigate to detail page
     await expect(page).toHaveURL(/\/dashboard\/events\/[a-f0-9-]+$/);
 
-    // Event details should be visible
-    await expect(page.getByText(eventTitle)).toBeVisible();
+    // Event details should be visible (use first() since title appears in both card and timeline)
+    await expect(page.getByText(eventTitle).first()).toBeVisible();
   });
 
   test('should display event details page elements', async ({
@@ -197,8 +197,8 @@ test.describe('Events Management', () => {
     // Navigate to details
     await page.getByRole('row').filter({ hasText: eventTitle }).click();
 
-    // Check elements
-    await expect(page.getByText(eventTitle)).toBeVisible();
+    // Check elements (use first() since title appears in both card and timeline)
+    await expect(page.getByText(eventTitle).first()).toBeVisible();
     await expect(page.getByRole('heading', { name: /timeline/i })).toBeVisible();
     // Check for Post Update button which is always present
     await expect(page.getByRole('button', { name: /post update/i })).toBeVisible();
@@ -227,22 +227,22 @@ test.describe('Events Management', () => {
     await expect(page.getByText(updateMessage)).toBeVisible();
   });
 
-  test('should display changes history on event details', async ({
+  test('should display event created block in timeline', async ({
     authenticatedPage: page,
   }) => {
     // Create an event
     const eventTitle = testEventTitle();
     await page.getByTestId('create-event-button').click();
     await page.getByLabel(/title/i).fill(eventTitle);
-    await page.getByLabel(/description/i).fill('Event for changes history');
+    await page.getByLabel(/description/i).fill('Event for timeline test');
     await page.getByRole('button', { name: /create event/i }).click();
     // Dialog should close after successful creation
 
     // Navigate to details
     await page.getByRole('row').filter({ hasText: eventTitle }).click();
 
-    // Changes history section should be visible - use heading role to be specific
-    await expect(page.getByRole('heading', { name: /change history/i })).toBeVisible();
+    // Event created block should be visible in timeline
+    await expect(page.getByText('Event created')).toBeVisible();
   });
 
   test('should filter events by type', async ({ authenticatedPage: page }) => {
