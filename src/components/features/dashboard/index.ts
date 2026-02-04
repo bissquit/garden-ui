@@ -21,8 +21,6 @@ export { EventUpdateForm } from './event-update-form';
 export { TemplatesTable } from './templates-table';
 export { TemplateForm } from './template-form';
 export { TemplateFormDialog } from './template-form-dialog';
-// Service tags
-export { ServiceTagsEditor } from './service-tags-editor';
 // Channels
 export { ChannelsTable } from './channels-table';
 export { ChannelForm } from './channel-form';

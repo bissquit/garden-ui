@@ -62,8 +62,7 @@ src/
 │   ├── dashboard/             # Protected (operator/admin only)
 │   │   ├── layout.tsx         # Guard: operator+ required
 │   │   ├── page.tsx           # Overview
-│   │   ├── services/page.tsx  # CRUD services
-│   │   ├── services/[slug]/page.tsx  # Service details + tags
+│   │   ├── services/page.tsx  # CRUD services (tags edited in dialog)
 │   │   ├── groups/page.tsx    # CRUD groups
 │   │   ├── events/page.tsx    # Events list + filters
 │   │   ├── events/[id]/page.tsx  # Event detail + timeline
@@ -81,8 +80,7 @@ src/
 │       │                      # ActiveIncidents, ScheduledMaintenance, EventCard,
 │       │                      # HistoryList, HistoryDayGroup
 │       └── dashboard/         # DataTable, EmptyState, DeleteConfirmationDialog,
-│                              # ServicesTable, ServiceForm, ServiceFormDialog,
-│                              # ServiceTagsEditor,
+│                              # ServicesTable, ServiceForm (with tags support), ServiceFormDialog,
 │                              # GroupsTable, GroupForm, GroupFormDialog,
 │                              # EventsTable, EventsFilters, EventForm, EventFormDialog,
 │                              # EventDetailsCard, EventTimeline, EventChangesTimeline,
@@ -170,6 +168,10 @@ docker-compose.ci.yml          # CI environment: postgres + migrate + backend (n
 - [ ] i18n (опционально)
 
 ### Recent Changes
+- **2026-02-03:** Упрощение UX редактирования сервисов
+  - Объединено редактирование сервиса и тегов в один диалог (ServiceForm)
+  - Удалена кнопка Settings и страница /dashboard/services/[slug]
+  - Удалён компонент ServiceTagsEditor
 - **2026-02-03:** Исправлены иконки и тексты для операций архивирования Services/Groups
   - Заменена иконка Trash2 на Archive для Services и Groups
   - Добавлен prop confirmText в DeleteConfirmationDialog

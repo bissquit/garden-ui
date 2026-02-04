@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -22,7 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus, X } from 'lucide-react';
 import {
   createServiceSchema,
   updateServiceSchema,
@@ -38,12 +39,26 @@ type ServiceGroup = components['schemas']['ServiceGroup'];
 interface ServiceFormProps {
   service?: Service;
   groups: ServiceGroup[];
-  onSubmit: (data: CreateServiceFormData | UpdateServiceFormData) => void;
+  initialTags?: Record<string, string>;
+  onSubmit: (data: CreateServiceFormData | UpdateServiceFormData, tags?: Record<string, string>) => void;
   isLoading?: boolean;
 }
 
-export function ServiceForm({ service, groups, onSubmit, isLoading }: ServiceFormProps) {
+export function ServiceForm({ service, groups, initialTags, onSubmit, isLoading }: ServiceFormProps) {
   const isEditing = !!service;
+
+  // Tags state
+  const [tags, setTags] = useState<Array<{ key: string; value: string }>>([]);
+  const [newTagKey, setNewTagKey] = useState('');
+  const [newTagValue, setNewTagValue] = useState('');
+
+  // Sync tags state when initialTags loads
+  useEffect(() => {
+    if (initialTags) {
+      setTags(Object.entries(initialTags).map(([key, value]) => ({ key, value })));
+    }
+  }, [initialTags]);
+
   const form = useForm<CreateServiceFormData | UpdateServiceFormData>({
     resolver: zodResolver(isEditing ? updateServiceSchema : createServiceSchema),
     defaultValues: isEditing
@@ -77,9 +92,33 @@ export function ServiceForm({ service, groups, onSubmit, isLoading }: ServiceFor
     }
   };
 
+  const handleAddTag = () => {
+    const key = newTagKey.trim();
+    const value = newTagValue.trim();
+    if (key && !tags.some((t) => t.key === key)) {
+      setTags([...tags, { key, value }]);
+      setNewTagKey('');
+      setNewTagValue('');
+    }
+  };
+
+  const handleRemoveTag = (key: string) => {
+    setTags(tags.filter((t) => t.key !== key));
+  };
+
+  const handleFormSubmit = (data: CreateServiceFormData | UpdateServiceFormData) => {
+    const tagsObject: Record<string, string> = {};
+    for (const tag of tags) {
+      if (tag.key.trim()) {
+        tagsObject[tag.key.trim()] = tag.value.trim();
+      }
+    }
+    onSubmit(data, tagsObject);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="name"
@@ -215,6 +254,62 @@ export function ServiceForm({ service, groups, onSubmit, isLoading }: ServiceFor
             </FormItem>
           )}
         />
+
+        {/* Tags section */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium leading-none">Tags (optional)</label>
+          <p className="text-sm text-muted-foreground">Key-value metadata for the service</p>
+
+          {tags.length > 0 && (
+            <div className="space-y-2 mt-2">
+              {tags.map((tag) => (
+                <div key={tag.key} className="flex items-center gap-2">
+                  <div className="flex-1 text-sm bg-muted px-3 py-2 rounded-md">
+                    <span className="font-medium">{tag.key}</span>
+                    <span className="text-muted-foreground">: {tag.value}</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveTag(tag.key)}
+                    className="shrink-0 h-8 w-8"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 mt-2">
+            <Input
+              placeholder="Key"
+              value={newTagKey}
+              onChange={(e) => setNewTagKey(e.target.value)}
+              className="flex-1"
+              data-testid="tag-key-input"
+            />
+            <Input
+              placeholder="Value"
+              value={newTagValue}
+              onChange={(e) => setNewTagValue(e.target.value)}
+              className="flex-1"
+              data-testid="tag-value-input"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={handleAddTag}
+              disabled={!newTagKey.trim()}
+              className="shrink-0"
+              data-testid="add-tag-button"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
 
         <div className="flex justify-end gap-2 pt-4">
           <Button type="submit" disabled={isLoading}>
