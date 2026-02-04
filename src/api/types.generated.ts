@@ -671,6 +671,11 @@ export interface components {
             id: string;
             /** Format: uuid */
             event_id: string;
+            /**
+             * Format: uuid
+             * @description Groups changes made in a single operation. Null for legacy records.
+             */
+            batch_id?: string | null;
             action: components["schemas"]["ChangeAction"];
             /** Format: uuid */
             service_id?: string | null;

@@ -5,9 +5,8 @@ export { GroupsTable } from './groups-table';
 export { EventsTable } from './events-table';
 export { EventsFilters } from './events-filters';
 export { EventDetailsCard } from './event-details-card';
-export { EventTimeline } from './event-timeline';
+export { EventUnifiedTimeline } from './event-unified-timeline';
 export { EventServicesManager } from './event-services-manager';
-export { EventChangesTimeline } from './event-changes-timeline';
 // Form components
 export { DeleteConfirmationDialog } from './delete-confirmation-dialog';
 export { ServiceForm } from './service-form';
