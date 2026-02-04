@@ -241,8 +241,8 @@ test.describe('Events Management', () => {
     // Navigate to details
     await page.getByRole('row').filter({ hasText: eventTitle }).click();
 
-    // Event created block should be visible in timeline
-    await expect(page.getByText('Event created')).toBeVisible();
+    // Event created block should be visible in timeline (use exact match to avoid toast conflict)
+    await expect(page.getByText('Event created', { exact: true })).toBeVisible();
   });
 
   test('should filter events by type', async ({ authenticatedPage: page }) => {
