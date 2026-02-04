@@ -6,7 +6,6 @@ import { setupServer } from 'msw/node';
 import { ServicesTable } from './services-table';
 import { GroupsTable } from './groups-table';
 import { EventsTable } from './events-table';
-import { EventTimeline } from './event-timeline';
 import { EventDetailsCard } from './event-details-card';
 import { EmptyState } from './empty-state';
 import { Server } from 'lucide-react';
@@ -87,27 +86,6 @@ const mockEvents = [
     service_ids: ['3'],
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
-  },
-];
-
-const mockEventUpdates = [
-  {
-    id: 'u1',
-    event_id: 'e1',
-    status: 'investigating' as const,
-    message: 'Looking into the issue.',
-    notify_subscribers: false,
-    created_by: '1',
-    created_at: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'u2',
-    event_id: 'e1',
-    status: 'identified' as const,
-    message: 'Found the root cause.',
-    notify_subscribers: true,
-    created_by: '1',
-    created_at: '2026-01-01T01:00:00Z',
   },
 ];
 
@@ -220,28 +198,6 @@ describe('EventsTable', () => {
     expect(
       screen.getByText('No events match the current filters.')
     ).toBeInTheDocument();
-  });
-});
-
-describe('EventTimeline', () => {
-  it('renders timeline updates', () => {
-    renderWithProviders(<EventTimeline updates={mockEventUpdates} />);
-
-    expect(screen.getByText('Looking into the issue.')).toBeInTheDocument();
-    expect(screen.getByText('Found the root cause.')).toBeInTheDocument();
-  });
-
-  it('shows status labels for each update', () => {
-    renderWithProviders(<EventTimeline updates={mockEventUpdates} />);
-
-    expect(screen.getByText('Investigating')).toBeInTheDocument();
-    expect(screen.getByText('Identified')).toBeInTheDocument();
-  });
-
-  it('renders empty message when no updates', () => {
-    renderWithProviders(<EventTimeline updates={[]} />);
-
-    expect(screen.getByText('No updates yet.')).toBeInTheDocument();
   });
 });
 

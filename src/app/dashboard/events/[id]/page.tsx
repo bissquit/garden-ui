@@ -8,10 +8,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { useServices, useGroups } from '@/hooks/use-public-status';
 import {
   EventDetailsCard,
-  EventTimeline,
+  EventUnifiedTimeline,
   EventUpdateForm,
   EventServicesManager,
-  EventChangesTimeline,
   DeleteConfirmationDialog,
 } from '@/components/features/dashboard';
 import { Button } from '@/components/ui/button';
@@ -28,7 +27,7 @@ export default function EventDetailsPage() {
   const eventId = params.id as string;
 
   const { data: event, isLoading: eventLoading, isError: eventError } = useEvent(eventId);
-  const { data: updates, isLoading: updatesLoading } = useEventUpdates(eventId);
+  const { data: updates } = useEventUpdates(eventId);
   const { data: services } = useServices();
   const { data: groups } = useGroups();
 
@@ -144,25 +143,14 @@ export default function EventDetailsPage() {
       {/* Timeline */}
       <div>
         <h2 className="text-lg font-semibold mb-4">Timeline</h2>
-        {updatesLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <EventTimeline updates={updates ?? []} />
-        )}
+        <EventUnifiedTimeline
+          event={event}
+          eventId={eventId}
+          updates={updates ?? []}
+          services={services ?? []}
+          groups={groups ?? []}
+        />
       </div>
-
-      {/* Change History */}
-      <Card>
-        <CardContent className="pt-6">
-          <EventChangesTimeline
-            eventId={eventId}
-            services={services ?? []}
-            groups={groups ?? []}
-          />
-        </CardContent>
-      </Card>
 
       <DeleteConfirmationDialog
         open={showDeleteDialog}

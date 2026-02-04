@@ -83,7 +83,7 @@ src/
 │                              # ServicesTable, ServiceForm (with tags support), ServiceFormDialog,
 │                              # GroupsTable, GroupForm, GroupFormDialog,
 │                              # EventsTable, EventsFilters, EventForm, EventFormDialog,
-│                              # EventDetailsCard, EventTimeline, EventChangesTimeline,
+│                              # EventDetailsCard, EventUnifiedTimeline (merged timeline + changes),
 │                              # EventServicesManager, EventUpdateForm,
 │                              # TemplatesTable, TemplateForm, TemplateFormDialog,
 │                              # ChannelsTable, ChannelForm, ChannelFormDialog,
@@ -168,6 +168,10 @@ docker-compose.ci.yml          # CI environment: postgres + migrate + backend (n
 - [ ] i18n (опционально)
 
 ### Recent Changes
+- **2026-02-04:** Объединение Timeline и Change History в единый Unified Timeline
+  - Создан EventUnifiedTimeline — объединяет статусные апдейты и изменения сервисов в один хронологический список
+  - Удалены компоненты EventTimeline и EventChangesTimeline
+  - Улучшен UX страницы события — теперь вся активность видна в одном месте
 - **2026-02-03:** Упрощение UX редактирования сервисов
   - Объединено редактирование сервиса и тегов в один диалог (ServiceForm)
   - Удалена кнопка Settings и страница /dashboard/services/[slug]
