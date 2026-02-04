@@ -13,8 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Archive, Pencil, RotateCcw, Plus, Settings } from 'lucide-react';
-import Link from 'next/link';
+import { Loader2, Archive, Pencil, RotateCcw, Plus } from 'lucide-react';
 import type { components } from '@/api/types.generated';
 
 type Service = components['schemas']['Service'];
@@ -91,11 +90,6 @@ export default function ServicesPage() {
               </Button>
             }
           />
-          <Button variant="ghost" size="icon" asChild data-testid="settings-button">
-            <Link href={`/dashboard/services/${service.slug}`}>
-              <Settings className="h-4 w-4" />
-            </Link>
-          </Button>
           <Button
             variant="ghost"
             size="icon"

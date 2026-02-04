@@ -217,4 +217,58 @@ test.describe('Services Management', () => {
     // Service should still be visible
     await expect(page.getByRole('row').filter({ hasText: serviceName })).toBeVisible();
   });
+
+  test('should create service with tags', async ({ authenticatedPage: page }) => {
+    const serviceName = testServiceName();
+
+    await page.getByTestId('create-service-button').click();
+
+    // Fill basic info
+    await page.getByLabel(/^name$/i).fill(serviceName);
+
+    // Add a tag
+    await page.getByTestId('tag-key-input').fill('environment');
+    await page.getByTestId('tag-value-input').fill('production');
+    await page.getByTestId('add-tag-button').click();
+
+    // Verify tag appears in form
+    await expect(page.getByText('environment')).toBeVisible();
+    await expect(page.getByText(': production')).toBeVisible();
+
+    // Submit
+    await page.getByRole('button', { name: /create service/i }).click();
+
+    // Wait for service to appear in table
+    await expect(page.getByRole('row').filter({ hasText: serviceName })).toBeVisible({ timeout: 10000 });
+  });
+
+  test('should edit service tags', async ({ authenticatedPage: page }) => {
+    // Create a service first
+    const serviceName = testServiceName();
+    await page.getByTestId('create-service-button').click();
+    await page.getByLabel(/^name$/i).fill(serviceName);
+    await page.getByRole('button', { name: /create service/i }).click();
+    await expect(page.getByRole('row').filter({ hasText: serviceName })).toBeVisible({ timeout: 10000 });
+
+    // Open edit dialog
+    const row = page.getByRole('row').filter({ hasText: serviceName });
+    await row.getByTestId('edit-button').click();
+
+    // Wait for dialog
+    await expect(page.getByRole('heading', { name: /edit service/i })).toBeVisible();
+
+    // Add a tag
+    await page.getByTestId('tag-key-input').fill('version');
+    await page.getByTestId('tag-value-input').fill('1.0.0');
+    await page.getByTestId('add-tag-button').click();
+
+    // Verify tag appears
+    await expect(page.getByText('version')).toBeVisible();
+
+    // Save
+    await page.getByRole('button', { name: /update service/i }).click();
+
+    // Wait for dialog to close
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10000 });
+  });
 });
