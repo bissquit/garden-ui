@@ -168,6 +168,10 @@ docker-compose.ci.yml          # CI environment: postgres + migrate + backend (n
 - [ ] i18n (опционально)
 
 ### Recent Changes
+- **2026-02-04:** Адаптация к batch_id в EventServiceChange
+  - Обновлена OpenAPI спецификация до версии 1.4.0
+  - Группировка изменений сервисов теперь использует batch_id
+  - Сохранён fallback на timestamp для legacy записей (до добавления batch_id)
 - **2026-02-04:** Объединение Timeline и Change History в единый Unified Timeline
   - Создан EventUnifiedTimeline — объединяет статусные апдейты и изменения сервисов в один хронологический список
   - Удалены компоненты EventTimeline и EventChangesTimeline

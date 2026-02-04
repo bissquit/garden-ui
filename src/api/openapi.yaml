@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: StatusPage API
   description: API for managing service statuses and incidents
-  version: 1.3.0
+  version: 1.4.0
   contact:
     name: API Support
 servers:
@@ -1344,6 +1344,11 @@ components:
         event_id:
           type: string
           format: uuid
+        batch_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Groups changes made in a single operation. Null for legacy records.
         action:
           $ref: '#/components/schemas/ChangeAction'
         service_id:

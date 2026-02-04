@@ -32,8 +32,8 @@ interface EventUnifiedTimelineProps {
 }
 
 /**
- * Groups service changes by action + timestamp (without milliseconds).
- * Temporary solution until backend adds batch_id.
+ * Groups service changes by batch_id.
+ * Falls back to action + timestamp for legacy records (before batch_id was added).
  */
 function groupServiceChanges(
   changes: EventServiceChange[],
@@ -43,7 +43,9 @@ function groupServiceChanges(
   const changeGroups = new Map<string, EventServiceChange[]>();
 
   for (const change of changes) {
-    const groupKey = `${change.action}-${change.created_at.slice(0, 19)}`;
+    // batch_id takes priority, fallback to timestamp for legacy records
+    const groupKey = change.batch_id
+      ?? `legacy-${change.action}-${change.created_at.slice(0, 19)}`;
     if (!changeGroups.has(groupKey)) {
       changeGroups.set(groupKey, []);
     }
@@ -129,9 +131,6 @@ export function EventUnifiedTimeline({
 
   return (
     <div className="relative">
-      {/* Continuous vertical line - from first entry to "Event created" */}
-      <div className="absolute left-[9px] top-[22px] bottom-6 w-0.5 bg-border" />
-
       {entries.map((entry) => {
         if (entry.type === 'status_update') {
           const update = entry.data;
@@ -139,6 +138,8 @@ export function EventUnifiedTimeline({
 
           return (
             <div key={`update-${update.id}`} className="relative pl-6 pb-6">
+              {/* Line segment connecting to next element */}
+              <div className="absolute left-[9px] top-0 bottom-0 w-0.5 bg-border" />
               <div className="absolute left-0 top-1 h-[18px] w-[18px] rounded-full border-2 border-primary bg-background" />
               <div className="flex items-center gap-2 mb-1">
                 <span className="font-medium">{config.label}</span>
@@ -170,6 +171,8 @@ export function EventUnifiedTimeline({
 
         return (
           <div key={`change-${group.action}-${group.created_at}`} className="relative pl-6 pb-6">
+            {/* Line segment connecting to next element */}
+            <div className="absolute left-[9px] top-0 bottom-0 w-0.5 bg-border" />
             <div className="absolute left-0 top-1 h-[18px] w-[18px] rounded-full border bg-background flex items-center justify-center">
               {isAdded ? (
                 <Plus className="h-3 w-3 text-muted-foreground" />
