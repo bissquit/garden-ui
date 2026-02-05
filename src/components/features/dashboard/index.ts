@@ -4,9 +4,9 @@ export { ServicesTable } from './services-table';
 export { GroupsTable } from './groups-table';
 export { EventsTable } from './events-table';
 export { EventsFilters } from './events-filters';
-export { EventDetailsCard } from './event-details-card';
-export { EventUnifiedTimeline } from './event-unified-timeline';
 export { EventServicesManager } from './event-services-manager';
+// Re-export shared event components
+export { EventDetailsCard, EventUnifiedTimeline } from '../events';
 // Form components
 export { DeleteConfirmationDialog } from './delete-confirmation-dialog';
 export { ServiceForm } from './service-form';

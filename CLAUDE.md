@@ -55,7 +55,8 @@ src/
 ├── app/                       # Next.js 14 App Router
 │   ├── (public)/              # SSR pages (no auth)
 │   │   ├── page.tsx           # Status page
-│   │   └── history/page.tsx   # History (7 days)
+│   │   ├── history/page.tsx   # History (7 days)
+│   │   └── events/[id]/page.tsx  # Public event details + timeline
 │   ├── (auth)/
 │   │   ├── login/page.tsx
 │   │   └── register/page.tsx
@@ -79,11 +80,12 @@ src/
 │       ├── status/            # OverallStatusBanner, ServiceList, ServiceItem,
 │       │                      # ActiveIncidents, ScheduledMaintenance, EventCard,
 │       │                      # HistoryList, HistoryDayGroup
+│       ├── events/            # Shared event components (used by public + dashboard)
+│       │                      # EventDetailsCard, EventUnifiedTimeline
 │       └── dashboard/         # DataTable, EmptyState, DeleteConfirmationDialog,
 │                              # ServicesTable, ServiceForm (with tags support), ServiceFormDialog,
 │                              # GroupsTable, GroupForm, GroupFormDialog,
 │                              # EventsTable, EventsFilters, EventForm, EventFormDialog,
-│                              # EventDetailsCard, EventUnifiedTimeline (merged timeline + changes),
 │                              # EventServicesManager, EventUpdateForm,
 │                              # TemplatesTable, TemplateForm, TemplateFormDialog,
 │                              # ChannelsTable, ChannelForm, ChannelFormDialog,
@@ -92,6 +94,7 @@ src/
 ├── hooks/
 │   ├── use-auth.tsx           # Auth context: login, logout, hasRole, hasMinRole
 │   ├── use-public-status.ts   # useServices, useGroups, usePublicStatus, useStatusHistory
+│   ├── use-public-events.ts   # usePublicEvent, usePublicEventUpdates, usePublicEventChanges
 │   ├── use-services-mutations.ts  # useCreateService, useUpdateService, useDeleteService, useRestoreService
 │   ├── use-service-tags.ts    # useServiceTags, useUpdateServiceTags
 │   ├── use-groups-mutations.ts    # useCreateGroup, useUpdateGroup, useDeleteGroup, useRestoreGroup
@@ -127,7 +130,7 @@ tests/
     ├── services.spec.ts       # Services CRUD, archive/restore
     ├── groups.spec.ts         # Groups CRUD, archive/restore
     ├── events.spec.ts         # Events CRUD, updates, services management
-    └── public-status.spec.ts  # Public status page, history
+    └── public-status.spec.ts  # Public status page, history, event details
 
 .github/workflows/
 ├── ci.yml                     # Lint, typecheck, unit tests, build
@@ -168,6 +171,13 @@ docker-compose.ci.yml          # CI environment: postgres + migrate + backend (n
 - [ ] i18n (опционально)
 
 ### Recent Changes
+- **2026-02-05:** Публичная страница деталей события
+  - Создан `/events/[id]` — публичная страница с деталями события и timeline
+  - Создан `use-public-events.ts` — хуки для публичного доступа к событиям (usePublicEvent, usePublicEventUpdates, usePublicEventChanges)
+  - Перемещены EventDetailsCard и EventUnifiedTimeline в `components/features/events/` (shared)
+  - Рефакторинг EventUnifiedTimeline — changes теперь передаются как пропс (презентационный компонент)
+  - Добавлена ссылка "View details" в EventCard
+  - Кнопка "Edit" на публичной странице видна только operator+
 - **2026-02-04:** Адаптация к batch_id в EventServiceChange
   - Обновлена OpenAPI спецификация до версии 1.4.0
   - Группировка изменений сервисов теперь использует batch_id

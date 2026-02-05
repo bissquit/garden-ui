@@ -1,16 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { EventUnifiedTimeline } from './event-unified-timeline';
-
-// Mock API client
-vi.mock('@/api/client', () => ({
-  apiClient: {
-    GET: vi.fn(),
-  },
-}));
-
-import { apiClient } from '@/api/client';
 
 const mockEvent = {
   id: 'e1',
@@ -115,114 +106,76 @@ describe('EventUnifiedTimeline', () => {
     vi.clearAllMocks();
   });
 
-  it('renders status updates', async () => {
-    vi.mocked(apiClient.GET).mockResolvedValueOnce({
-      data: { data: mockChanges },
-      error: null,
-    } as never);
-
+  it('renders status updates', () => {
     renderWithProviders(
       <EventUnifiedTimeline
         event={mockEvent}
-        eventId="e1"
         updates={mockUpdates}
+        changes={mockChanges}
         services={mockServices}
         groups={mockGroups}
       />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Looking into the issue.')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Looking into the issue.')).toBeInTheDocument();
     expect(screen.getByText('Found the root cause.')).toBeInTheDocument();
   });
 
-  it('shows status labels for updates', async () => {
-    vi.mocked(apiClient.GET).mockResolvedValueOnce({
-      data: { data: mockChanges },
-      error: null,
-    } as never);
-
+  it('shows status labels for updates', () => {
     renderWithProviders(
       <EventUnifiedTimeline
         event={mockEvent}
-        eventId="e1"
         updates={mockUpdates}
+        changes={mockChanges}
         services={mockServices}
         groups={mockGroups}
       />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Identified')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Identified')).toBeInTheDocument();
   });
 
-  it('renders service changes', async () => {
-    vi.mocked(apiClient.GET).mockResolvedValueOnce({
-      data: { data: mockChanges },
-      error: null,
-    } as never);
-
+  it('renders service changes', () => {
     renderWithProviders(
       <EventUnifiedTimeline
         event={mockEvent}
-        eventId="e1"
         updates={[]}
+        changes={mockChanges}
         services={mockServices}
         groups={mockGroups}
       />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Added service')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Added service')).toBeInTheDocument();
     expect(screen.getByText('"API Service"')).toBeInTheDocument();
     expect(screen.getByText('Removed group')).toBeInTheDocument();
     expect(screen.getByText('"Core Services"')).toBeInTheDocument();
   });
 
-  it('shows reason for service changes when provided', async () => {
-    vi.mocked(apiClient.GET).mockResolvedValueOnce({
-      data: { data: mockChanges },
-      error: null,
-    } as never);
-
+  it('shows reason for service changes when provided', () => {
     renderWithProviders(
       <EventUnifiedTimeline
         event={mockEvent}
-        eventId="e1"
         updates={[]}
+        changes={mockChanges}
         services={mockServices}
         groups={mockGroups}
       />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('No longer affected')).toBeInTheDocument();
-    });
+    expect(screen.getByText('No longer affected')).toBeInTheDocument();
   });
 
-  it('sorts entries by date (newest first)', async () => {
-    vi.mocked(apiClient.GET).mockResolvedValueOnce({
-      data: { data: mockChanges },
-      error: null,
-    } as never);
-
+  it('sorts entries by date (newest first)', () => {
     const { container } = renderWithProviders(
       <EventUnifiedTimeline
         event={mockEvent}
-        eventId="e1"
         updates={mockUpdates}
+        changes={mockChanges}
         services={mockServices}
         groups={mockGroups}
       />
     );
-
-    // Wait for changes to load
-    await waitFor(() => {
-      expect(screen.getByText('Removed group')).toBeInTheDocument();
-    });
 
     // Get all timeline entry headers (font-medium spans) in order
     const headers = container.querySelectorAll('.font-medium');
@@ -241,16 +194,14 @@ describe('EventUnifiedTimeline', () => {
   });
 
   it('renders loading state', () => {
-    // Don't resolve the mock - it will stay loading
-    vi.mocked(apiClient.GET).mockImplementation(() => new Promise(() => {}));
-
     const { container } = renderWithProviders(
       <EventUnifiedTimeline
         event={mockEvent}
-        eventId="e1"
         updates={mockUpdates}
+        changes={[]}
         services={mockServices}
         groups={mockGroups}
+        isLoading={true}
       />
     );
 
@@ -259,53 +210,40 @@ describe('EventUnifiedTimeline', () => {
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
-  it('renders error state', async () => {
-    vi.mocked(apiClient.GET).mockResolvedValueOnce({
-      data: null,
-      error: { message: 'Server error' },
-    } as never);
-
+  it('renders error state', () => {
     renderWithProviders(
       <EventUnifiedTimeline
         event={mockEvent}
-        eventId="e1"
         updates={mockUpdates}
+        changes={[]}
         services={mockServices}
         groups={mockGroups}
+        error={new Error('Server error')}
       />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Failed to load timeline')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Failed to load timeline')).toBeInTheDocument();
   });
 
-  it('renders event created block', async () => {
-    vi.mocked(apiClient.GET).mockResolvedValueOnce({
-      data: { data: [] },
-      error: null,
-    } as never);
-
+  it('renders event created block', () => {
     renderWithProviders(
       <EventUnifiedTimeline
         event={mockEvent}
-        eventId="e1"
         updates={[]}
+        changes={[]}
         services={mockServices}
         groups={mockGroups}
       />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Event created')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Event created')).toBeInTheDocument();
     expect(screen.getByText(/Incident: Database connectivity issues/)).toBeInTheDocument();
     expect(screen.getByText(/Severity: Major/)).toBeInTheDocument();
     expect(screen.getByText(/Initial status: Investigating/)).toBeInTheDocument();
     expect(screen.getByText('We are investigating reports of slow database queries.')).toBeInTheDocument();
   });
 
-  it('groups simultaneous service changes', async () => {
+  it('groups simultaneous service changes', () => {
     const simultaneousChanges = [
       {
         id: 'c1',
@@ -325,25 +263,18 @@ describe('EventUnifiedTimeline', () => {
       },
     ];
 
-    vi.mocked(apiClient.GET).mockResolvedValueOnce({
-      data: { data: simultaneousChanges },
-      error: null,
-    } as never);
-
     renderWithProviders(
       <EventUnifiedTimeline
         event={mockEvent}
-        eventId="e1"
         updates={[]}
+        changes={simultaneousChanges}
         services={mockServices}
         groups={mockGroups}
       />
     );
 
     // Should show plural "services" and list items
-    await waitFor(() => {
-      expect(screen.getByText('Added services')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Added services')).toBeInTheDocument();
     expect(screen.getByText('API Service')).toBeInTheDocument();
     expect(screen.getByText('Web App')).toBeInTheDocument();
   });
