@@ -1,6 +1,5 @@
 'use client';
 
-import { useEventServiceChanges } from '@/hooks/use-events';
 import { eventStatusConfig, severityConfig, formatEventDate } from '@/lib/status-utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, Plus, Minus } from 'lucide-react';
@@ -25,10 +24,12 @@ type TimelineEntry =
 
 interface EventUnifiedTimelineProps {
   event: Event;
-  eventId: string;
   updates: EventUpdate[];
+  changes: EventServiceChange[];
   services: Service[];
   groups: ServiceGroup[];
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
 /**
@@ -82,13 +83,13 @@ function groupServiceChanges(
 
 export function EventUnifiedTimeline({
   event,
-  eventId,
   updates,
+  changes,
   services,
   groups,
+  isLoading = false,
+  error = null,
 }: EventUnifiedTimelineProps) {
-  const { data: changes, isLoading, error } = useEventServiceChanges(eventId);
-
   const serviceMap = new Map(services.map((s) => [s.id, s.name]));
   const groupMap = new Map(groups.map((g) => [g.id, g.name]));
 
@@ -111,7 +112,7 @@ export function EventUnifiedTimeline({
     );
   }
 
-  const groupedChanges = groupServiceChanges(changes ?? [], serviceMap, groupMap);
+  const groupedChanges = groupServiceChanges(changes, serviceMap, groupMap);
 
   // Merge and sort entries (newest first)
   const entries: TimelineEntry[] = [

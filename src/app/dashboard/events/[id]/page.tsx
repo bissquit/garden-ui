@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useEvent, useEventUpdates } from '@/hooks/use-events';
+import { useEvent, useEventUpdates, useEventServiceChanges } from '@/hooks/use-events';
 import { useAddEventUpdate, useDeleteEvent } from '@/hooks/use-events-mutations';
 import { useAuth } from '@/hooks/use-auth';
 import { useServices, useGroups } from '@/hooks/use-public-status';
@@ -28,6 +28,7 @@ export default function EventDetailsPage() {
 
   const { data: event, isLoading: eventLoading, isError: eventError } = useEvent(eventId);
   const { data: updates } = useEventUpdates(eventId);
+  const { data: changes, isLoading: changesLoading, error: changesError } = useEventServiceChanges(eventId);
   const { data: services } = useServices();
   const { data: groups } = useGroups();
 
@@ -145,10 +146,12 @@ export default function EventDetailsPage() {
         <h2 className="text-lg font-semibold mb-4">Timeline</h2>
         <EventUnifiedTimeline
           event={event}
-          eventId={eventId}
           updates={updates ?? []}
+          changes={changes ?? []}
           services={services ?? []}
           groups={groups ?? []}
+          isLoading={changesLoading}
+          error={changesError}
         />
       </div>
 

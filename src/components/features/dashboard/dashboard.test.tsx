@@ -6,7 +6,7 @@ import { setupServer } from 'msw/node';
 import { ServicesTable } from './services-table';
 import { GroupsTable } from './groups-table';
 import { EventsTable } from './events-table';
-import { EventDetailsCard } from './event-details-card';
+import { EventDetailsCard } from '../events';
 import { EmptyState } from './empty-state';
 import { Server } from 'lucide-react';
 

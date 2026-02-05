@@ -1,7 +1,9 @@
 'use client';
 
-import { AlertTriangle, Wrench, Clock } from 'lucide-react';
+import Link from 'next/link';
+import { AlertTriangle, Wrench, Clock, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   severityConfig,
   eventStatusConfig,
@@ -79,6 +81,18 @@ export function EventCard({ event, showDetails = true }: EventCardProps) {
           {event.scheduled_end_at && (
             <> — {formatEventDate(event.scheduled_end_at)}</>
           )}
+        </div>
+      )}
+
+      {/* View details link */}
+      {showDetails && (
+        <div className="mt-3 pt-3 border-t border-current/10">
+          <Button variant="ghost" size="sm" className="p-0 h-auto" asChild>
+            <Link href={`/events/${event.id}`}>
+              View details
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Link>
+          </Button>
         </div>
       )}
     </div>

@@ -180,6 +180,115 @@ test.describe('Public Status Page', () => {
   });
 });
 
+test.describe('Public Event Details Page', () => {
+  test('should navigate to event details via "View details" link', async ({ page }) => {
+    await page.goto('/');
+
+    // Wait for data to load
+    await expect(page.locator('.animate-spin')).not.toBeVisible({ timeout: 10000 });
+
+    // Find "View details" link - only visible if there are active events
+    const viewDetailsLink = page.getByRole('link', { name: /view details/i }).first();
+
+    if (await viewDetailsLink.isVisible()) {
+      await viewDetailsLink.click();
+
+      // Should navigate to /events/[id]
+      await expect(page).toHaveURL(/\/events\/[a-f0-9-]+/);
+
+      // Event details should be visible
+      await expect(page.getByText(/description/i)).toBeVisible();
+    }
+  });
+
+  test('should display event details page without authentication', async ({ page }) => {
+    // First, get an event ID from the status page
+    await page.goto('/');
+    await expect(page.locator('.animate-spin')).not.toBeVisible({ timeout: 10000 });
+
+    const viewDetailsLink = page.getByRole('link', { name: /view details/i }).first();
+
+    if (await viewDetailsLink.isVisible()) {
+      const href = await viewDetailsLink.getAttribute('href');
+      const eventId = href?.split('/events/')[1];
+
+      if (eventId) {
+        // Navigate directly to event page
+        await page.goto(`/events/${eventId}`);
+        await expect(page).toHaveURL(`/events/${eventId}`);
+
+        // Event card should be visible
+        await expect(page.getByText(/description/i)).toBeVisible();
+
+        // Timeline section should be visible
+        await expect(page.getByRole('heading', { name: /timeline/i })).toBeVisible();
+
+        // Back button should be visible
+        await expect(page.getByRole('link', { name: /back to status/i })).toBeVisible();
+      }
+    }
+  });
+
+  test('should display timeline on event details page', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('.animate-spin')).not.toBeVisible({ timeout: 10000 });
+
+    const viewDetailsLink = page.getByRole('link', { name: /view details/i }).first();
+
+    if (await viewDetailsLink.isVisible()) {
+      await viewDetailsLink.click();
+      await expect(page).toHaveURL(/\/events\/[a-f0-9-]+/);
+
+      // Timeline heading
+      await expect(page.getByRole('heading', { name: /timeline/i })).toBeVisible();
+
+      // Event created block should always be present
+      await expect(page.getByText(/event created/i)).toBeVisible();
+    }
+  });
+
+  test('should navigate back to status page', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('.animate-spin')).not.toBeVisible({ timeout: 10000 });
+
+    const viewDetailsLink = page.getByRole('link', { name: /view details/i }).first();
+
+    if (await viewDetailsLink.isVisible()) {
+      await viewDetailsLink.click();
+      await expect(page).toHaveURL(/\/events\/[a-f0-9-]+/);
+
+      // Click back button
+      await page.getByRole('link', { name: /back to status/i }).click();
+      await expect(page).toHaveURL('/');
+    }
+  });
+
+  test('should show "Event not found" for invalid ID', async ({ page }) => {
+    await page.goto('/events/non-existent-event-id');
+
+    // Should show not found message
+    await expect(page.getByText(/event not found/i)).toBeVisible();
+
+    // Back button should still work
+    await expect(page.getByRole('link', { name: /back to status/i })).toBeVisible();
+  });
+
+  test('should not show Edit button for unauthenticated users', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('.animate-spin')).not.toBeVisible({ timeout: 10000 });
+
+    const viewDetailsLink = page.getByRole('link', { name: /view details/i }).first();
+
+    if (await viewDetailsLink.isVisible()) {
+      await viewDetailsLink.click();
+      await expect(page).toHaveURL(/\/events\/[a-f0-9-]+/);
+
+      // Edit button should NOT be visible for unauthenticated users
+      await expect(page.getByRole('link', { name: /edit/i })).not.toBeVisible();
+    }
+  });
+});
+
 test.describe('History Page', () => {
   test('should display history page without authentication', async ({ page }) => {
     await page.goto('/history');
