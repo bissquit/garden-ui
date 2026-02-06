@@ -21,8 +21,8 @@ export function useCreateService() {
       }
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['services'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['services'] });
     },
   });
 }
@@ -44,8 +44,8 @@ export function useUpdateService() {
       }
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['services'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['services'] });
     },
   });
 }
@@ -65,8 +65,8 @@ export function useDeleteService() {
         throw new Error(error.error?.message || 'Failed to delete service');
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['services'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['services'] });
     },
   });
 }
@@ -82,8 +82,8 @@ export function useRestoreService() {
       if (error) throw new Error(error.error?.message || 'Failed to restore service');
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['services'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['services'] });
     },
   });
 }

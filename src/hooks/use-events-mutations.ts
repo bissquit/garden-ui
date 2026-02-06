@@ -18,9 +18,11 @@ export function useCreateEvent() {
       if (error) throw new Error(error.error?.message || 'Failed to create event');
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['public-status'] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['events'] }),
+        queryClient.refetchQueries({ queryKey: ['public-status'] }),
+      ]);
     },
   });
 }
@@ -37,11 +39,13 @@ export function useAddEventUpdate() {
       if (error) throw new Error(error.error?.message || 'Failed to add update');
       return result;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['events', variables.eventId] });
-      queryClient.invalidateQueries({ queryKey: ['events', variables.eventId, 'updates'] });
-      queryClient.invalidateQueries({ queryKey: ['public-status'] });
+    onSuccess: async (_, variables) => {
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['events'] }),
+        queryClient.refetchQueries({ queryKey: ['events', variables.eventId] }),
+        queryClient.refetchQueries({ queryKey: ['events', variables.eventId, 'updates'] }),
+        queryClient.refetchQueries({ queryKey: ['public-status'] }),
+      ]);
     },
   });
 }
@@ -56,9 +60,11 @@ export function useDeleteEvent() {
       });
       if (error) throw new Error(error.error?.message || 'Failed to delete event');
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['public-status'] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['events'] }),
+        queryClient.refetchQueries({ queryKey: ['public-status'] }),
+      ]);
     },
   });
 }
@@ -84,11 +90,14 @@ export function useAddServicesToEvent() {
       if (error) throw new Error(error.error?.message || 'Failed to add services');
       return result;
     },
-    onSuccess: (_, { eventId }) => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['event', eventId] });
-      queryClient.invalidateQueries({ queryKey: ['event-changes', eventId] });
-      queryClient.invalidateQueries({ queryKey: ['public-status'] });
+    onSuccess: async (_, { eventId }) => {
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['events'] }),
+        queryClient.refetchQueries({ queryKey: ['events', eventId] }),
+        queryClient.refetchQueries({ queryKey: ['events', eventId, 'updates'] }),
+        queryClient.refetchQueries({ queryKey: ['event-changes', eventId] }),
+        queryClient.refetchQueries({ queryKey: ['public-status'] }),
+      ]);
     },
   });
 }
@@ -114,11 +123,14 @@ export function useRemoveServicesFromEvent() {
       if (error) throw new Error(error.error?.message || 'Failed to remove services');
       return result;
     },
-    onSuccess: (_, { eventId }) => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['event', eventId] });
-      queryClient.invalidateQueries({ queryKey: ['event-changes', eventId] });
-      queryClient.invalidateQueries({ queryKey: ['public-status'] });
+    onSuccess: async (_, { eventId }) => {
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['events'] }),
+        queryClient.refetchQueries({ queryKey: ['events', eventId] }),
+        queryClient.refetchQueries({ queryKey: ['events', eventId, 'updates'] }),
+        queryClient.refetchQueries({ queryKey: ['event-changes', eventId] }),
+        queryClient.refetchQueries({ queryKey: ['public-status'] }),
+      ]);
     },
   });
 }

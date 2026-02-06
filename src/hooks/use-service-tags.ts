@@ -39,9 +39,11 @@ export function useUpdateServiceTags() {
       if (error) throw new Error(error.error?.message || 'Failed to update service tags');
       return data;
     },
-    onSuccess: (_, { slug }) => {
-      queryClient.invalidateQueries({ queryKey: ['service-tags', slug] });
-      queryClient.invalidateQueries({ queryKey: ['services'] });
+    onSuccess: async (_, { slug }) => {
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['service-tags', slug] }),
+        queryClient.refetchQueries({ queryKey: ['services'] }),
+      ]);
     },
   });
 }

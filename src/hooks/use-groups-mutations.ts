@@ -21,8 +21,8 @@ export function useCreateGroup() {
       }
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['groups'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['groups'] });
     },
   });
 }
@@ -44,8 +44,8 @@ export function useUpdateGroup() {
       }
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['groups'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['groups'] });
     },
   });
 }
@@ -65,8 +65,8 @@ export function useDeleteGroup() {
         throw new Error(error.error?.message || 'Failed to delete group');
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['groups'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['groups'] });
     },
   });
 }
@@ -82,8 +82,8 @@ export function useRestoreGroup() {
       if (error) throw new Error(error.error?.message || 'Failed to restore group');
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['groups'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['groups'] });
     },
   });
 }
