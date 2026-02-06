@@ -90,11 +90,11 @@ describe('useDeleteGroup', () => {
     });
   });
 
-  it('should handle 409 conflict error (active services)', async () => {
+  it('should handle 409 conflict error with backend message', async () => {
     const { apiClient } = await import('@/api/client');
     vi.mocked(apiClient.DELETE).mockResolvedValue({
       data: undefined,
-      error: { error: { message: 'Conflict' } },
+      error: { error: { message: 'cannot archive group: has active events' } },
       response: { status: 409 } as Response,
     });
 
@@ -108,7 +108,7 @@ describe('useDeleteGroup', () => {
       expect(result.current.isError).toBe(true);
     });
 
-    expect(result.current.error?.message).toBe('Cannot archive: group has active services');
+    expect(result.current.error?.message).toBe('cannot archive group: has active events');
   });
 });
 

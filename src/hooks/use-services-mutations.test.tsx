@@ -113,11 +113,11 @@ describe('useDeleteService', () => {
     });
   });
 
-  it('should handle 409 conflict error (active events)', async () => {
+  it('should handle 409 conflict error with backend message', async () => {
     const { apiClient } = await import('@/api/client');
     vi.mocked(apiClient.DELETE).mockResolvedValue({
       data: undefined,
-      error: { error: { message: 'Conflict' } },
+      error: { error: { message: 'cannot archive service: has active events' } },
       response: { status: 409 } as Response,
     });
 
@@ -131,7 +131,7 @@ describe('useDeleteService', () => {
       expect(result.current.isError).toBe(true);
     });
 
-    expect(result.current.error?.message).toBe('Cannot archive: service has active events');
+    expect(result.current.error?.message).toBe('cannot archive service: has active events');
   });
 });
 
