@@ -40,6 +40,19 @@ export function GroupForm({ group, onSubmit, isLoading }: GroupFormProps) {
     },
   });
 
+  // Auto-generate slug from name
+  const watchName = form.watch('name');
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const name = e.target.value;
+    form.setValue('name', name);
+
+    // Only auto-generate slug when creating (not editing) and only if user hasn't customized it
+    const currentSlug = form.getValues('slug');
+    if (!group && (!currentSlug || currentSlug === generateSlug(watchName))) {
+      form.setValue('slug', generateSlug(name));
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -50,7 +63,11 @@ export function GroupForm({ group, onSubmit, isLoading }: GroupFormProps) {
             <FormItem>
               <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Infrastructure" />
+                <Input
+                  {...field}
+                  onChange={handleNameChange}
+                  placeholder="Infrastructure"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -116,4 +133,11 @@ export function GroupForm({ group, onSubmit, isLoading }: GroupFormProps) {
       </form>
     </Form>
   );
+}
+
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }
