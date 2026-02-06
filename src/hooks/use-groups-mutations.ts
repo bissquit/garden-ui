@@ -59,10 +59,7 @@ export function useDeleteGroup() {
         params: { path: { slug } },
       });
       if (error) {
-        if (response.status === 409) {
-          throw new Error('Cannot archive: group has active services');
-        }
-        throw new Error(error.error?.message || 'Failed to delete group');
+        throw new Error(error.error?.message || 'Failed to archive group');
       }
     },
     onSuccess: async () => {

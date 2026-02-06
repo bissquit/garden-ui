@@ -59,10 +59,7 @@ export function useDeleteService() {
         params: { path: { slug } },
       });
       if (error) {
-        if (response.status === 409) {
-          throw new Error('Cannot archive: service has active events');
-        }
-        throw new Error(error.error?.message || 'Failed to delete service');
+        throw new Error(error.error?.message || 'Failed to archive service');
       }
     },
     onSuccess: async () => {

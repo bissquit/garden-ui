@@ -24,7 +24,7 @@ export default function ServicesPage() {
 
   const [showArchived, setShowArchived] = useState(false);
   const { data: services, isLoading: servicesLoading } = useServices({ includeArchived: showArchived });
-  const { data: groups, isLoading: groupsLoading } = useGroups();
+  const { data: groups, isLoading: groupsLoading } = useGroups({ includeArchived: true });
   const deleteMutation = useDeleteService();
   const restoreMutation = useRestoreService();
   const { toast } = useToast();
