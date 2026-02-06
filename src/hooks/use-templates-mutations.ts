@@ -15,8 +15,8 @@ export function useCreateTemplate() {
       if (error) throw new Error(error.error?.message || 'Failed to create template');
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['templates'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['templates'] });
     },
   });
 }
@@ -31,8 +31,8 @@ export function useDeleteTemplate() {
       });
       if (error) throw new Error(error.error?.message || 'Failed to delete template');
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['templates'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['templates'] });
     },
   });
 }

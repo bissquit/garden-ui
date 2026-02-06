@@ -15,8 +15,8 @@ export function useUpdateSubscription() {
       if (error) throw new Error(error.error?.message || 'Failed to update subscription');
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['subscription'] });
     },
   });
 }
@@ -29,8 +29,8 @@ export function useDeleteSubscription() {
       const { error } = await apiClient.DELETE('/api/v1/me/subscriptions');
       if (error) throw new Error(error.error?.message || 'Failed to delete subscription');
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['subscription'] });
     },
   });
 }

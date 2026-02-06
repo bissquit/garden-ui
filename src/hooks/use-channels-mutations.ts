@@ -16,8 +16,8 @@ export function useCreateChannel() {
       if (error) throw new Error(error.error?.message || 'Failed to create channel');
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['channels'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['channels'] });
     },
   });
 }
@@ -34,8 +34,8 @@ export function useUpdateChannel() {
       if (error) throw new Error(error.error?.message || 'Failed to update channel');
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['channels'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['channels'] });
     },
   });
 }
@@ -50,8 +50,8 @@ export function useDeleteChannel() {
       });
       if (error) throw new Error(error.error?.message || 'Failed to delete channel');
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['channels'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['channels'] });
     },
   });
 }
@@ -67,8 +67,8 @@ export function useVerifyChannel() {
       if (error) throw new Error(error.error?.message || 'Failed to verify channel');
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['channels'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['channels'] });
     },
   });
 }
