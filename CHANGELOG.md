@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.2.0](https://github.com/bissquit/garden-ui/compare/v1.1.0...v1.2.0) (2026-02-07)
+
+
+### Features
+
+* perform refactoring to show al r/o objects (backend api 1.5.0) ([a4a9c85](https://github.com/bissquit/garden-ui/commit/a4a9c85525d2dd8f643062815092bd377fe7b5fb))
+
+
+### Bug Fixes
+
+* add slug autocomplete for groups ([08dc1a8](https://github.com/bissquit/garden-ui/commit/08dc1a8e2cb5f83e56c50e2a8bb6a802ddc7270b))
+* handle error creating group/service with existed slug ([#28](https://github.com/bissquit/garden-ui/issues/28)) ([baadc4f](https://github.com/bissquit/garden-ui/commit/baadc4f3e74333e7d509dbc851a575dc9c43c7a9))
+* hide UI elements depending on user role ([#21](https://github.com/bissquit/garden-ui/issues/21)) ([6a5eda4](https://github.com/bissquit/garden-ui/commit/6a5eda4919fc1318cd6af17f588a8475770ee5ef))
+* include Change History into event Timeline ([#32](https://github.com/bissquit/garden-ui/issues/32)) ([ad09aab](https://github.com/bissquit/garden-ui/commit/ad09aabe5f3e87f86132fb372e5932bbddece733))
+* move service tags configuration to settings, remove gear button ([#31](https://github.com/bissquit/garden-ui/issues/31)) ([a06411d](https://github.com/bissquit/garden-ui/commit/a06411d24ca0c00090b492245a1bdbfe3588e5f5))
+* permit removing group with active services ([9369c39](https://github.com/bissquit/garden-ui/commit/9369c3997f38cc28c22c8b588189b23d46dbf4ec))
+* refactoring of user menu and settings ([#24](https://github.com/bissquit/garden-ui/issues/24)) ([1f86df5](https://github.com/bissquit/garden-ui/commit/1f86df583f32d13994048fced9079de6bf1cdc7e))
+* replace delete icon to archive icon for groups and services ([#30](https://github.com/bissquit/garden-ui/issues/30)) ([aa5feaa](https://github.com/bissquit/garden-ui/commit/aa5feaa0f0dc3bc096f6bf3a9edd9366cab5efa5))
+* use refetchQueries for immediate UI updates after mutations ([b111ecb](https://github.com/bissquit/garden-ui/commit/b111ecb61afedd2317b008cdd849ab4c6e64314e))
+
 ## [1.1.0](https://github.com/bissquit/garden-ui/compare/v1.0.0...v1.1.0) (2026-02-02)
 
 
