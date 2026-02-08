@@ -79,24 +79,25 @@ describe('createEventSchema', () => {
     }
   });
 
-  it('should accept valid group_ids', () => {
+  it('should accept valid affected_groups', () => {
     const eventWithGroups = {
       title: 'Test Incident',
       type: 'incident' as const,
       status: 'investigating' as const,
       severity: 'minor' as const,
       description: 'Test description',
-      group_ids: ['123e4567-e89b-12d3-a456-426614174000'],
+      affected_groups: [{ group_id: '123e4567-e89b-12d3-a456-426614174000', status: 'degraded' as const }],
     };
 
     const result = createEventSchema.safeParse(eventWithGroups);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.group_ids).toEqual(['123e4567-e89b-12d3-a456-426614174000']);
+      expect(result.data.affected_groups).toHaveLength(1);
+      expect(result.data.affected_groups![0].group_id).toBe('123e4567-e89b-12d3-a456-426614174000');
     }
   });
 
-  it('should default group_ids to empty array', () => {
+  it('should default affected_groups to empty array', () => {
     const eventWithoutGroups = {
       title: 'Test Incident',
       type: 'incident' as const,
@@ -108,26 +109,26 @@ describe('createEventSchema', () => {
     const result = createEventSchema.safeParse(eventWithoutGroups);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.group_ids).toEqual([]);
+      expect(result.data.affected_groups).toEqual([]);
     }
   });
 
-  it('should accept both service_ids and group_ids', () => {
+  it('should accept both affected_services and affected_groups', () => {
     const eventWithBoth = {
       title: 'Test Incident',
       type: 'incident' as const,
       status: 'investigating' as const,
       severity: 'minor' as const,
       description: 'Test description',
-      service_ids: ['123e4567-e89b-12d3-a456-426614174001'],
-      group_ids: ['123e4567-e89b-12d3-a456-426614174002'],
+      affected_services: [{ service_id: '123e4567-e89b-12d3-a456-426614174001', status: 'major_outage' as const }],
+      affected_groups: [{ group_id: '123e4567-e89b-12d3-a456-426614174002', status: 'degraded' as const }],
     };
 
     const result = createEventSchema.safeParse(eventWithBoth);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.service_ids).toEqual(['123e4567-e89b-12d3-a456-426614174001']);
-      expect(result.data.group_ids).toEqual(['123e4567-e89b-12d3-a456-426614174002']);
+      expect(result.data.affected_services).toHaveLength(1);
+      expect(result.data.affected_groups).toHaveLength(1);
     }
   });
 });

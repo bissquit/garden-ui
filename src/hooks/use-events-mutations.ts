@@ -20,6 +20,7 @@ export function useCreateEvent() {
       await Promise.all([
         queryClient.refetchQueries({ queryKey: ['events'] }),
         queryClient.refetchQueries({ queryKey: ['public-status'] }),
+        queryClient.refetchQueries({ queryKey: ['services'] }), // Service statuses may have changed
       ]);
     },
   });

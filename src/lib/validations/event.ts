@@ -42,12 +42,9 @@ export const createEventSchema = z
     scheduled_end_at: z.string().datetime().optional(),
     notify_subscribers: z.boolean().default(false),
     template_id: z.string().uuid().optional(),
-    // New: affected services and groups with statuses
-    affected_services: z.array(affectedServiceSchema).optional(),
-    affected_groups: z.array(affectedGroupSchema).optional(),
-    // Legacy fields for backward compatibility with existing form
-    service_ids: z.array(z.string().uuid()).optional().default([]),
-    group_ids: z.array(z.string().uuid()).optional().default([]),
+    // Affected services and groups with statuses
+    affected_services: z.array(affectedServiceSchema).optional().default([]),
+    affected_groups: z.array(affectedGroupSchema).optional().default([]),
   })
   .refine(
     (data) => {

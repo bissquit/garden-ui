@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -29,10 +29,13 @@ import {
   type CreateEventFormData,
 } from '@/lib/validations/event';
 import { eventStatusConfig, severityConfig } from '@/lib/status-utils';
+import { ServiceStatusSelector } from './service-status-selector';
+import { GroupStatusSelector } from './group-status-selector';
 import type { components } from '@/api/types.generated';
 
 type Service = components['schemas']['Service'];
 type ServiceGroup = components['schemas']['ServiceGroup'];
+type ServiceStatus = components['schemas']['ServiceStatus'];
 
 interface EventFormProps {
   services: Service[];
@@ -44,6 +47,17 @@ interface EventFormProps {
 const incidentStatuses = ['investigating', 'identified', 'monitoring', 'resolved'];
 const maintenanceStatuses = ['scheduled', 'in_progress', 'completed'];
 
+const DEFAULT_SERVICE_STATUS: ServiceStatus = 'degraded';
+
+// Helper to convert Map to array for form value
+function mapToAffectedServices(map: Map<string, ServiceStatus>) {
+  return Array.from(map.entries()).map(([service_id, status]) => ({ service_id, status }));
+}
+
+function mapToAffectedGroups(map: Map<string, ServiceStatus>) {
+  return Array.from(map.entries()).map(([group_id, status]) => ({ group_id, status }));
+}
+
 export function EventForm({ services, groups, onSubmit, isLoading }: EventFormProps) {
   const form = useForm<CreateEventFormData>({
     resolver: zodResolver(createEventSchema),
@@ -54,33 +68,31 @@ export function EventForm({ services, groups, onSubmit, isLoading }: EventFormPr
       severity: 'minor',
       description: '',
       notify_subscribers: false,
-      service_ids: [],
-      group_ids: [],
+      affected_services: [],
+      affected_groups: [],
     },
   });
 
+  // Local state for service selections: Map<service_id, status>
+  const [serviceSelections, setServiceSelections] = useState<Map<string, ServiceStatus>>(
+    new Map()
+  );
+
+  // Local state for group selections: Map<group_id, status>
+  const [groupSelections, setGroupSelections] = useState<Map<string, ServiceStatus>>(
+    new Map()
+  );
+
   const watchType = form.watch('type');
+  const watchStatus = form.watch('status');
   const statuses = watchType === 'incident' ? incidentStatuses : maintenanceStatuses;
-
-  // Watch selected services and groups for preview
-  const watchedServiceIds = form.watch('service_ids');
-  const watchedGroupIds = form.watch('group_ids');
-
-  const selectedServiceIds = useMemo(
-    () => watchedServiceIds ?? [],
-    [watchedServiceIds]
-  );
-  const selectedGroupIds = useMemo(
-    () => watchedGroupIds ?? [],
-    [watchedGroupIds]
-  );
 
   // Calculate total affected services
   const totalAffectedServices = useMemo(() => {
-    const serviceSet = new Set(selectedServiceIds);
+    const serviceSet = new Set(Array.from(serviceSelections.keys()));
 
     // Add services from selected groups
-    for (const groupId of selectedGroupIds) {
+    for (const groupId of Array.from(groupSelections.keys())) {
       for (const service of services) {
         if (service.group_ids?.includes(groupId)) {
           serviceSet.add(service.id);
@@ -89,12 +101,58 @@ export function EventForm({ services, groups, onSubmit, isLoading }: EventFormPr
     }
 
     return serviceSet.size;
-  }, [selectedServiceIds, selectedGroupIds, services]);
+  }, [serviceSelections, groupSelections, services]);
 
   // Get service count in a group
-  const getServicesCountInGroup = (groupId: string) => {
+  const getServicesCountInGroup = useCallback((groupId: string) => {
     return services.filter(s => s.group_ids?.includes(groupId)).length;
-  };
+  }, [services]);
+
+  // Handlers for service selection - sync form immediately
+  const handleServiceToggle = useCallback((serviceId: string, selected: boolean) => {
+    setServiceSelections(prev => {
+      const next = new Map(prev);
+      if (selected) {
+        next.set(serviceId, DEFAULT_SERVICE_STATUS);
+      } else {
+        next.delete(serviceId);
+      }
+      form.setValue('affected_services', mapToAffectedServices(next));
+      return next;
+    });
+  }, [form]);
+
+  const handleServiceStatusChange = useCallback((serviceId: string, status: ServiceStatus) => {
+    setServiceSelections(prev => {
+      const next = new Map(prev);
+      next.set(serviceId, status);
+      form.setValue('affected_services', mapToAffectedServices(next));
+      return next;
+    });
+  }, [form]);
+
+  // Handlers for group selection - sync form immediately
+  const handleGroupToggle = useCallback((groupId: string, selected: boolean) => {
+    setGroupSelections(prev => {
+      const next = new Map(prev);
+      if (selected) {
+        next.set(groupId, DEFAULT_SERVICE_STATUS);
+      } else {
+        next.delete(groupId);
+      }
+      form.setValue('affected_groups', mapToAffectedGroups(next));
+      return next;
+    });
+  }, [form]);
+
+  const handleGroupStatusChange = useCallback((groupId: string, status: ServiceStatus) => {
+    setGroupSelections(prev => {
+      const next = new Map(prev);
+      next.set(groupId, status);
+      form.setValue('affected_groups', mapToAffectedGroups(next));
+      return next;
+    });
+  }, [form]);
 
   // Reset status when type changes
   const handleTypeChange = (type: 'incident' | 'maintenance') => {
@@ -251,101 +309,79 @@ export function EventForm({ services, groups, onSubmit, isLoading }: EventFormPr
           </>
         )}
 
-        <FormField
-          control={form.control}
-          name="group_ids"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Affected Groups</FormLabel>
-              <FormDescription>
-                Select groups — all their services will be added automatically
-              </FormDescription>
-              <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
-                {groups.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No groups available</p>
-                ) : (
-                  groups.map((group) => (
-                    <div key={group.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`event-group-${group.id}`}
-                        data-testid="event-group-checkbox"
-                        checked={field.value?.includes(group.id)}
-                        onCheckedChange={(checked) => {
-                          const current = field.value ?? [];
-                          if (checked) {
-                            field.onChange([...current, group.id]);
-                          } else {
-                            field.onChange(current.filter((id) => id !== group.id));
-                          }
-                        }}
-                      />
-                      <label
-                        htmlFor={`event-group-${group.id}`}
-                        className="text-sm font-medium leading-none cursor-pointer"
-                      >
-                        {group.name}
-                        <span className="text-muted-foreground ml-1">
-                          ({getServicesCountInGroup(group.id)} services)
-                        </span>
-                      </label>
-                    </div>
-                  ))
-                )}
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Resolved at for past incidents */}
+        {watchType === 'incident' && watchStatus === 'resolved' && (
+          <FormField
+            control={form.control}
+            name="resolved_at"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Resolved At</FormLabel>
+                <FormDescription>
+                  For past incidents that are already resolved
+                </FormDescription>
+                <FormControl>
+                  <Input type="datetime-local" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
-        <FormField
-          control={form.control}
-          name="service_ids"
-          render={() => (
-            <FormItem>
-              <FormLabel>Additional Services</FormLabel>
-              <FormDescription>
-                Select individual services (in addition to groups)
-              </FormDescription>
-              <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
-                {services.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No services available</p>
-                ) : (
-                  services.map((service) => (
-                    <FormField
-                      key={service.id}
-                      control={form.control}
-                      name="service_ids"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value?.includes(service.id)}
-                              onCheckedChange={(checked) => {
-                                const current = field.value ?? [];
-                                if (checked) {
-                                  field.onChange([...current, service.id]);
-                                } else {
-                                  field.onChange(current.filter((id) => id !== service.id));
-                                }
-                              }}
-                            />
-                          </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">
-                            {service.name}
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                  ))
-                )}
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Affected Groups */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium leading-none">Affected Groups</label>
+          <p className="text-sm text-muted-foreground">
+            Select groups — all their services will get the selected status
+          </p>
+          <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+            {groups.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No groups available</p>
+            ) : (
+              groups.map((group) => (
+                <GroupStatusSelector
+                  key={group.id}
+                  groupId={group.id}
+                  groupName={group.name}
+                  serviceCount={getServicesCountInGroup(group.id)}
+                  selected={groupSelections.has(group.id)}
+                  status={groupSelections.get(group.id) ?? DEFAULT_SERVICE_STATUS}
+                  onSelectionChange={(selected) => handleGroupToggle(group.id, selected)}
+                  onStatusChange={(status) => handleGroupStatusChange(group.id, status)}
+                />
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Affected Services */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium leading-none">Additional Services</label>
+          <p className="text-sm text-muted-foreground">
+            Select individual services with specific statuses
+          </p>
+          <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+            {services.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No services available</p>
+            ) : (
+              services.map((service) => (
+                <ServiceStatusSelector
+                  key={service.id}
+                  serviceId={service.id}
+                  serviceName={service.name}
+                  selected={serviceSelections.has(service.id)}
+                  status={serviceSelections.get(service.id) ?? DEFAULT_SERVICE_STATUS}
+                  onSelectionChange={(selected) => handleServiceToggle(service.id, selected)}
+                  onStatusChange={(status) => handleServiceStatusChange(service.id, status)}
+                />
+              ))
+            )}
+          </div>
+        </div>
 
         {/* Preview of total affected services */}
-        {(selectedServiceIds.length > 0 || selectedGroupIds.length > 0) && (
+        {(serviceSelections.size > 0 || groupSelections.size > 0) && (
           <div className="flex items-center gap-2 text-sm bg-muted p-3 rounded-md">
             <Info className="h-4 w-4 text-muted-foreground" />
             <span>

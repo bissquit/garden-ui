@@ -58,6 +58,14 @@ export const serviceStatusConfig: Record<
   },
 };
 
+// Statuses available for events (without operational — events should degrade, not improve)
+export const eventServiceStatuses: ServiceStatus[] = [
+  'degraded',
+  'partial_outage',
+  'major_outage',
+  'maintenance',
+];
+
 // Severity config
 export const severityConfig: Record<
   Severity,

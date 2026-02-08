@@ -15,10 +15,6 @@ import { useServices, useGroups } from '@/hooks/use-public-status';
 import { useToast } from '@/hooks/use-toast';
 import { Plus } from 'lucide-react';
 import type { CreateEventFormData } from '@/lib/validations/event';
-import {
-  convertLegacyToAffectedServices,
-  convertLegacyToAffectedGroups,
-} from '@/lib/adapters/event-adapter';
 
 interface EventFormDialogProps {
   trigger?: React.ReactNode;
@@ -34,10 +30,7 @@ export function EventFormDialog({ trigger }: EventFormDialogProps) {
 
   const handleSubmit = async (data: CreateEventFormData) => {
     try {
-      // Determine default status based on event type
-      const defaultStatus = data.type === 'maintenance' ? 'maintenance' : 'degraded';
-
-      // Transform legacy service_ids/group_ids to new format
+      // Form now returns affected_services and affected_groups directly
       const requestData = {
         title: data.title,
         type: data.type,
@@ -50,13 +43,8 @@ export function EventFormDialog({ trigger }: EventFormDialogProps) {
         scheduled_end_at: data.scheduled_end_at,
         notify_subscribers: data.notify_subscribers,
         template_id: data.template_id,
-        // Convert legacy arrays to new format
-        affected_services: data.service_ids?.length
-          ? convertLegacyToAffectedServices(data.service_ids, defaultStatus)
-          : undefined,
-        affected_groups: data.group_ids?.length
-          ? convertLegacyToAffectedGroups(data.group_ids, defaultStatus)
-          : undefined,
+        affected_services: data.affected_services?.length ? data.affected_services : undefined,
+        affected_groups: data.affected_groups?.length ? data.affected_groups : undefined,
       };
 
       await createMutation.mutateAsync(requestData);
