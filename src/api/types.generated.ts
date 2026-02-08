@@ -204,6 +204,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/services/{slug}/status-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get service status change history
+         * @description Returns the audit log of status changes for a service.
+         *     Requires operator or admin role.
+         *
+         *     Each entry shows:
+         *     - What the status changed from/to
+         *     - Source (manual, event, webhook)
+         *     - Associated event (if applicable)
+         *     - Who made the change
+         *     - When it happened
+         */
+        get: operations["getServiceStatusLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/services/{slug}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get events for a service
+         * @description Returns events (incidents and maintenance) associated with a service.
+         *     This is a public endpoint, no authentication required.
+         *
+         *     Events are sorted with active events first, then by creation date descending.
+         */
+        get: operations["getServiceEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/services/{slug}/tags": {
         parameters: {
             query?: never;
@@ -253,7 +304,7 @@ export interface paths {
         post?: never;
         /**
          * Archive a group (soft delete)
-         * @description Archives the group. Returns 409 if group has services with active events.
+         * @description Archives the group. Returns 409 if group has active events or has non-archived services assigned.
          */
         delete: operations["deleteGroup"];
         options?: never;
@@ -286,12 +337,24 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List events */
+        /**
+         * List events
+         * @description Public endpoint, no authentication required
+         */
         get: operations["listEvents"];
         put?: never;
         /**
          * Create an event
-         * @description Creates an incident or maintenance. Groups in group_ids are expanded to services.
+         * @description Creates an incident or maintenance event.
+         *
+         *     **Service status assignment:**
+         *     - Use `affected_services` to specify individual services with their statuses
+         *     - Use `affected_groups` to assign the same status to all services in a group
+         *     - If a service appears in both a group and `affected_services`, the explicit status takes precedence
+         *
+         *     **Creating past events:**
+         *     - Set `started_at` and `resolved_at` to dates in the past
+         *     - Event will be created as already resolved
          */
         post: operations["createEvent"];
         delete?: never;
@@ -307,13 +370,32 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get an event */
+        /**
+         * Get an event
+         * @description Public endpoint, no authentication required
+         */
         get: operations["getEvent"];
         put?: never;
         post?: never;
         /**
          * Delete an event
-         * @description Requires admin role
+         * @description Deletes an event and all associated data.
+         *
+         *     **Requirements:**
+         *     - Requires admin role
+         *     - Event must be resolved/completed (active events cannot be deleted)
+         *
+         *     **What gets deleted:**
+         *     - The event itself
+         *     - All event updates
+         *     - Service associations (event_services)
+         *     - Group associations (event_groups)
+         *     - Service change audit trail (event_service_changes)
+         *     - Status log entries referencing this event
+         *
+         *     **Note:** This is a destructive operation. The event and its history
+         *     will be permanently removed. Consider if you really need to delete
+         *     rather than just keeping the resolved event in history.
          */
         delete: operations["deleteEvent"];
         options?: never;
@@ -328,39 +410,31 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List event updates */
+        /**
+         * List event updates
+         * @description Public endpoint, no authentication required
+         */
         get: operations["listEventUpdates"];
         put?: never;
         /**
          * Add an update to an event
-         * @description Also updates the event status
+         * @description Adds a status update to an event and optionally modifies affected services.
+         *
+         *     **Service modifications:**
+         *     - `service_updates`: Change status of services already in the event
+         *     - `add_services`: Add new services with specified statuses
+         *     - `add_groups`: Add all services from groups with specified status
+         *     - `remove_service_ids`: Remove services from the event
+         *
+         *     **On event resolution:**
+         *     When status is `resolved` or `completed`, affected services' stored status
+         *     is recalculated. If a service has no other active events, it becomes `operational`.
+         *
+         *     **Cannot update resolved events:**
+         *     Returns 409 Conflict if the event is already resolved.
          */
         post: operations["addEventUpdate"];
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/events/{id}/services": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add services to an event
-         * @description Adds services and/or groups. Groups are expanded to services.
-         */
-        post: operations["addServicesToEvent"];
-        /**
-         * Remove services from an event
-         * @description Removes services only, not group associations.
-         */
-        delete: operations["removeServicesFromEvent"];
         options?: never;
         head?: never;
         patch?: never;
@@ -375,7 +449,7 @@ export interface paths {
         };
         /**
          * Get event service change history
-         * @description Returns chronological list of all service/group additions and removals.
+         * @description Public endpoint, no authentication required. Returns chronological list of all service/group additions and removals.
          */
         get: operations["getEventServiceChanges"];
         put?: never;
@@ -578,6 +652,11 @@ export interface components {
         Severity: "minor" | "major" | "critical";
         /** @enum {string} */
         ChangeAction: "added" | "removed";
+        /**
+         * @description Source of the status change
+         * @enum {string}
+         */
+        StatusLogSourceType: "manual" | "event" | "webhook";
         /** @enum {string} */
         ChannelType: "email" | "telegram";
         /** @enum {string} */
@@ -601,7 +680,12 @@ export interface components {
             name: string;
             slug: string;
             description?: string;
+            /** @description Stored status (set manually or by closed events) */
             status: components["schemas"]["ServiceStatus"];
+            /** @description Effective status (worst-case from active events, or stored if no active events) */
+            effective_status: components["schemas"]["ServiceStatus"];
+            /** @description Whether the service has any active (non-resolved) events */
+            has_active_events: boolean;
             group_ids: string[];
             order: number;
             /** Format: date-time */
@@ -617,6 +701,7 @@ export interface components {
             name: string;
             slug: string;
             description?: string;
+            service_ids: string[];
             order: number;
             /** Format: date-time */
             created_at: string;
@@ -761,6 +846,8 @@ export interface components {
             status: components["schemas"]["ServiceStatus"];
             group_ids?: string[];
             order?: number;
+            /** @description Reason for status change (recorded in audit log) */
+            reason?: string;
         };
         UpdateTagsRequest: {
             tags: {
@@ -779,15 +866,36 @@ export interface components {
             slug: string;
             description?: string;
             order?: number;
+            /** @description List of service IDs to assign to this group. If provided, replaces all existing service memberships. */
+            service_ids?: string[];
+        };
+        /** @description Service to associate with an event and its status */
+        AffectedService: {
+            /** Format: uuid */
+            service_id: string;
+            status: components["schemas"]["ServiceStatus"];
+        };
+        /** @description Group whose services will be associated with an event */
+        AffectedGroup: {
+            /** Format: uuid */
+            group_id: string;
+            /** @description Status to apply to ALL services in this group */
+            status: components["schemas"]["ServiceStatus"];
         };
         CreateEventRequest: {
             title: string;
             type: components["schemas"]["EventType"];
             status: components["schemas"]["EventStatus"];
+            /** @description Required for incidents */
             severity?: components["schemas"]["Severity"];
             description: string;
             /** Format: date-time */
             started_at?: string;
+            /**
+             * Format: date-time
+             * @description For creating past events (already resolved)
+             */
+            resolved_at?: string;
             /** Format: date-time */
             scheduled_start_at?: string;
             /** Format: date-time */
@@ -796,23 +904,26 @@ export interface components {
             notify_subscribers: boolean;
             /** Format: uuid */
             template_id?: string;
-            service_ids?: string[];
-            group_ids?: string[];
-        };
-        AddServicesRequest: {
-            service_ids?: string[];
-            group_ids?: string[];
-            reason?: string;
-        };
-        RemoveServicesRequest: {
-            service_ids: string[];
-            reason?: string;
+            /** @description Services to associate with this event */
+            affected_services?: components["schemas"]["AffectedService"][];
+            /** @description Groups whose services to associate with this event */
+            affected_groups?: components["schemas"]["AffectedGroup"][];
         };
         AddEventUpdateRequest: {
             status: components["schemas"]["EventStatus"];
             message: string;
             /** @default false */
             notify_subscribers: boolean;
+            /** @description Update statuses of services already in this event */
+            service_updates?: components["schemas"]["AffectedService"][];
+            /** @description Add new services to this event */
+            add_services?: components["schemas"]["AffectedService"][];
+            /** @description Add all services from these groups to this event */
+            add_groups?: components["schemas"]["AffectedGroup"][];
+            /** @description Remove services from this event */
+            remove_service_ids?: string[];
+            /** @description Reason for service changes (for audit log) */
+            reason?: string;
         };
         CreateTemplateRequest: {
             slug: string;
@@ -903,6 +1014,39 @@ export interface components {
                 tags?: {
                     [key: string]: string;
                 };
+            };
+        };
+        ServiceStatusLogEntry: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            service_id: string;
+            old_status?: components["schemas"]["ServiceStatus"] | null;
+            new_status: components["schemas"]["ServiceStatus"];
+            source_type: components["schemas"]["StatusLogSourceType"];
+            /** Format: uuid */
+            event_id?: string | null;
+            reason?: string;
+            /** Format: uuid */
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        ServiceStatusLogResponse: {
+            data?: {
+                entries?: components["schemas"]["ServiceStatusLogEntry"][];
+                total?: number;
+                limit?: number;
+                offset?: number;
+            };
+        };
+        ServiceEventsResponse: {
+            data?: {
+                events?: components["schemas"]["Event"][];
+                /** @description Total number of events matching the filter */
+                total?: number;
+                limit?: number;
+                offset?: number;
             };
         };
         PublicStatusResponse: {
@@ -1323,6 +1467,66 @@ export interface operations {
             409: components["responses"]["ConflictError"];
         };
     };
+    getServiceStatusLog: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                slug: components["parameters"]["ServiceSlug"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Status change history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceStatusLogResponse"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    getServiceEvents: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Filter by event status
+                 * @example active
+                 */
+                status?: "active" | "resolved";
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                slug: components["parameters"]["ServiceSlug"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Events for the service */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceEventsResponse"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
     getServiceTags: {
         parameters: {
             query?: never;
@@ -1550,8 +1754,6 @@ export interface operations {
                     "application/json": components["schemas"]["EventsResponse"];
                 };
             };
-            401: components["responses"]["UnauthorizedError"];
-            403: components["responses"]["ForbiddenError"];
         };
     };
     createEvent: {
@@ -1601,8 +1803,6 @@ export interface operations {
                     "application/json": components["schemas"]["EventResponse"];
                 };
             };
-            401: components["responses"]["UnauthorizedError"];
-            403: components["responses"]["ForbiddenError"];
             404: components["responses"]["NotFoundError"];
         };
     };
@@ -1617,7 +1817,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Event deleted */
+            /** @description Event deleted successfully */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -1627,6 +1827,20 @@ export interface operations {
             401: components["responses"]["UnauthorizedError"];
             403: components["responses"]["ForbiddenError"];
             404: components["responses"]["NotFoundError"];
+            /** @description Cannot delete active event */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            /** @example cannot delete active event: resolve it first */
+                            message?: string;
+                        };
+                    };
+                };
+            };
         };
     };
     listEventUpdates: {
@@ -1649,8 +1863,6 @@ export interface operations {
                     "application/json": components["schemas"]["EventUpdatesResponse"];
                 };
             };
-            401: components["responses"]["UnauthorizedError"];
-            403: components["responses"]["ForbiddenError"];
             404: components["responses"]["NotFoundError"];
         };
     };
@@ -1682,66 +1894,7 @@ export interface operations {
             401: components["responses"]["UnauthorizedError"];
             403: components["responses"]["ForbiddenError"];
             404: components["responses"]["NotFoundError"];
-        };
-    };
-    addServicesToEvent: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["EventId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AddServicesRequest"];
-            };
-        };
-        responses: {
-            /** @description Services added */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventResponse"];
-                };
-            };
-            400: components["responses"]["ValidationError"];
-            401: components["responses"]["UnauthorizedError"];
-            403: components["responses"]["ForbiddenError"];
-            404: components["responses"]["NotFoundError"];
-        };
-    };
-    removeServicesFromEvent: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["EventId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RemoveServicesRequest"];
-            };
-        };
-        responses: {
-            /** @description Services removed */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventResponse"];
-                };
-            };
-            400: components["responses"]["ValidationError"];
-            401: components["responses"]["UnauthorizedError"];
-            403: components["responses"]["ForbiddenError"];
-            404: components["responses"]["NotFoundError"];
+            409: components["responses"]["ConflictError"];
         };
     };
     getEventServiceChanges: {
@@ -1764,8 +1917,6 @@ export interface operations {
                     "application/json": components["schemas"]["EventServiceChangesResponse"];
                 };
             };
-            401: components["responses"]["UnauthorizedError"];
-            403: components["responses"]["ForbiddenError"];
             404: components["responses"]["NotFoundError"];
         };
     };

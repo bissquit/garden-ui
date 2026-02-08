@@ -12,7 +12,9 @@ interface ServiceItemProps {
 }
 
 export function ServiceItem({ service }: ServiceItemProps) {
-  const config = serviceStatusConfig[service.status];
+  // Use effective_status (includes active events) with fallback to status
+  const displayStatus = service.effective_status ?? service.status;
+  const config = serviceStatusConfig[displayStatus];
 
   return (
     <div
@@ -32,8 +34,8 @@ export function ServiceItem({ service }: ServiceItemProps) {
           {config.label}
         </span>
         <StatusIndicator
-          status={service.status}
-          pulse={service.status !== 'operational'}
+          status={displayStatus}
+          pulse={displayStatus !== 'operational'}
         />
       </div>
     </div>

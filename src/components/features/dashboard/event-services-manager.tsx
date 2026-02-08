@@ -14,10 +14,11 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAddServicesToEvent, useRemoveServicesFromEvent } from '@/hooks/use-events-mutations';
+import { useAddEventUpdate } from '@/hooks/use-events-mutations';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Minus, Loader2 } from 'lucide-react';
 import type { components } from '@/api/types.generated';
+import { convertLegacyToAffectedServices, convertLegacyToAffectedGroups } from '@/lib/adapters/event-adapter';
 
 type Event = components['schemas']['Event'];
 type Service = components['schemas']['Service'];
@@ -33,8 +34,7 @@ export function EventServicesManager({ event, services, groups }: EventServicesM
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
 
-  const addMutation = useAddServicesToEvent();
-  const removeMutation = useRemoveServicesFromEvent();
+  const addUpdateMutation = useAddEventUpdate();
   const { toast } = useToast();
 
   // Services associated with the event
@@ -113,7 +113,22 @@ export function EventServicesManager({ event, services, groups }: EventServicesM
         groups={groups}
         onSubmit={async (data) => {
           try {
-            await addMutation.mutateAsync({ eventId: event.id, data });
+            // Convert to new API format using event update
+            await addUpdateMutation.mutateAsync({
+              eventId: event.id,
+              data: {
+                status: event.status,
+                message: data.reason || 'Services added',
+                notify_subscribers: false,
+                add_services: data.service_ids
+                  ? convertLegacyToAffectedServices(data.service_ids)
+                  : undefined,
+                add_groups: data.group_ids
+                  ? convertLegacyToAffectedGroups(data.group_ids)
+                  : undefined,
+                reason: data.reason,
+              },
+            });
             toast({ title: 'Services added successfully' });
             setIsAddDialogOpen(false);
           } catch (error) {
@@ -124,7 +139,7 @@ export function EventServicesManager({ event, services, groups }: EventServicesM
             });
           }
         }}
-        isSubmitting={addMutation.isPending}
+        isSubmitting={addUpdateMutation.isPending}
       />
 
       {/* Remove Services Dialog */}
@@ -134,9 +149,16 @@ export function EventServicesManager({ event, services, groups }: EventServicesM
         eventServices={eventServices}
         onSubmit={async (serviceIds, reason) => {
           try {
-            await removeMutation.mutateAsync({
+            // Convert to new API format using event update
+            await addUpdateMutation.mutateAsync({
               eventId: event.id,
-              data: { service_ids: serviceIds, reason },
+              data: {
+                status: event.status,
+                message: reason || 'Services removed',
+                notify_subscribers: false,
+                remove_service_ids: serviceIds,
+                reason,
+              },
             });
             toast({ title: 'Services removed successfully' });
             setIsRemoveDialogOpen(false);
@@ -148,7 +170,7 @@ export function EventServicesManager({ event, services, groups }: EventServicesM
             });
           }
         }}
-        isSubmitting={removeMutation.isPending}
+        isSubmitting={addUpdateMutation.isPending}
       />
     </div>
   );

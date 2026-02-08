@@ -25,7 +25,7 @@ npm run api:generate     # Сгенерировать TypeScript типы
 ```
 
 **Backend:** https://github.com/bissquit/incident-garden
-**Compatibility:** Frontend 1.x.x ↔ Backend >= 1.0.0
+**Compatibility:** Frontend 1.x.x ↔ Backend >= 2.4.0
 
 ### Test Environment
 
@@ -99,7 +99,7 @@ src/
 │   ├── use-service-tags.ts    # useServiceTags, useUpdateServiceTags
 │   ├── use-groups-mutations.ts    # useCreateGroup, useUpdateGroup, useDeleteGroup, useRestoreGroup
 │   ├── use-events.ts          # useEvents, useEvent, useEventUpdates, useEventServiceChanges
-│   ├── use-events-mutations.ts    # useCreateEvent, useAddEventUpdate, useDeleteEvent, useAddServicesToEvent, useRemoveServicesFromEvent
+│   ├── use-events-mutations.ts    # useCreateEvent, useAddEventUpdate, useDeleteEvent
 │   ├── use-templates.ts       # useTemplates
 │   ├── use-templates-mutations.ts # useCreateTemplate, useDeleteTemplate
 │   ├── use-channels.ts        # useChannels
@@ -113,10 +113,13 @@ src/
 │   ├── utils.ts               # cn(), formatDate(), formatRelativeTime()
 │   ├── status-utils.ts        # serviceStatusConfig, severityConfig, eventStatusConfig,
 │   │                          # calculateOverallStatus, groupServices, filterActiveEvents
+│   ├── adapters/              # Adapters for API compatibility
+│   │   └── event-adapter.ts   # convertLegacyToAffectedServices, convertLegacyToAffectedGroups
 │   └── validations/           # Zod schemas
-│       ├── service.ts         # createServiceSchema, updateServiceSchema
+│       ├── service.ts         # createServiceSchema, updateServiceSchema, serviceStatusEnum
 │       ├── group.ts           # createGroupSchema, updateGroupSchema
-│       ├── event.ts           # createEventSchema, createEventUpdateSchema
+│       ├── event.ts           # createEventSchema, addEventUpdateSchema,
+│       │                      # affectedServiceSchema, affectedGroupSchema
 │       ├── template.ts        # template schemas
 │       ├── channel.ts         # createChannelSchema (email/telegram validation)
 │       └── subscription.ts    # updateSubscriptionSchema

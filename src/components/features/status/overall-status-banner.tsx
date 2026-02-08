@@ -11,7 +11,7 @@ import type { components } from '@/api/types.generated';
 type ServiceStatus = components['schemas']['ServiceStatus'];
 
 interface OverallStatusBannerProps {
-  services: Array<{ status: ServiceStatus }>;
+  services: Array<{ status: ServiceStatus; effective_status?: ServiceStatus }>;
 }
 
 const icons: Record<ServiceStatus, typeof CheckCircle> = {

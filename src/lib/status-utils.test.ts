@@ -78,6 +78,22 @@ describe('calculateOverallStatus', () => {
     ];
     expect(calculateOverallStatus(services).status).toBe('major_outage');
   });
+
+  it('uses effective_status when available', () => {
+    const services = [
+      { status: 'operational' as const, effective_status: 'degraded' as const },
+      { status: 'operational' as const },
+    ];
+    expect(calculateOverallStatus(services).status).toBe('degraded');
+  });
+
+  it('falls back to status when effective_status is undefined', () => {
+    const services = [
+      { status: 'degraded' as const, effective_status: undefined },
+      { status: 'operational' as const },
+    ];
+    expect(calculateOverallStatus(services).status).toBe('degraded');
+  });
 });
 
 describe('groupServices', () => {
