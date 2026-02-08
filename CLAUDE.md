@@ -87,6 +87,7 @@ src/
 │                              # GroupsTable, GroupForm, GroupFormDialog,
 │                              # EventsTable, EventsFilters, EventForm, EventFormDialog,
 │                              # EventServicesManager, EventUpdateForm,
+│                              # ServiceStatusSelector, GroupStatusSelector,
 │                              # TemplatesTable, TemplateForm, TemplateFormDialog,
 │                              # ChannelsTable, ChannelForm, ChannelFormDialog,
 │                              # SubscriptionEditor
