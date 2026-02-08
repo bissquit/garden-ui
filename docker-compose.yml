@@ -20,7 +20,8 @@ services:
       - garden-ui-network
 
   migrate:
-    image: ${BACKEND_IMAGE_NAME:-ghcr.io/bissquit/incident-garden}:${BACKEND_IMAGE_TAG:-1.4.1}
+#    image: ${BACKEND_IMAGE_NAME:-ghcr.io/bissquit/incident-garden}:${BACKEND_IMAGE_TAG:-1.4.1}
+    image: incident-garden:2.0.0-dev
     container_name: garden-ui-migrate
     user: root
     depends_on:
@@ -50,7 +51,8 @@ services:
       - garden-ui-network
 
   backend:
-    image: ${BACKEND_IMAGE_NAME:-ghcr.io/bissquit/incident-garden}:${BACKEND_IMAGE_TAG:-1.4.1}
+#    image: ${BACKEND_IMAGE_NAME:-ghcr.io/bissquit/incident-garden}:${BACKEND_IMAGE_TAG:-1.4.1}
+    image: incident-garden:2.0.0-dev
     container_name: garden-ui-backend
     restart: unless-stopped
     depends_on:
@@ -77,23 +79,23 @@ services:
     networks:
       - garden-ui-network
 
-  frontend:
-    build:
-      no_cache: true
-      context: .
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
-    container_name: garden-ui-frontend
-    restart: unless-stopped
-    depends_on:
-      backend:
-        condition: service_healthy
-    ports:
-      - "${FRONTEND_PORT:-3000}:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
-    networks:
-      - garden-ui-network
+#  frontend:
+#    build:
+#      no_cache: true
+#      context: .
+#      args:
+#        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+#    container_name: garden-ui-frontend
+#    restart: unless-stopped
+#    depends_on:
+#      backend:
+#        condition: service_healthy
+#    ports:
+#      - "${FRONTEND_PORT:-3000}:3000"
+#    environment:
+#      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+#    networks:
+#      - garden-ui-network
 
 volumes:
   postgres_data:

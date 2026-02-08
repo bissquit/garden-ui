@@ -15,6 +15,10 @@ import { useServices, useGroups } from '@/hooks/use-public-status';
 import { useToast } from '@/hooks/use-toast';
 import { Plus } from 'lucide-react';
 import type { CreateEventFormData } from '@/lib/validations/event';
+import {
+  convertLegacyToAffectedServices,
+  convertLegacyToAffectedGroups,
+} from '@/lib/adapters/event-adapter';
 
 interface EventFormDialogProps {
   trigger?: React.ReactNode;
@@ -30,7 +34,32 @@ export function EventFormDialog({ trigger }: EventFormDialogProps) {
 
   const handleSubmit = async (data: CreateEventFormData) => {
     try {
-      await createMutation.mutateAsync(data);
+      // Determine default status based on event type
+      const defaultStatus = data.type === 'maintenance' ? 'maintenance' : 'degraded';
+
+      // Transform legacy service_ids/group_ids to new format
+      const requestData = {
+        title: data.title,
+        type: data.type,
+        status: data.status,
+        severity: data.severity,
+        description: data.description,
+        started_at: data.started_at,
+        resolved_at: data.resolved_at,
+        scheduled_start_at: data.scheduled_start_at,
+        scheduled_end_at: data.scheduled_end_at,
+        notify_subscribers: data.notify_subscribers,
+        template_id: data.template_id,
+        // Convert legacy arrays to new format
+        affected_services: data.service_ids?.length
+          ? convertLegacyToAffectedServices(data.service_ids, defaultStatus)
+          : undefined,
+        affected_groups: data.group_ids?.length
+          ? convertLegacyToAffectedGroups(data.group_ids, defaultStatus)
+          : undefined,
+      };
+
+      await createMutation.mutateAsync(requestData);
       toast({ title: 'Event created successfully' });
       setOpen(false);
     } catch (error) {

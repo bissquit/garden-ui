@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: StatusPage API
   description: API for managing service statuses and incidents
-  version: 1.5.1
+  version: 2.4.0
   contact:
     name: API Support
 servers:
@@ -321,6 +321,94 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '409':
           $ref: '#/components/responses/ConflictError'
+  /api/v1/services/{slug}/status-log:
+    get:
+      tags: [services]
+      summary: Get service status change history
+      description: |
+        Returns the audit log of status changes for a service.
+        Requires operator or admin role.
+
+        Each entry shows:
+        - What the status changed from/to
+        - Source (manual, event, webhook)
+        - Associated event (if applicable)
+        - Who made the change
+        - When it happened
+      operationId: getServiceStatusLog
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ServiceSlug'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Status change history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceStatusLogResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /api/v1/services/{slug}/events:
+    get:
+      tags: [services]
+      summary: Get events for a service
+      description: |
+        Returns events (incidents and maintenance) associated with a service.
+        This is a public endpoint, no authentication required.
+
+        Events are sorted with active events first, then by creation date descending.
+      operationId: getServiceEvents
+      parameters:
+        - $ref: '#/components/parameters/ServiceSlug'
+        - name: status
+          in: query
+          description: Filter by event status
+          schema:
+            type: string
+            enum: [active, resolved]
+          example: active
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Events for the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceEventsResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
   /api/v1/services/{slug}/tags:
     get:
       tags: [services]
@@ -524,7 +612,17 @@ paths:
     post:
       tags: [events]
       summary: Create an event
-      description: Creates an incident or maintenance. Groups in group_ids are expanded to services.
+      description: |
+        Creates an incident or maintenance event.
+
+        **Service status assignment:**
+        - Use `affected_services` to specify individual services with their statuses
+        - Use `affected_groups` to assign the same status to all services in a group
+        - If a service appears in both a group and `affected_services`, the explicit status takes precedence
+
+        **Creating past events:**
+        - Set `started_at` and `resolved_at` to dates in the past
+        - Event will be created as already resolved
       operationId: createEvent
       security:
         - BearerAuth: []
@@ -567,7 +665,24 @@ paths:
     delete:
       tags: [events]
       summary: Delete an event
-      description: Requires admin role
+      description: |
+        Deletes an event and all associated data.
+
+        **Requirements:**
+        - Requires admin role
+        - Event must be resolved/completed (active events cannot be deleted)
+
+        **What gets deleted:**
+        - The event itself
+        - All event updates
+        - Service associations (event_services)
+        - Group associations (event_groups)
+        - Service change audit trail (event_service_changes)
+        - Status log entries referencing this event
+
+        **Note:** This is a destructive operation. The event and its history
+        will be permanently removed. Consider if you really need to delete
+        rather than just keeping the resolved event in history.
       operationId: deleteEvent
       security:
         - BearerAuth: []
@@ -575,13 +690,26 @@ paths:
         - $ref: '#/components/parameters/EventId'
       responses:
         '204':
-          description: Event deleted
+          description: Event deleted successfully
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
         '404':
           $ref: '#/components/responses/NotFoundError'
+        '409':
+          description: Cannot delete active event
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "cannot delete active event: resolve it first"
   /api/v1/events/{id}/updates:
     get:
       tags: [events]
@@ -602,7 +730,21 @@ paths:
     post:
       tags: [events]
       summary: Add an update to an event
-      description: Also updates the event status
+      description: |
+        Adds a status update to an event and optionally modifies affected services.
+
+        **Service modifications:**
+        - `service_updates`: Change status of services already in the event
+        - `add_services`: Add new services with specified statuses
+        - `add_groups`: Add all services from groups with specified status
+        - `remove_service_ids`: Remove services from the event
+
+        **On event resolution:**
+        When status is `resolved` or `completed`, affected services' stored status
+        is recalculated. If a service has no other active events, it becomes `operational`.
+
+        **Cannot update resolved events:**
+        Returns 409 Conflict if the event is already resolved.
       operationId: addEventUpdate
       security:
         - BearerAuth: []
@@ -629,67 +771,8 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
         '404':
           $ref: '#/components/responses/NotFoundError'
-  /api/v1/events/{id}/services:
-    post:
-      tags: [events]
-      summary: Add services to an event
-      description: Adds services and/or groups. Groups are expanded to services.
-      operationId: addServicesToEvent
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/EventId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AddServicesRequest'
-      responses:
-        '200':
-          description: Services added
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventResponse'
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
-    delete:
-      tags: [events]
-      summary: Remove services from an event
-      description: Removes services only, not group associations.
-      operationId: removeServicesFromEvent
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/EventId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RemoveServicesRequest'
-      responses:
-        '200':
-          description: Services removed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventResponse'
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
   /api/v1/events/{id}/changes:
     get:
       tags: [events]
@@ -1145,6 +1228,10 @@ components:
     ChangeAction:
       type: string
       enum: [added, removed]
+    StatusLogSourceType:
+      type: string
+      enum: [manual, event, webhook]
+      description: Source of the status change
     ChannelType:
       type: string
       enum: [email, telegram]
@@ -1187,6 +1274,13 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/ServiceStatus'
+          description: Stored status (set manually or by closed events)
+        effective_status:
+          $ref: '#/components/schemas/ServiceStatus'
+          description: Effective status (worst-case from active events, or stored if no active events)
+        has_active_events:
+          type: boolean
+          description: Whether the service has any active (non-resolved) events
         group_ids:
           type: array
           items:
@@ -1204,7 +1298,7 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [id, name, slug, status, group_ids, order, created_at, updated_at]
+      required: [id, name, slug, status, effective_status, has_active_events, group_ids, order, created_at, updated_at]
     ServiceGroup:
       type: object
       properties:
@@ -1217,6 +1311,11 @@ components:
           type: string
         description:
           type: string
+        service_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
         order:
           type: integer
         created_at:
@@ -1229,7 +1328,7 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [id, name, slug, order, created_at, updated_at]
+      required: [id, name, slug, service_ids, order, created_at, updated_at]
     Event:
       type: object
       properties:
@@ -1501,6 +1600,9 @@ components:
             format: uuid
         order:
           type: integer
+        reason:
+          type: string
+          description: Reason for status change (recorded in audit log)
       required: [name, slug, status]
     UpdateTagsRequest:
       type: object
@@ -1544,23 +1646,56 @@ components:
           type: string
         order:
           type: integer
+        service_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of service IDs to assign to this group. If provided, replaces all existing service memberships.
       required: [name, slug]
+    AffectedService:
+      type: object
+      description: Service to associate with an event and its status
+      properties:
+        service_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/ServiceStatus'
+      required: [service_id, status]
+    AffectedGroup:
+      type: object
+      description: Group whose services will be associated with an event
+      properties:
+        group_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/ServiceStatus'
+          description: Status to apply to ALL services in this group
+      required: [group_id, status]
     CreateEventRequest:
       type: object
       properties:
         title:
           type: string
+          minLength: 1
         type:
           $ref: '#/components/schemas/EventType'
         status:
           $ref: '#/components/schemas/EventStatus'
         severity:
           $ref: '#/components/schemas/Severity'
+          description: Required for incidents
         description:
           type: string
         started_at:
           type: string
           format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+          description: For creating past events (already resolved)
         scheduled_start_at:
           type: string
           format: date-time
@@ -1573,43 +1708,17 @@ components:
         template_id:
           type: string
           format: uuid
-        service_ids:
+        affected_services:
           type: array
+          description: Services to associate with this event
           items:
-            type: string
-            format: uuid
-        group_ids:
+            $ref: '#/components/schemas/AffectedService'
+        affected_groups:
           type: array
+          description: Groups whose services to associate with this event
           items:
-            type: string
-            format: uuid
+            $ref: '#/components/schemas/AffectedGroup'
       required: [title, type, status, description]
-    AddServicesRequest:
-      type: object
-      properties:
-        service_ids:
-          type: array
-          items:
-            type: string
-            format: uuid
-        group_ids:
-          type: array
-          items:
-            type: string
-            format: uuid
-        reason:
-          type: string
-    RemoveServicesRequest:
-      type: object
-      properties:
-        service_ids:
-          type: array
-          items:
-            type: string
-            format: uuid
-        reason:
-          type: string
-      required: [service_ids]
     AddEventUpdateRequest:
       type: object
       properties:
@@ -1617,9 +1726,34 @@ components:
           $ref: '#/components/schemas/EventStatus'
         message:
           type: string
+          minLength: 1
         notify_subscribers:
           type: boolean
           default: false
+        service_updates:
+          type: array
+          description: Update statuses of services already in this event
+          items:
+            $ref: '#/components/schemas/AffectedService'
+        add_services:
+          type: array
+          description: Add new services to this event
+          items:
+            $ref: '#/components/schemas/AffectedService'
+        add_groups:
+          type: array
+          description: Add all services from these groups to this event
+          items:
+            $ref: '#/components/schemas/AffectedGroup'
+        remove_service_ids:
+          type: array
+          description: Remove services from this event
+          items:
+            type: string
+            format: uuid
+        reason:
+          type: string
+          description: Reason for service changes (for audit log)
       required: [status, message]
     CreateTemplateRequest:
       type: object
@@ -1792,6 +1926,69 @@ components:
               type: object
               additionalProperties:
                 type: string
+    ServiceStatusLogEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        service_id:
+          type: string
+          format: uuid
+        old_status:
+          allOf:
+            - $ref: '#/components/schemas/ServiceStatus'
+          nullable: true
+        new_status:
+          $ref: '#/components/schemas/ServiceStatus'
+        source_type:
+          $ref: '#/components/schemas/StatusLogSourceType'
+        event_id:
+          type: string
+          format: uuid
+          nullable: true
+        reason:
+          type: string
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+      required: [id, service_id, new_status, source_type, created_by, created_at]
+    ServiceStatusLogResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            entries:
+              type: array
+              items:
+                $ref: '#/components/schemas/ServiceStatusLogEntry'
+            total:
+              type: integer
+            limit:
+              type: integer
+            offset:
+              type: integer
+    ServiceEventsResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            events:
+              type: array
+              items:
+                $ref: '#/components/schemas/Event'
+            total:
+              type: integer
+              description: Total number of events matching the filter
+            limit:
+              type: integer
+            offset:
+              type: integer
     PublicStatusResponse:
       type: object
       properties:

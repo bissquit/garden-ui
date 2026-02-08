@@ -5,8 +5,6 @@ import {
   useCreateEvent,
   useAddEventUpdate,
   useDeleteEvent,
-  useAddServicesToEvent,
-  useRemoveServicesFromEvent,
 } from './use-events-mutations';
 import { type ReactNode } from 'react';
 
@@ -143,6 +141,47 @@ describe('useAddEventUpdate', () => {
     });
   });
 
+  it('should add event update with service changes', async () => {
+    const { apiClient } = await import('@/api/client');
+    vi.mocked(apiClient.POST).mockResolvedValue({
+      data: { data: { id: 'u1', message: 'Update with service changes' } },
+      error: undefined,
+      response: {} as Response,
+    });
+
+    const { result } = renderHook(() => useAddEventUpdate(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      eventId: 'e1',
+      data: {
+        status: 'monitoring',
+        message: 'Update with service changes',
+        notify_subscribers: false,
+        add_services: [{ service_id: 's1', status: 'degraded' }],
+        remove_service_ids: ['s2'],
+        reason: 'Adding affected service',
+      },
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(apiClient.POST).toHaveBeenCalledWith('/api/v1/events/{id}/updates', {
+      params: { path: { id: 'e1' } },
+      body: {
+        status: 'monitoring',
+        message: 'Update with service changes',
+        notify_subscribers: false,
+        add_services: [{ service_id: 's1', status: 'degraded' }],
+        remove_service_ids: ['s2'],
+        reason: 'Adding affected service',
+      },
+    });
+  });
+
   it('should handle error when adding update fails', async () => {
     const { apiClient } = await import('@/api/client');
     vi.mocked(apiClient.POST).mockResolvedValue({
@@ -211,136 +250,6 @@ describe('useDeleteEvent', () => {
     });
 
     result.current.mutate('e1');
-
-    await waitFor(() => {
-      expect(result.current.isError).toBe(true);
-    });
-  });
-});
-
-describe('useAddServicesToEvent', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('should add services to event successfully', async () => {
-    const { apiClient } = await import('@/api/client');
-    vi.mocked(apiClient.POST).mockResolvedValue({
-      data: { data: { message: 'Services added' } },
-      error: undefined,
-      response: {} as Response,
-    });
-
-    const { result } = renderHook(() => useAddServicesToEvent(), {
-      wrapper: createWrapper(),
-    });
-
-    result.current.mutate({
-      eventId: 'e1',
-      data: {
-        service_ids: ['s1', 's2'],
-        group_ids: ['g1'],
-        reason: 'Services affected by incident',
-      },
-    });
-
-    await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
-    });
-
-    expect(apiClient.POST).toHaveBeenCalledWith('/api/v1/events/{id}/services', {
-      params: { path: { id: 'e1' } },
-      body: {
-        service_ids: ['s1', 's2'],
-        group_ids: ['g1'],
-        reason: 'Services affected by incident',
-      },
-    });
-  });
-
-  it('should handle error when adding services fails', async () => {
-    const { apiClient } = await import('@/api/client');
-    vi.mocked(apiClient.POST).mockResolvedValue({
-      data: undefined,
-      error: { error: { message: 'Failed to add services' } },
-      response: {} as Response,
-    });
-
-    const { result } = renderHook(() => useAddServicesToEvent(), {
-      wrapper: createWrapper(),
-    });
-
-    result.current.mutate({
-      eventId: 'e1',
-      data: {
-        service_ids: ['s1'],
-        reason: 'Adding service',
-      },
-    });
-
-    await waitFor(() => {
-      expect(result.current.isError).toBe(true);
-    });
-  });
-});
-
-describe('useRemoveServicesFromEvent', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('should remove services from event successfully', async () => {
-    const { apiClient } = await import('@/api/client');
-    vi.mocked(apiClient.DELETE).mockResolvedValue({
-      data: { data: { message: 'Services removed' } },
-      error: undefined,
-      response: {} as Response,
-    });
-
-    const { result } = renderHook(() => useRemoveServicesFromEvent(), {
-      wrapper: createWrapper(),
-    });
-
-    result.current.mutate({
-      eventId: 'e1',
-      data: {
-        service_ids: ['s1', 's2'],
-        reason: 'Services recovered',
-      },
-    });
-
-    await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
-    });
-
-    expect(apiClient.DELETE).toHaveBeenCalledWith('/api/v1/events/{id}/services', {
-      params: { path: { id: 'e1' } },
-      body: {
-        service_ids: ['s1', 's2'],
-        reason: 'Services recovered',
-      },
-    });
-  });
-
-  it('should handle error when removing services fails', async () => {
-    const { apiClient } = await import('@/api/client');
-    vi.mocked(apiClient.DELETE).mockResolvedValue({
-      data: undefined,
-      error: { error: { message: 'Failed to remove services' } },
-      response: {} as Response,
-    });
-
-    const { result } = renderHook(() => useRemoveServicesFromEvent(), {
-      wrapper: createWrapper(),
-    });
-
-    result.current.mutate({
-      eventId: 'e1',
-      data: {
-        service_ids: ['s1'],
-        reason: 'Removing service',
-      },
-    });
 
     await waitFor(() => {
       expect(result.current.isError).toBe(true);

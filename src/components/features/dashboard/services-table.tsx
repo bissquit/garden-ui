@@ -59,10 +59,12 @@ export function ServicesTable({ services, groups }: ServicesTableProps) {
       key: 'status',
       header: 'Status',
       cell: (service: Service & { actions?: React.ReactNode }) => {
-        const config = serviceStatusConfig[service.status];
+        // Use effective_status (includes active events) with fallback to status
+        const displayStatus = service.effective_status ?? service.status;
+        const config = serviceStatusConfig[displayStatus];
         return (
           <div className="flex items-center gap-2">
-            <StatusIndicator status={service.status} />
+            <StatusIndicator status={displayStatus} />
             <span className={config.textClass}>{config.label}</span>
           </div>
         );

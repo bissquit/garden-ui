@@ -104,8 +104,9 @@ export const eventStatusConfig: Record<
 };
 
 // Calculate overall system status from services
+// Uses effective_status (includes active events) with fallback to status
 export function calculateOverallStatus(
-  services: Array<{ status: ServiceStatus }>
+  services: Array<{ status: ServiceStatus; effective_status?: ServiceStatus }>
 ): {
   status: ServiceStatus;
   label: string;
@@ -115,7 +116,7 @@ export function calculateOverallStatus(
   }
 
   const hasStatus = (s: ServiceStatus) =>
-    services.some((svc) => svc.status === s);
+    services.some((svc) => (svc.effective_status ?? svc.status) === s);
 
   if (hasStatus('major_outage')) {
     return { status: 'major_outage', label: 'Major System Outage' };
