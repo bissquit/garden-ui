@@ -16,6 +16,8 @@ export { GroupFormDialog } from './group-form-dialog';
 export { EventForm } from './event-form';
 export { EventFormDialog } from './event-form-dialog';
 export { EventUpdateForm } from './event-update-form';
+export { CurrentServiceEditor } from './current-service-editor';
+export { AddServicesSection } from './add-services-section';
 // Template components
 export { TemplatesTable } from './templates-table';
 export { TemplateForm } from './template-form';
