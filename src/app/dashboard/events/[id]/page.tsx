@@ -10,15 +10,13 @@ import {
   EventDetailsCard,
   EventUnifiedTimeline,
   EventUpdateForm,
-  EventServicesManager,
   DeleteConfirmationDialog,
 } from '@/components/features/dashboard';
+import type { AddEventUpdateFormData } from '@/lib/validations/event';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Loader2, Trash2 } from 'lucide-react';
-import type { AddEventUpdateFormData } from '@/lib/validations/event';
-
 export default function EventDetailsPage() {
   const params = useParams();
   const router = useRouter();
@@ -49,6 +47,7 @@ export default function EventDetailsPage() {
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
+      throw error; // Re-throw so form knows submission failed
     }
   };
 
@@ -111,19 +110,6 @@ export default function EventDetailsPage() {
 
       <EventDetailsCard event={event} services={services ?? []} groups={groups ?? []} />
 
-      {/* Services Manager - only show if not resolved */}
-      {!isResolved && (
-        <Card>
-          <CardContent className="pt-6">
-            <EventServicesManager
-              event={event}
-              services={services ?? []}
-              groups={groups ?? []}
-            />
-          </CardContent>
-        </Card>
-      )}
-
       {/* Add Update Form - only show if not resolved */}
       {!isResolved && (
         <Card>
@@ -132,8 +118,10 @@ export default function EventDetailsPage() {
           </CardHeader>
           <CardContent>
             <EventUpdateForm
-              eventType={event.type}
-              currentStatus={event.status}
+              key={event.updated_at}
+              event={event}
+              services={services ?? []}
+              groups={groups ?? []}
               onSubmit={handleAddUpdate}
               isLoading={addUpdateMutation.isPending}
             />
