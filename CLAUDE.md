@@ -83,7 +83,8 @@ src/
 │       ├── events/            # Shared event components (used by public + dashboard)
 │       │                      # EventDetailsCard, EventUnifiedTimeline
 │       └── dashboard/         # DataTable, EmptyState, DeleteConfirmationDialog,
-│                              # ServicesTable, ServiceForm (with tags support), ServiceFormDialog,
+│                              # ServicesTable (with active events indicator), ServiceForm, ServiceFormDialog,
+│                              # ActiveEventsWarning (warning for services with active events),
 │                              # GroupsTable, GroupForm, GroupFormDialog,
 │                              # EventsTable, EventsFilters, EventForm, EventFormDialog,
 │                              # EventServicesManager, EventUpdateForm (with service management),
@@ -130,11 +131,20 @@ src/
 
 tests/
 └── e2e/                       # Playwright E2E tests
-    ├── fixtures.ts            # Test fixtures, helpers, test user credentials
+    ├── fixtures.ts            # Test fixtures, helpers, ApiHelper class, test user credentials
     ├── auth.spec.ts           # Login, logout, protected routes
     ├── services.spec.ts       # Services CRUD, archive/restore
     ├── groups.spec.ts         # Groups CRUD, archive/restore
-    ├── events.spec.ts         # Events CRUD, updates, services management
+    ├── events.spec.ts         # Events CRUD, updates, basic UI tests
+    ├── events-lifecycle.spec.ts    # Groups A, B: Incident/Maintenance lifecycle, service status changes
+    ├── events-multiple.spec.ts     # Group C: Multiple events on same service, worst-case calculation
+    ├── events-manual-status.spec.ts # Group D: Manual status management vs event statuses
+    ├── events-service-page.spec.ts  # Group E: Service events listing, filtering, pagination, status history
+    ├── events-past.spec.ts          # Group F: Creating past (resolved) events
+    ├── events-deletion.spec.ts      # Group G: Event deletion, related data cleanup
+    ├── events-audit.spec.ts         # Group H: Status logs, event service changes audit
+    ├── events-permissions.spec.ts   # Group I: Access control (operator+/admin)
+    ├── events-validation.spec.ts    # Group J: Input validation (severity, status transitions)
     └── public-status.spec.ts  # Public status page, history, event details
 
 .github/workflows/
