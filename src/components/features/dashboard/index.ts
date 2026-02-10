@@ -9,6 +9,7 @@ export { EventServicesManager } from './event-services-manager';
 export { EventDetailsCard, EventUnifiedTimeline } from '../events';
 // Form components
 export { DeleteConfirmationDialog } from './delete-confirmation-dialog';
+export { ActiveEventsWarning } from './active-events-warning';
 export { ServiceForm } from './service-form';
 export { ServiceFormDialog } from './service-form-dialog';
 export { GroupForm } from './group-form';

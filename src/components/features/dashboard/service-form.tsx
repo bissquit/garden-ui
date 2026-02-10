@@ -31,6 +31,7 @@ import {
   type UpdateServiceFormData,
 } from '@/lib/validations/service';
 import { serviceStatusConfig } from '@/lib/status-utils';
+import { ActiveEventsWarning } from './active-events-warning';
 import type { components } from '@/api/types.generated';
 
 type Service = components['schemas']['Service'];
@@ -42,9 +43,10 @@ interface ServiceFormProps {
   initialTags?: Record<string, string>;
   onSubmit: (data: CreateServiceFormData | UpdateServiceFormData, tags?: Record<string, string>) => void;
   isLoading?: boolean;
+  hasActiveEvents?: boolean;
 }
 
-export function ServiceForm({ service, groups, initialTags, onSubmit, isLoading }: ServiceFormProps) {
+export function ServiceForm({ service, groups, initialTags, onSubmit, isLoading, hasActiveEvents }: ServiceFormProps) {
   const isEditing = !!service;
 
   // Tags state
@@ -119,6 +121,8 @@ export function ServiceForm({ service, groups, initialTags, onSubmit, isLoading 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+        {hasActiveEvents && <ActiveEventsWarning />}
+
         <FormField
           control={form.control}
           name="name"
@@ -173,7 +177,14 @@ export function ServiceForm({ service, groups, initialTags, onSubmit, isLoading 
           name="status"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Status{!isEditing && ' (optional)'}</FormLabel>
+              <FormLabel>
+                Status{!isEditing && ' (optional)'}
+                {hasActiveEvents && (
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    (stored value)
+                  </span>
+                )}
+              </FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
@@ -188,6 +199,12 @@ export function ServiceForm({ service, groups, initialTags, onSubmit, isLoading 
                   ))}
                 </SelectContent>
               </Select>
+              {hasActiveEvents && (
+                <FormDescription>
+                  This is the stored status. The effective status is currently
+                  determined by active events.
+                </FormDescription>
+              )}
               <FormMessage />
             </FormItem>
           )}

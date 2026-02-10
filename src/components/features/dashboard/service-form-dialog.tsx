@@ -110,6 +110,7 @@ export function ServiceFormDialog({ service, trigger }: ServiceFormDialogProps) 
             initialTags={isEditing ? tagsData : undefined}
             onSubmit={handleSubmit}
             isLoading={isLoading}
+            hasActiveEvents={service?.has_active_events}
           />
         )}
       </DialogContent>
