@@ -5,7 +5,7 @@ import { EmptyState } from './empty-state';
 import { StatusIndicator } from '@/components/features/status';
 import { serviceStatusConfig, formatEventDate } from '@/lib/status-utils';
 import { Badge } from '@/components/ui/badge';
-import { Server } from 'lucide-react';
+import { Server, Zap } from 'lucide-react';
 import type { components } from '@/api/types.generated';
 
 type Service = components['schemas']['Service'];
@@ -66,6 +66,14 @@ export function ServicesTable({ services, groups }: ServicesTableProps) {
           <div className="flex items-center gap-2">
             <StatusIndicator status={displayStatus} />
             <span className={config.textClass}>{config.label}</span>
+            {service.has_active_events && (
+              <span title="Has active events">
+                <Zap
+                  className="h-3.5 w-3.5 text-yellow-500"
+                  aria-label="Has active events"
+                />
+              </span>
+            )}
           </div>
         );
       },
