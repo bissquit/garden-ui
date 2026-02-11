@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.3.0](https://github.com/bissquit/garden-ui/compare/v1.2.0...v1.3.0) (2026-02-11)
+
+
+### Features
+
+* **api:** Update types for event-driven service status management ([5967993](https://github.com/bissquit/garden-ui/commit/5967993e5f57b635be075ce2f6954795507c8111))
+* **dashboard:** Event updates with service management ([00d6a2a](https://github.com/bissquit/garden-ui/commit/00d6a2aaab2cc238fd598d7dac7b0bada6180fc3))
+* rework event page ([ec1608d](https://github.com/bissquit/garden-ui/commit/ec1608d431f91ba11cd50c281afb375af41c9999))
+* rework eventForm to use affected_services ([0a704ac](https://github.com/bissquit/garden-ui/commit/0a704ac445f2a699835cfa4d8365a561ac9d1e9a))
+
 ## [1.2.0](https://github.com/bissquit/garden-ui/compare/v1.1.0...v1.2.0) (2026-02-07)
 
 
