@@ -105,10 +105,19 @@ export interface StatusLogEntry {
 // === API Helper Class ===
 
 export class ApiHelper {
+  private csrfToken: string | null = null;
+
   constructor(
     private request: APIRequestContext,
     private baseUrl: string
   ) {}
+
+  private getMutationHeaders(): Record<string, string> {
+    if (this.csrfToken) {
+      return { 'X-CSRF-Token': this.csrfToken };
+    }
+    return {};
+  }
 
   async login(email: string, password: string): Promise<void> {
     const res = await this.request.post(`${this.baseUrl}/api/v1/auth/login`, {
@@ -117,12 +126,22 @@ export class ApiHelper {
     if (!res.ok()) {
       throw new Error(`Login failed: ${res.status()} ${await res.text()}`);
     }
+
+    // Extract CSRF token from Set-Cookie header
+    const cookies = res.headers()['set-cookie'];
+    if (cookies) {
+      const csrfMatch = cookies.match(/csrf_token=([^;]+)/);
+      if (csrfMatch) {
+        this.csrfToken = csrfMatch[1];
+      }
+    }
   }
 
   async createService(data: CreateServiceData): Promise<{ id: string; slug: string }> {
     const slug = data.slug ?? data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     const res = await this.request.post(`${this.baseUrl}/api/v1/services`, {
       data: { ...data, slug },
+      headers: this.getMutationHeaders(),
     });
     if (!res.ok()) {
       throw new Error(`Create service failed: ${res.status()} ${await res.text()}`);
@@ -135,6 +154,7 @@ export class ApiHelper {
     const slug = data.slug ?? data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     const res = await this.request.post(`${this.baseUrl}/api/v1/groups`, {
       data: { ...data, slug },
+      headers: this.getMutationHeaders(),
     });
     if (!res.ok()) {
       throw new Error(`Create group failed: ${res.status()} ${await res.text()}`);
@@ -146,6 +166,7 @@ export class ApiHelper {
   async createEvent(data: CreateEventData): Promise<{ id: string; status: number }> {
     const res = await this.request.post(`${this.baseUrl}/api/v1/events`, {
       data,
+      headers: this.getMutationHeaders(),
     });
     const status = res.status();
     if (!res.ok()) {
@@ -158,6 +179,7 @@ export class ApiHelper {
   async addEventUpdate(eventId: string, data: AddEventUpdateData): Promise<{ status: number; error?: string }> {
     const res = await this.request.post(`${this.baseUrl}/api/v1/events/${eventId}/updates`, {
       data,
+      headers: this.getMutationHeaders(),
     });
     const status = res.status();
     if (!res.ok()) {
@@ -228,17 +250,24 @@ export class ApiHelper {
   }
 
   async deleteEvent(eventId: string): Promise<number> {
-    const res = await this.request.delete(`${this.baseUrl}/api/v1/events/${eventId}`);
+    const res = await this.request.delete(`${this.baseUrl}/api/v1/events/${eventId}`, {
+      headers: this.getMutationHeaders(),
+    });
     return res.status();
   }
 
   async updateService(slug: string, data: Partial<CreateServiceData> & { name: string; slug: string; status: string; reason?: string }): Promise<{ status: number }> {
-    const res = await this.request.patch(`${this.baseUrl}/api/v1/services/${slug}`, { data });
+    const res = await this.request.patch(`${this.baseUrl}/api/v1/services/${slug}`, {
+      data,
+      headers: this.getMutationHeaders(),
+    });
     return { status: res.status() };
   }
 
   async deleteService(slug: string): Promise<void> {
-    const res = await this.request.delete(`${this.baseUrl}/api/v1/services/${slug}`);
+    const res = await this.request.delete(`${this.baseUrl}/api/v1/services/${slug}`, {
+      headers: this.getMutationHeaders(),
+    });
     // Ignore 404 - service may already be deleted
     if (!res.ok() && res.status() !== 404) {
       throw new Error(`Delete service failed: ${res.status()} ${await res.text()}`);
@@ -246,7 +275,9 @@ export class ApiHelper {
   }
 
   async deleteGroup(slug: string): Promise<void> {
-    const res = await this.request.delete(`${this.baseUrl}/api/v1/groups/${slug}`);
+    const res = await this.request.delete(`${this.baseUrl}/api/v1/groups/${slug}`, {
+      headers: this.getMutationHeaders(),
+    });
     if (!res.ok() && res.status() !== 404) {
       throw new Error(`Delete group failed: ${res.status()} ${await res.text()}`);
     }
@@ -254,7 +285,10 @@ export class ApiHelper {
 
   // Raw request methods for testing permissions
   async rawPost(path: string, data: unknown): Promise<{ status: number }> {
-    const res = await this.request.post(`${this.baseUrl}${path}`, { data });
+    const res = await this.request.post(`${this.baseUrl}${path}`, {
+      data,
+      headers: this.getMutationHeaders(),
+    });
     return { status: res.status() };
   }
 
@@ -264,7 +298,9 @@ export class ApiHelper {
   }
 
   async rawDelete(path: string): Promise<{ status: number }> {
-    const res = await this.request.delete(`${this.baseUrl}${path}`);
+    const res = await this.request.delete(`${this.baseUrl}${path}`, {
+      headers: this.getMutationHeaders(),
+    });
     return { status: res.status() };
   }
 }
