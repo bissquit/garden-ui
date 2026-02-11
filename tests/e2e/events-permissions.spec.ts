@@ -59,8 +59,9 @@ test.describe('Permissions', () => {
       expect(status).toBe(403);
     });
 
-    test('operator can create events', async ({ operatorApi }) => {
-      const svc = await operatorApi.createService({ name: uniqueSlug('test-svc') });
+    test('operator can create events', async ({ api, operatorApi }) => {
+      // Services require admin, but events can be created by operator
+      const svc = await api.createService({ name: uniqueSlug('test-svc') });
 
       const { status } = await operatorApi.createEvent({
         title: 'Operator created incident',

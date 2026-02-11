@@ -27,8 +27,8 @@ test.describe('Public Status Page', () => {
   test('should display services section', async ({ page }) => {
     await page.goto('/');
 
-    // Services heading
-    await expect(page.getByRole('heading', { name: /services/i })).toBeVisible();
+    // Services heading (exact match to avoid matching group names like "backend-services-xxx")
+    await expect(page.getByRole('heading', { name: 'Services', exact: true })).toBeVisible();
 
     // Service list should be visible (or empty state)
     const serviceList = page.getByTestId('services-list');
@@ -167,8 +167,8 @@ test.describe('Public Status Page', () => {
     // Page should still be functional
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
-    // Services section should be visible
-    await expect(page.getByRole('heading', { name: /services/i })).toBeVisible();
+    // Services section should be visible (exact match to avoid matching group names)
+    await expect(page.getByRole('heading', { name: 'Services', exact: true })).toBeVisible();
   });
 
   test('should show theme switcher', async ({ page }) => {
