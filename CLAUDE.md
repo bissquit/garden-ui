@@ -115,7 +115,7 @@ src/
 │   ├── api-error.ts           # ApiError class
 │   ├── utils.ts               # cn(), formatDate(), formatRelativeTime()
 │   ├── status-utils.ts        # serviceStatusConfig, severityConfig, eventStatusConfig,
-│   │                          # calculateOverallStatus, groupServices, filterActiveEvents
+│   │                          # calculateOverallStatus, groupServices, isEventActive, filterActiveEvents
 │   ├── adapters/              # Adapters for API compatibility
 │   │   └── event-adapter.ts   # convertLegacyToAffectedServices, convertLegacyToAffectedGroups
 │   └── validations/           # Zod schemas

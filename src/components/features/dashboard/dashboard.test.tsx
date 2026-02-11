@@ -183,11 +183,11 @@ describe('EventsTable', () => {
     expect(screen.getByText('Database Maintenance')).toBeInTheDocument();
   });
 
-  it('shows event type badges', () => {
+  it('shows event status badges', () => {
     renderWithProviders(<EventsTable events={mockEvents} />);
 
-    expect(screen.getByText('incident')).toBeInTheDocument();
-    expect(screen.getByText('maintenance')).toBeInTheDocument();
+    expect(screen.getByText('Investigating')).toBeInTheDocument();
+    expect(screen.getByText('Scheduled')).toBeInTheDocument();
   });
 
   it('shows severity for incidents', () => {

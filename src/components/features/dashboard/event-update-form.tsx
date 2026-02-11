@@ -177,7 +177,9 @@ export function EventUpdateForm({
     return { statusUpdates, removed, added, total: statusUpdates + removed + added };
   }, [currentServices, addServices, addGroups]);
 
-  const needsReason = changesCount.total > 0;
+  // reason is only needed for add/remove operations (recorded in event_service_changes)
+  // status updates don't create change records, so reason is not applicable
+  const needsReason = changesCount.added + changesCount.removed > 0;
 
   // Reset form to initial state
   const resetFormState = () => {
