@@ -45,26 +45,6 @@ jobs:
         if: failure()
         run: docker compose -f docker-compose.ci.yml logs
 
-      - name: Create test users
-        run: |
-          # Create operator user (password must match fixtures.ts: TestPassword123)
-          curl -X POST http://localhost:8080/api/v1/auth/register \
-            -H "Content-Type: application/json" \
-            -d '{"email":"operator@test.com","password":"TestPassword123"}' || true
-
-          # Create admin user (password must match fixtures.ts: AdminPassword123)
-          curl -X POST http://localhost:8080/api/v1/auth/register \
-            -H "Content-Type: application/json" \
-            -d '{"email":"admin@test.com","password":"AdminPassword123"}' || true
-
-          # Set admin role for admin user
-          docker exec ci-postgres psql -U postgres -d garden \
-            -c "UPDATE users SET role = 'admin' WHERE email = 'admin@test.com';" || true
-
-          # Set operator role for operator user
-          docker exec ci-postgres psql -U postgres -d garden \
-            -c "UPDATE users SET role = 'operator' WHERE email = 'operator@test.com';" || true
-
       - name: Build application
         run: npm run build
         env:

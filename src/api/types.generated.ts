@@ -178,7 +178,7 @@ export interface paths {
         post?: never;
         /**
          * Archive a service (soft delete)
-         * @description Archives the service. Returns 409 if service has active events.
+         * @description Archives the service. Returns 409 if service has active events (not resolved, completed, or scheduled).
          */
         delete: operations["deleteService"];
         options?: never;
@@ -245,6 +245,7 @@ export interface paths {
          *     This is a public endpoint, no authentication required.
          *
          *     Events are sorted with active events first, then by creation date descending.
+         *     Active events are those not resolved, completed, or scheduled.
          */
         get: operations["getServiceEvents"];
         put?: never;
@@ -304,7 +305,7 @@ export interface paths {
         post?: never;
         /**
          * Archive a group (soft delete)
-         * @description Archives the group. Returns 409 if group has active events or has non-archived services assigned.
+         * @description Archives the group. Returns 409 if group has active events (not resolved, completed, or scheduled) or has non-archived services assigned.
          */
         delete: operations["deleteGroup"];
         options?: never;
@@ -682,9 +683,9 @@ export interface components {
             description?: string;
             /** @description Stored status (set manually or by closed events) */
             status: components["schemas"]["ServiceStatus"];
-            /** @description Effective status (worst-case from active events, or stored if no active events) */
+            /** @description Effective status (worst-case from active events, or stored if no active events). Active events exclude resolved, completed, and scheduled. */
             effective_status: components["schemas"]["ServiceStatus"];
-            /** @description Whether the service has any active (non-resolved) events */
+            /** @description Whether the service has any active events (not resolved, completed, or scheduled) */
             has_active_events: boolean;
             group_ids: string[];
             order: number;
@@ -1499,7 +1500,7 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description Filter by event status
+                 * @description Filter by event status. Active excludes resolved, completed, and scheduled events.
                  * @example active
                  */
                 status?: "active" | "resolved";

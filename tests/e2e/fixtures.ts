@@ -306,6 +306,7 @@ export class ApiHelper {
 }
 
 // Extended test fixture
+// Each API helper uses its own request context to avoid cookie conflicts
 export const test = base.extend<{
   authenticatedPage: Page;
   api: ApiHelper;
@@ -317,29 +318,37 @@ export const test = base.extend<{
     await loginAsAdmin(page);
     await use(page);
   },
-  api: async ({ request }, use) => {
+  api: async ({ playwright }, use) => {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
-    const helper = new ApiHelper(request, baseUrl);
+    const context = await playwright.request.newContext({ baseURL: baseUrl });
+    const helper = new ApiHelper(context, baseUrl);
     await helper.login(testAdmin.email, testAdmin.password);
     await use(helper);
+    await context.dispose();
   },
-  operatorApi: async ({ request }, use) => {
+  operatorApi: async ({ playwright }, use) => {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
-    const helper = new ApiHelper(request, baseUrl);
+    const context = await playwright.request.newContext({ baseURL: baseUrl });
+    const helper = new ApiHelper(context, baseUrl);
     await helper.login(testOperator.email, testOperator.password);
     await use(helper);
+    await context.dispose();
   },
-  userApi: async ({ request }, use) => {
+  userApi: async ({ playwright }, use) => {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
-    const helper = new ApiHelper(request, baseUrl);
+    const context = await playwright.request.newContext({ baseURL: baseUrl });
+    const helper = new ApiHelper(context, baseUrl);
     await helper.login(testUser.email, testUser.password);
     await use(helper);
+    await context.dispose();
   },
-  publicApi: async ({ request }, use) => {
+  publicApi: async ({ playwright }, use) => {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+    const context = await playwright.request.newContext({ baseURL: baseUrl });
     // Public API - no login
-    const helper = new ApiHelper(request, baseUrl);
+    const helper = new ApiHelper(context, baseUrl);
     await use(helper);
+    await context.dispose();
   },
 });
 
