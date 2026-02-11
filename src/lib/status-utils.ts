@@ -199,6 +199,11 @@ export function groupServices<T extends { group_ids?: string[] }>(
   return result;
 }
 
+// Check if event is active (not resolved/completed)
+export function isEventActive(status: EventStatus): boolean {
+  return !['resolved', 'completed'].includes(status);
+}
+
 // Filter active events (not resolved/completed)
 export function filterActiveEvents<T extends { status: string }>(
   events: T[]

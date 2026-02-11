@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 interface Column<T> {
   key: string;
@@ -21,6 +22,7 @@ interface DataTableProps<T> {
   data: T[];
   onRowClick?: (item: T) => void;
   emptyState?: React.ReactNode;
+  rowClassName?: (item: T) => string;
 }
 
 export function DataTable<T extends { id: string }>({
@@ -28,6 +30,7 @@ export function DataTable<T extends { id: string }>({
   data,
   onRowClick,
   emptyState,
+  rowClassName,
 }: DataTableProps<T>) {
   if (data.length === 0 && emptyState) {
     return <>{emptyState}</>;
@@ -50,7 +53,10 @@ export function DataTable<T extends { id: string }>({
             <TableRow
               key={item.id}
               onClick={() => onRowClick?.(item)}
-              className={onRowClick ? 'cursor-pointer hover:bg-muted/50' : ''}
+              className={cn(
+                onRowClick ? 'cursor-pointer hover:bg-muted/50' : '',
+                rowClassName?.(item)
+              )}
             >
               {columns.map((column) => (
                 <TableCell key={column.key} className={column.className}>

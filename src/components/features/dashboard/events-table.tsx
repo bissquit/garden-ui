@@ -3,12 +3,13 @@
 import { useRouter } from 'next/navigation';
 import { DataTable } from './data-table';
 import { EmptyState } from './empty-state';
-import { AlertCircle, Wrench } from 'lucide-react';
+import { AlertCircle, Wrench, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   severityConfig,
   eventStatusConfig,
   formatRelativeTime,
+  isEventActive,
 } from '@/lib/status-utils';
 import { cn } from '@/lib/utils';
 import type { components } from '@/api/types.generated';
@@ -26,25 +27,25 @@ export function EventsTable({ events }: EventsTableProps) {
     {
       key: 'title',
       header: 'Title',
-      cell: (event: Event) => (
-        <div className="flex items-center gap-2">
-          {event.type === 'incident' ? (
-            <AlertCircle className="h-4 w-4 text-red-500" />
-          ) : (
-            <Wrench className="h-4 w-4 text-blue-500" />
-          )}
-          <span className="font-medium">{event.title}</span>
-        </div>
-      ),
-    },
-    {
-      key: 'type',
-      header: 'Type',
-      cell: (event: Event) => (
-        <Badge variant={event.type === 'incident' ? 'destructive' : 'secondary'}>
-          {event.type}
-        </Badge>
-      ),
+      cell: (event: Event) => {
+        const active = isEventActive(event.status);
+        const iconColor = !active
+          ? 'text-muted-foreground'
+          : event.type === 'incident'
+            ? 'text-red-500'
+            : 'text-blue-500';
+
+        return (
+          <div className="flex items-center gap-2">
+            {event.type === 'incident' ? (
+              <AlertCircle className={cn('h-4 w-4', iconColor)} />
+            ) : (
+              <Wrench className={cn('h-4 w-4', iconColor)} />
+            )}
+            <span className="font-medium">{event.title}</span>
+          </div>
+        );
+      },
     },
     {
       key: 'severity',
@@ -53,7 +54,11 @@ export function EventsTable({ events }: EventsTableProps) {
         if (!event.severity)
           return <span className="text-muted-foreground">—</span>;
         const config = severityConfig[event.severity];
-        return <Badge className={cn(config.bgClass, 'text-white')}>{config.label}</Badge>;
+        const active = isEventActive(event.status);
+        const badgeClass = active
+          ? cn(config.bgClass, 'text-white')
+          : 'bg-muted text-muted-foreground';
+        return <Badge className={badgeClass}>{config.label}</Badge>;
       },
     },
     {
@@ -61,7 +66,22 @@ export function EventsTable({ events }: EventsTableProps) {
       header: 'Status',
       cell: (event: Event) => {
         const config = eventStatusConfig[event.status];
-        return <span>{config.label}</span>;
+        const active = isEventActive(event.status);
+
+        if (active) {
+          return (
+            <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+              {config.label}
+            </Badge>
+          );
+        }
+
+        return (
+          <Badge variant="outline" className="text-green-600 dark:text-green-400">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            {config.label}
+          </Badge>
+        );
       },
     },
     {
@@ -81,6 +101,7 @@ export function EventsTable({ events }: EventsTableProps) {
       columns={columns}
       data={events}
       onRowClick={(event) => router.push(`/dashboard/events/${event.id}`)}
+      rowClassName={(event) => (!isEventActive(event.status) ? 'opacity-60' : '')}
       emptyState={
         <EmptyState
           icon={AlertCircle}
