@@ -25,7 +25,8 @@ npm run api:generate     # Сгенерировать TypeScript типы
 ```
 
 **Backend:** https://github.com/bissquit/incident-garden
-**Compatibility:** Frontend 1.x.x ↔ Backend >= 2.4.0
+**Compatibility:** Frontend 1.3.x ↔ Backend 2.4.0-2.7.x (текущая)
+**Pending Migration:** Frontend 1.4.0 ↔ Backend >= 2.8.0 (требуется обновление)
 
 ### Test Environment
 
@@ -92,7 +93,7 @@ src/
 │                              # ServiceStatusSelector, GroupStatusSelector,
 │                              # TemplatesTable, TemplateForm, TemplateFormDialog,
 │                              # ChannelsTable, ChannelForm, ChannelFormDialog,
-│                              # SubscriptionEditor
+│                              # SubscriptionEditor (DISABLED - pending Stage 4 rewrite)
 │
 ├── hooks/
 │   ├── use-auth.tsx           # Auth context: login, logout, hasRole, hasMinRole
@@ -107,8 +108,9 @@ src/
 │   ├── use-templates-mutations.ts # useCreateTemplate, useDeleteTemplate
 │   ├── use-channels.ts        # useChannels
 │   ├── use-channels-mutations.ts  # useCreateChannel, useUpdateChannel, useDeleteChannel, useVerifyChannel
-│   ├── use-subscriptions.ts   # useSubscription
-│   ├── use-subscriptions-mutations.ts # useUpdateSubscription, useDeleteSubscription
+│   │                              # TODO v2.8.0: + useResendVerificationCode (код для email)
+│   ├── use-subscriptions.ts   # useSubscriptionsMatrix (per-channel model)
+│   ├── use-subscriptions-mutations.ts # useSetChannelSubscriptions
 │   └── use-theme.ts           # Theme switching (Garden/Ocean/Sunset/Forest)
 │
 ├── lib/
@@ -125,7 +127,9 @@ src/
 │       │                      # affectedServiceSchema, affectedGroupSchema
 │       ├── template.ts        # template schemas
 │       ├── channel.ts         # createChannelSchema (email/telegram validation)
+│       │                      # TODO v2.8.0: + mattermost, verifyChannelSchema
 │       └── subscription.ts    # updateSubscriptionSchema
+│                              # TODO v2.8.0: → setChannelSubscriptionsSchema (per-channel)
 │
 └── types/index.ts             # Role, User, TokenPair, AuthState
 
@@ -159,7 +163,7 @@ docker-compose.ci.yml          # CI environment: postgres + migrate + backend (n
 
 ## 3. STATUS
 
-**Current:** Phase 7 (in progress) | **Version:** 1.0.0
+**Current:** Phase 7 (in progress) | **Version:** 1.3.0
 
 | Phase              | Status | Scope                                                                         |
 |--------------------|--------|-------------------------------------------------------------------------------|
@@ -184,6 +188,42 @@ docker-compose.ci.yml          # CI environment: postgres + migrate + backend (n
 - [ ] Loading skeletons
 - [ ] Error boundaries
 - [ ] i18n (опционально)
+
+### 🔴 PENDING: Backend 2.8.0 Migration
+
+**OpenAPI 2.8.0 Breaking Changes — требуется адаптация frontend:**
+
+#### 1. Subscriptions Model (BREAKING)
+Старая модель (user-level subscriptions) заменена на channel-level subscriptions:
+- ❌ `GET/POST/DELETE /api/v1/me/subscriptions` — старая семантика удалена
+- ✅ `GET /api/v1/me/subscriptions` — возвращает `SubscriptionsMatrixResponse` (channels + их подписки)
+- ✅ `PUT /api/v1/me/channels/{id}/subscriptions` — установка подписок для конкретного канала
+
+**Новая схема:**
+```yaml
+SetChannelSubscriptionsRequest:
+  subscribe_to_all_services: boolean  # Подписка на все сервисы (включая будущие)
+  service_ids: string[]               # Конкретные сервисы (если subscribe_to_all = false)
+```
+
+#### 2. Channels (Additions)
+- ✅ Новый тип канала: `mattermost`
+- ✅ `POST /api/v1/me/channels/{id}/resend-code` — повторная отправка кода верификации
+- ✅ `VerifyChannelRequest` — для email требуется 6-digit код
+
+#### 3. Прогресс миграции:
+| Файл | Изменение | Статус |
+|------|-----------|--------|
+| `types.generated.ts` | Перегенерировать: `npm run api:generate` | ✅ Done |
+| `lib/validations/channel.ts` | Добавить `mattermost`, `verifyChannelSchema` | ✅ Done |
+| `lib/validations/subscription.ts` | Переписать под `SetChannelSubscriptionsRequest` | ✅ Done |
+| `hooks/use-subscriptions.ts` | Новый хук `useSubscriptionsMatrix` | ✅ Done |
+| `hooks/use-subscriptions-mutations.ts` | `useSetChannelSubscriptions`, удалить старые | ✅ Done |
+| `hooks/use-channels-mutations.ts` | Добавить `useResendVerificationCode`, обновить `useVerifyChannel` | ⏳ Stage 2 |
+| `components/.../subscription-editor.tsx` | Полная переработка UI под per-channel model | ⏳ Stage 4 |
+| `components/.../channel-form.tsx` | Добавить mattermost | ⏳ Stage 2 |
+| `components/.../channels-table.tsx` | Добавить verify с кодом, resend code |
+| `app/settings/page.tsx` | Интегрировать новую модель подписок |
 
 ---
 

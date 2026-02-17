@@ -28,4 +28,5 @@ export { ChannelsTable } from './channels-table';
 export { ChannelForm } from './channel-form';
 export { ChannelFormDialog } from './channel-form-dialog';
 // Subscriptions
-export { SubscriptionEditor } from './subscription-editor';
+// TODO: Uncomment after Stage 4 (UI Subscriptions rewrite)
+// export { SubscriptionEditor } from './subscription-editor';

@@ -1,13 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useUpdateSubscription, useDeleteSubscription } from './use-subscriptions-mutations';
+import { useSetChannelSubscriptions } from './use-subscriptions-mutations';
 import { type ReactNode } from 'react';
 
 vi.mock('@/api/client', () => ({
   apiClient: {
-    POST: vi.fn(),
-    DELETE: vi.fn(),
+    PUT: vi.fn(),
   },
 }));
 
@@ -27,111 +26,150 @@ function createWrapper() {
   return Wrapper;
 }
 
-describe('useUpdateSubscription', () => {
+describe('useSetChannelSubscriptions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should update subscription successfully', async () => {
+  it('sets subscriptions for channel', async () => {
     const { apiClient } = await import('@/api/client');
-    vi.mocked(apiClient.POST).mockResolvedValue({
+    vi.mocked(apiClient.PUT).mockResolvedValue({
       data: {
         data: {
-          id: '1',
-          user_id: 'user-1',
-          service_ids: ['service-1', 'service-2'],
-          created_at: '2024-01-01T00:00:00Z',
+          channel_id: 'channel-1',
+          subscribe_to_all_services: false,
+          subscribed_service_ids: ['service-1', 'service-2'],
         },
       },
       error: undefined,
-      response: {} as Response,
-    } as never);
+      response: { status: 200 } as Response,
+    });
 
-    const { result } = renderHook(() => useUpdateSubscription(), {
+    const { result } = renderHook(() => useSetChannelSubscriptions(), {
       wrapper: createWrapper(),
     });
 
     result.current.mutate({
-      service_ids: ['service-1', 'service-2'],
+      channelId: 'channel-1',
+      data: {
+        subscribe_to_all_services: false,
+        service_ids: ['service-1', 'service-2'],
+      },
     });
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(apiClient.POST).toHaveBeenCalledWith('/api/v1/me/subscriptions', {
-      body: { service_ids: ['service-1', 'service-2'] },
-    });
+    expect(apiClient.PUT).toHaveBeenCalledWith(
+      '/api/v1/me/channels/{id}/subscriptions',
+      {
+        params: { path: { id: 'channel-1' } },
+        body: {
+          subscribe_to_all_services: false,
+          service_ids: ['service-1', 'service-2'],
+        },
+      }
+    );
   });
 
-  it('should handle error when updating subscription fails', async () => {
+  it('handles subscribe_to_all_services', async () => {
     const { apiClient } = await import('@/api/client');
-    vi.mocked(apiClient.POST).mockResolvedValue({
-      data: undefined,
-      error: { error: { message: 'Update failed' } },
-      response: {} as Response,
-    } as never);
-
-    const { result } = renderHook(() => useUpdateSubscription(), {
-      wrapper: createWrapper(),
-    });
-
-    result.current.mutate({
-      service_ids: ['service-1'],
-    });
-
-    await waitFor(() => {
-      expect(result.current.isError).toBe(true);
-    });
-
-    expect(result.current.error?.message).toBe('Update failed');
-  });
-});
-
-describe('useDeleteSubscription', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('should delete subscription successfully', async () => {
-    const { apiClient } = await import('@/api/client');
-    vi.mocked(apiClient.DELETE).mockResolvedValue({
-      data: undefined,
+    vi.mocked(apiClient.PUT).mockResolvedValue({
+      data: {
+        data: {
+          channel_id: 'channel-1',
+          subscribe_to_all_services: true,
+          subscribed_service_ids: [],
+        },
+      },
       error: undefined,
-      response: { status: 204 } as Response,
-    } as never);
+      response: { status: 200 } as Response,
+    });
 
-    const { result } = renderHook(() => useDeleteSubscription(), {
+    const { result } = renderHook(() => useSetChannelSubscriptions(), {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate();
+    result.current.mutate({
+      channelId: 'channel-1',
+      data: {
+        subscribe_to_all_services: true,
+        service_ids: [],
+      },
+    });
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(apiClient.DELETE).toHaveBeenCalledWith('/api/v1/me/subscriptions');
+    expect(apiClient.PUT).toHaveBeenCalledWith(
+      '/api/v1/me/channels/{id}/subscriptions',
+      {
+        params: { path: { id: 'channel-1' } },
+        body: {
+          subscribe_to_all_services: true,
+          service_ids: [],
+        },
+      }
+    );
   });
 
-  it('should handle error when deleting subscription fails', async () => {
+  it('handles specific services subscription', async () => {
     const { apiClient } = await import('@/api/client');
-    vi.mocked(apiClient.DELETE).mockResolvedValue({
-      data: undefined,
-      error: { error: { message: 'Delete failed' } },
-      response: { status: 500 } as Response,
-    } as never);
+    vi.mocked(apiClient.PUT).mockResolvedValue({
+      data: {
+        data: {
+          channel_id: 'channel-1',
+          subscribe_to_all_services: false,
+          subscribed_service_ids: ['uuid-1', 'uuid-2'],
+        },
+      },
+      error: undefined,
+      response: { status: 200 } as Response,
+    });
 
-    const { result } = renderHook(() => useDeleteSubscription(), {
+    const { result } = renderHook(() => useSetChannelSubscriptions(), {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate();
+    result.current.mutate({
+      channelId: 'channel-1',
+      data: {
+        subscribe_to_all_services: false,
+        service_ids: ['uuid-1', 'uuid-2'],
+      },
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+  });
+
+  it('throws ApiError on failure', async () => {
+    const { apiClient } = await import('@/api/client');
+    vi.mocked(apiClient.PUT).mockResolvedValue({
+      data: undefined,
+      error: { error: { message: 'Channel not verified' } },
+      response: { status: 400 } as Response,
+    });
+
+    const { result } = renderHook(() => useSetChannelSubscriptions(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      channelId: 'channel-1',
+      data: {
+        subscribe_to_all_services: false,
+        service_ids: ['service-1'],
+      },
+    });
 
     await waitFor(() => {
       expect(result.current.isError).toBe(true);
     });
 
-    expect(result.current.error?.message).toBe('Delete failed');
+    expect(result.current.error).toBeDefined();
   });
 });

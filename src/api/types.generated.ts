@@ -578,8 +578,40 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Verify a channel */
+        /**
+         * Verify a channel with code
+         * @description Verifies a notification channel.
+         *
+         *     **For email channels:** Requires a 6-digit verification code sent to the email address.
+         *
+         *     **For Telegram/Mattermost:** Sends a test message to verify the channel is working.
+         *     No request body needed.
+         */
         post: operations["verifyChannel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/channels/{id}/resend-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resend verification code
+         * @description Resends a verification code for email channels.
+         *
+         *     **Rate limiting:** Cannot request a new code within 60 seconds of the previous request.
+         *
+         *     **Only for email channels:** Returns 400 for Telegram/Mattermost channels.
+         */
+        post: operations["resendVerificationCode"];
         delete?: never;
         options?: never;
         head?: never;
@@ -593,13 +625,42 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** My subscription */
-        get: operations["getMySubscription"];
+        /**
+         * Get subscriptions matrix
+         * @description Returns all channels with their subscription settings
+         */
+        get: operations["getSubscriptionsMatrix"];
         put?: never;
-        /** Create or update a subscription */
-        post: operations["updateSubscription"];
-        /** Delete a subscription */
-        delete: operations["deleteSubscription"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/channels/{id}/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set channel subscriptions
+         * @description Set which services this channel is subscribed to.
+         *
+         *     **Requirements:**
+         *     - Channel must be verified before managing subscriptions
+         *     - If subscribe_to_all_services is true, service_ids must be empty
+         *
+         *     **Subscription modes:**
+         *     - `subscribe_to_all_services: true` - Subscribe to all services including future ones
+         *     - `subscribe_to_all_services: false` with `service_ids` - Subscribe to specific services only
+         */
+        put: operations["setChannelSubscriptions"];
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -659,7 +720,7 @@ export interface components {
          */
         StatusLogSourceType: "manual" | "event" | "webhook";
         /** @enum {string} */
-        ChannelType: "email" | "telegram";
+        ChannelType: "email" | "telegram" | "mattermost";
         /** @enum {string} */
         Role: "user" | "operator" | "admin";
         User: {
@@ -799,14 +860,12 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
-        Subscription: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            user_id: string;
-            service_ids: string[];
-            /** Format: date-time */
-            created_at: string;
+        ChannelWithSubscriptions: {
+            channel: components["schemas"]["NotificationChannel"];
+            /** @description If true, channel is subscribed to all services including future ones */
+            subscribe_to_all_services: boolean;
+            /** @description List of specific service IDs subscribed to (empty if subscribe_to_all_services is true) */
+            subscribed_service_ids: string[];
         };
         TokenPair: {
             access_token: string;
@@ -951,7 +1010,30 @@ export interface components {
         UpdateChannelRequest: {
             is_enabled: boolean;
         };
-        UpdateSubscriptionRequest: {
+        /** @description Request body for email channel verification. Not required for Telegram/Mattermost. */
+        VerifyChannelRequest: {
+            /**
+             * @description 6-digit verification code sent to the email address
+             * @example 123456
+             */
+            code: string;
+        };
+        /**
+         * @example {
+         *       "subscribe_to_all_services": false,
+         *       "service_ids": [
+         *         "550e8400-e29b-41d4-a716-446655440001",
+         *         "550e8400-e29b-41d4-a716-446655440002"
+         *       ]
+         *     }
+         */
+        SetChannelSubscriptionsRequest: {
+            /**
+             * @description If true, subscribe to all services including future ones
+             * @default false
+             */
+            subscribe_to_all_services: boolean;
+            /** @description Specific services to subscribe to (must be empty if subscribe_to_all_services is true) */
             service_ids?: string[];
         };
         UserResponse: {
@@ -1007,8 +1089,18 @@ export interface components {
         ChannelsResponse: {
             data?: components["schemas"]["NotificationChannel"][];
         };
-        SubscriptionResponse: {
-            data?: components["schemas"]["Subscription"];
+        SubscriptionsMatrixResponse: {
+            data?: {
+                channels?: components["schemas"]["ChannelWithSubscriptions"][];
+            };
+        };
+        ChannelSubscriptionsResponse: {
+            data?: {
+                /** Format: uuid */
+                channel_id?: string;
+                subscribe_to_all_services?: boolean;
+                subscribed_service_ids?: string[];
+            };
         };
         TagsResponse: {
             data?: {
@@ -2092,6 +2184,7 @@ export interface operations {
             };
             400: components["responses"]["ValidationError"];
             401: components["responses"]["UnauthorizedError"];
+            409: components["responses"]["ConflictError"];
         };
     };
     deleteChannel: {
@@ -2155,7 +2248,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["VerifyChannelRequest"];
+            };
+        };
         responses: {
             /** @description Channel verified */
             200: {
@@ -2166,12 +2263,98 @@ export interface operations {
                     "application/json": components["schemas"]["ChannelResponse"];
                 };
             };
+            /** @description Invalid or expired code */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            /** @example verification code expired, request a new one */
+                            message?: string;
+                        };
+                    };
+                };
+            };
             401: components["responses"]["UnauthorizedError"];
             403: components["responses"]["ForbiddenError"];
             404: components["responses"]["NotFoundError"];
+            /** @description Too many verification attempts */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            /** @example too many attempts, request a new code */
+                            message?: string;
+                        };
+                    };
+                };
+            };
         };
     };
-    getMySubscription: {
+    resendVerificationCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ChannelId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verification code sent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: {
+                            /** @example verification code sent */
+                            message?: string;
+                        };
+                    };
+                };
+            };
+            /** @description Channel already verified or resend not supported */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            /** @example channel already verified */
+                            message?: string;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+            /** @description Please wait before requesting a new code */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            /** @example please wait before requesting a new code */
+                            message?: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    getSubscriptionsMatrix: {
         parameters: {
             query?: never;
             header?: never;
@@ -2180,60 +2363,58 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Subscription data */
+            /** @description Subscriptions matrix */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SubscriptionResponse"];
+                    "application/json": components["schemas"]["SubscriptionsMatrixResponse"];
                 };
             };
             401: components["responses"]["UnauthorizedError"];
         };
     };
-    updateSubscription: {
+    setChannelSubscriptions: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: components["parameters"]["ChannelId"];
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateSubscriptionRequest"];
+                "application/json": components["schemas"]["SetChannelSubscriptionsRequest"];
             };
         };
         responses: {
-            /** @description Subscription updated */
+            /** @description Subscriptions updated */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SubscriptionResponse"];
+                    "application/json": components["schemas"]["ChannelSubscriptionsResponse"];
                 };
             };
-            401: components["responses"]["UnauthorizedError"];
-        };
-    };
-    deleteSubscription: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Subscription deleted */
-            204: {
+            /** @description Invalid request or channel not verified */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error?: {
+                            /** @example channel must be verified first */
+                            message?: string;
+                        };
+                    };
+                };
             };
             401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
             404: components["responses"]["NotFoundError"];
         };
     };

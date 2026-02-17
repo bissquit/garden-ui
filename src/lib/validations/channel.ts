@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const channelTypeEnum = z.enum(['email', 'telegram']);
+export const channelTypeEnum = z.enum(['email', 'telegram', 'mattermost']);
 
 export const createChannelSchema = z
   .object({
@@ -27,7 +27,31 @@ export const createChannelSchema = z
           path: ['target'],
         });
       }
+    } else if (data.type === 'mattermost') {
+      // Mattermost webhook URL must be valid HTTPS URL
+      try {
+        const url = new URL(data.target);
+        if (url.protocol !== 'https:') {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Webhook URL must use HTTPS',
+            path: ['target'],
+          });
+        }
+      } catch {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Please enter a valid webhook URL',
+          path: ['target'],
+        });
+      }
     }
   });
 
 export type CreateChannelFormData = z.infer<typeof createChannelSchema>;
+
+export const verifyChannelSchema = z.object({
+  code: z.string().regex(/^\d{6}$/, 'Code must be 6 digits'),
+});
+
+export type VerifyChannelInput = z.infer<typeof verifyChannelSchema>;

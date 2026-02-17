@@ -1,36 +1,36 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
+import { ApiError } from '@/lib/api-error';
 import type { components } from '@/api/types.generated';
 
-type UpdateSubscriptionRequest = components['schemas']['UpdateSubscriptionRequest'];
+type SetChannelSubscriptionsRequest = components['schemas']['SetChannelSubscriptionsRequest'];
 
-export function useUpdateSubscription() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: UpdateSubscriptionRequest) => {
-      const { data: result, error } = await apiClient.POST('/api/v1/me/subscriptions', {
-        body: data,
-      });
-      if (error) throw new Error(error.error?.message || 'Failed to update subscription');
-      return result;
-    },
-    onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: ['subscription'] });
-    },
-  });
+interface SetChannelSubscriptionsParams {
+  channelId: string;
+  data: SetChannelSubscriptionsRequest;
 }
 
-export function useDeleteSubscription() {
+export function useSetChannelSubscriptions() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
-      const { error } = await apiClient.DELETE('/api/v1/me/subscriptions');
-      if (error) throw new Error(error.error?.message || 'Failed to delete subscription');
+    mutationFn: async ({ channelId, data }: SetChannelSubscriptionsParams) => {
+      const { data: result, error, response } = await apiClient.PUT(
+        '/api/v1/me/channels/{id}/subscriptions',
+        {
+          params: { path: { id: channelId } },
+          body: data,
+        }
+      );
+
+      if (error) {
+        throw ApiError.fromResponse(response.status, error, 'Failed to set channel subscriptions');
+      }
+
+      return result;
     },
-    onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: ['subscription'] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subscriptions-matrix'] });
     },
   });
 }
