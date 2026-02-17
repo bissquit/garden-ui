@@ -2,14 +2,10 @@
 
 import { useAuth } from '@/hooks/use-auth';
 import { useChannels } from '@/hooks/use-channels';
-import {
-  ChannelsTable,
-  ChannelFormDialog,
-  SubscriptionEditor,
-} from '@/components/features/dashboard';
+import { ChannelsTable, ChannelFormDialog } from '@/components/features/dashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, User, AlertCircle } from 'lucide-react';
+import { Loader2, User, AlertCircle, Bell } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -81,7 +77,23 @@ export default function SettingsPage() {
       <Separator />
 
       {/* Subscriptions Section */}
-      <SubscriptionEditor />
+      {/* TODO: Replace with new SubscriptionEditor after Stage 4 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            Service Subscriptions
+          </CardTitle>
+          <CardDescription>
+            Choose which services you want to receive notifications about
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            Subscription management is being updated. Coming soon.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

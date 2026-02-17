@@ -15,8 +15,11 @@ export class ApiError extends Error {
     this.name = 'ApiError';
   }
 
-  static fromResponse(status: number, body: ApiErrorResponse): ApiError {
-    return new ApiError(status, body.error.message, body.error.details);
+  static fromResponse(status: number, body: unknown, fallbackMessage = 'Request failed'): ApiError {
+    const errorBody = body as { error?: { message?: string; details?: string } } | undefined;
+    const message = errorBody?.error?.message ?? fallbackMessage;
+    const details = errorBody?.error?.details;
+    return new ApiError(status, message, details);
   }
 
   get isUnauthorized(): boolean {

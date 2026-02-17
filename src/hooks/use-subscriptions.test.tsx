@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useSubscription } from './use-subscriptions';
+import { useSubscriptionsMatrix } from './use-subscriptions';
 import { type ReactNode } from 'react';
 
 vi.mock('@/api/client', () => ({
@@ -26,27 +26,20 @@ function createWrapper() {
   return Wrapper;
 }
 
-describe('useSubscription', () => {
+describe('useSubscriptionsMatrix', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should fetch subscription successfully', async () => {
+  it('returns empty array when no channels', async () => {
     const { apiClient } = await import('@/api/client');
-    const mockSubscription = {
-      id: '1',
-      user_id: 'user-1',
-      service_ids: ['service-1', 'service-2'],
-      created_at: '2024-01-01T00:00:00Z',
-    };
-
     vi.mocked(apiClient.GET).mockResolvedValue({
-      data: { data: mockSubscription },
+      data: { data: { channels: [] } },
       error: undefined,
       response: { status: 200 } as Response,
     });
 
-    const { result } = renderHook(() => useSubscription(), {
+    const { result } = renderHook(() => useSubscriptionsMatrix(), {
       wrapper: createWrapper(),
     });
 
@@ -54,19 +47,50 @@ describe('useSubscription', () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data).toEqual(mockSubscription);
+    expect(result.current.data).toEqual([]);
     expect(apiClient.GET).toHaveBeenCalledWith('/api/v1/me/subscriptions');
   });
 
-  it('should return null when no subscription exists (404)', async () => {
+  it('returns channels with subscriptions', async () => {
     const { apiClient } = await import('@/api/client');
+    const mockChannels = [
+      {
+        channel: {
+          id: 'channel-1',
+          user_id: 'user-1',
+          type: 'email',
+          target: 'test@example.com',
+          is_enabled: true,
+          is_verified: true,
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z',
+        },
+        subscribe_to_all_services: false,
+        subscribed_service_ids: ['service-1', 'service-2'],
+      },
+      {
+        channel: {
+          id: 'channel-2',
+          user_id: 'user-1',
+          type: 'telegram',
+          target: 'telegram_user',
+          is_enabled: true,
+          is_verified: true,
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z',
+        },
+        subscribe_to_all_services: true,
+        subscribed_service_ids: [],
+      },
+    ];
+
     vi.mocked(apiClient.GET).mockResolvedValue({
-      data: undefined,
-      error: { error: { message: 'Not found' } },
-      response: { status: 404 } as Response,
+      data: { data: { channels: mockChannels } },
+      error: undefined,
+      response: { status: 200 } as Response,
     });
 
-    const { result } = renderHook(() => useSubscription(), {
+    const { result } = renderHook(() => useSubscriptionsMatrix(), {
       wrapper: createWrapper(),
     });
 
@@ -74,10 +98,10 @@ describe('useSubscription', () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data).toBeNull();
+    expect(result.current.data).toEqual(mockChannels);
   });
 
-  it('should handle error when fetching subscription fails', async () => {
+  it('throws ApiError on failure', async () => {
     const { apiClient } = await import('@/api/client');
     vi.mocked(apiClient.GET).mockResolvedValue({
       data: undefined,
@@ -85,7 +109,7 @@ describe('useSubscription', () => {
       response: { status: 500 } as Response,
     });
 
-    const { result } = renderHook(() => useSubscription(), {
+    const { result } = renderHook(() => useSubscriptionsMatrix(), {
       wrapper: createWrapper(),
     });
 
@@ -93,6 +117,6 @@ describe('useSubscription', () => {
       expect(result.current.isError).toBe(true);
     });
 
-    expect(result.current.error?.message).toBe('Failed to fetch subscription');
+    expect(result.current.error).toBeDefined();
   });
 });

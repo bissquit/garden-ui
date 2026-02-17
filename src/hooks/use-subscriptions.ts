@@ -1,22 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
+import { ApiError } from '@/lib/api-error';
 import type { components } from '@/api/types.generated';
 
-type Subscription = components['schemas']['Subscription'];
+type ChannelWithSubscriptions = components['schemas']['ChannelWithSubscriptions'];
 
-export function useSubscription() {
+export function useSubscriptionsMatrix() {
   return useQuery({
-    queryKey: ['subscription'],
-    queryFn: async (): Promise<Subscription | null> => {
+    queryKey: ['subscriptions-matrix'],
+    queryFn: async (): Promise<ChannelWithSubscriptions[]> => {
       const { data, error, response } = await apiClient.GET('/api/v1/me/subscriptions');
 
-      // 404 means no subscription exists yet - this is valid
-      if (response.status === 404) {
-        return null;
+      if (error) {
+        throw ApiError.fromResponse(response.status, error, 'Failed to fetch subscriptions');
       }
 
-      if (error) throw new Error('Failed to fetch subscription');
-      return data?.data ?? null;
+      return data?.data?.channels ?? [];
     },
   });
 }
