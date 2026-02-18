@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Mail, MessageSquare } from 'lucide-react';
+import { Loader2, Mail, MessageSquare, Hash } from 'lucide-react';
 import {
   createChannelSchema,
   type CreateChannelFormData,
@@ -48,6 +48,8 @@ export function ChannelForm({ onSubmit, isLoading }: ChannelFormProps) {
         return 'Enter email address';
       case 'telegram':
         return 'Enter Telegram username';
+      case 'mattermost':
+        return 'https://mattermost.example.com/hooks/xxx';
       default:
         return 'Enter target';
     }
@@ -56,11 +58,26 @@ export function ChannelForm({ onSubmit, isLoading }: ChannelFormProps) {
   const getDescription = () => {
     switch (watchType) {
       case 'email':
-        return 'We will send a verification email to this address.';
+        return 'We will send a verification code to this address.';
       case 'telegram':
         return 'Enter your Telegram username without the @ symbol.';
+      case 'mattermost':
+        return 'Create an Incoming Webhook in Mattermost and paste the URL here.';
       default:
         return '';
+    }
+  };
+
+  const getInputLabel = () => {
+    switch (watchType) {
+      case 'email':
+        return 'Email Address';
+      case 'telegram':
+        return 'Username';
+      case 'mattermost':
+        return 'Webhook URL';
+      default:
+        return 'Target';
     }
   };
 
@@ -98,6 +115,12 @@ export function ChannelForm({ onSubmit, isLoading }: ChannelFormProps) {
                       <span>Telegram</span>
                     </div>
                   </SelectItem>
+                  <SelectItem value="mattermost">
+                    <div className="flex items-center gap-2">
+                      <Hash className="h-4 w-4" />
+                      <span>Mattermost</span>
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -110,9 +133,7 @@ export function ChannelForm({ onSubmit, isLoading }: ChannelFormProps) {
           name="target"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>
-                {watchType === 'email' ? 'Email Address' : 'Username'}
-              </FormLabel>
+              <FormLabel>{getInputLabel()}</FormLabel>
               <FormControl>
                 <Input
                   {...field}

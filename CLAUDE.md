@@ -93,6 +93,7 @@ src/
 │                              # ServiceStatusSelector, GroupStatusSelector,
 │                              # TemplatesTable, TemplateForm, TemplateFormDialog,
 │                              # ChannelsTable, ChannelForm, ChannelFormDialog,
+│                              # VerifyEmailDialog,
 │                              # SubscriptionEditor (DISABLED - pending Stage 4 rewrite)
 │
 ├── hooks/
@@ -126,8 +127,7 @@ src/
 │       ├── event.ts           # createEventSchema, addEventUpdateSchema,
 │       │                      # affectedServiceSchema, affectedGroupSchema
 │       ├── template.ts        # template schemas
-│       ├── channel.ts         # createChannelSchema (email/telegram validation)
-│       │                      # TODO v2.8.0: + mattermost, verifyChannelSchema
+│       ├── channel.ts         # createChannelSchema (email/telegram/mattermost), verifyChannelSchema
 │       └── subscription.ts    # updateSubscriptionSchema
 │                              # TODO v2.8.0: → setChannelSubscriptionsSchema (per-channel)
 │
@@ -221,9 +221,10 @@ SetChannelSubscriptionsRequest:
 | `hooks/use-subscriptions-mutations.ts` | `useSetChannelSubscriptions`, удалить старые | ✅ Done |
 | `hooks/use-channels-mutations.ts` | Добавить `useResendVerificationCode`, обновить `useVerifyChannel` | ✅ Done |
 | `components/.../subscription-editor.tsx` | Полная переработка UI под per-channel model | ⏳ Stage 4 |
-| `components/.../channel-form.tsx` | Добавить mattermost | ⏳ Stage 2 |
-| `components/.../channels-table.tsx` | Добавить verify с кодом, resend code |
-| `app/settings/page.tsx` | Интегрировать новую модель подписок |
+| `components/.../channel-form.tsx` | Добавить mattermost | ✅ Done |
+| `components/.../channels-table.tsx` | Добавить verify с кодом, resend code | ✅ Done |
+| `components/.../verify-email-dialog.tsx` | Диалог верификации email с 6-digit кодом | ✅ Done |
+| `app/settings/page.tsx` | Интегрировать новую модель подписок | ⏳ Stage 5 |
 
 ---
 
