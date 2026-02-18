@@ -306,16 +306,18 @@ export function SubscriptionEditor() {
                 {activeChannels.map((ch) => {
                   const state = localState.get(ch.channel.id);
                   return (
-                    <td key={ch.channel.id} className="text-center py-3 px-4">
-                      <Checkbox
-                        checked={state?.subscribeToAll ?? false}
-                        onCheckedChange={(checked) =>
-                          handleSubscribeToAllChange(
-                            ch.channel.id,
-                            checked === true
-                          )
-                        }
-                      />
+                    <td key={ch.channel.id} className="py-3 px-4">
+                      <div className="flex justify-center">
+                        <Checkbox
+                          checked={state?.subscribeToAll ?? false}
+                          onCheckedChange={(checked) =>
+                            handleSubscribeToAllChange(
+                              ch.channel.id,
+                              checked === true
+                            )
+                          }
+                        />
+                      </div>
                     </td>
                   );
                 })}
@@ -392,17 +394,19 @@ function GroupRows({
             const isSubscribed = state?.serviceIds.has(service.id) ?? false;
 
             return (
-              <td key={ch.channel.id} className="text-center py-2 px-4">
-                {isSubscribedToAll ? (
-                  <span className="text-muted-foreground">—</span>
-                ) : (
-                  <Checkbox
-                    checked={isSubscribed}
-                    onCheckedChange={(checked) =>
-                      onServiceChange(ch.channel.id, service.id, checked === true)
-                    }
-                  />
-                )}
+              <td key={ch.channel.id} className="py-2 px-4">
+                <div className="flex justify-center">
+                  {isSubscribedToAll ? (
+                    <span className="text-muted-foreground">—</span>
+                  ) : (
+                    <Checkbox
+                      checked={isSubscribed}
+                      onCheckedChange={(checked) =>
+                        onServiceChange(ch.channel.id, service.id, checked === true)
+                      }
+                    />
+                  )}
+                </div>
               </td>
             );
           })}
