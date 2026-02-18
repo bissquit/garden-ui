@@ -10,13 +10,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Palette, Sun, Moon, Sprout, Waves, Sunset, Trees } from 'lucide-react';
+import { Palette, Sun, Moon, Sprout, Waves, Flower2, TreePine } from 'lucide-react';
 
-const themeIcons: Record<Theme, React.ComponentType<{ className?: string }>> = {
+export const themeIcons: Record<Theme, React.ComponentType<{ className?: string }>> = {
   garden: Sprout,
   ocean: Waves,
-  sunset: Sunset,
-  forest: Trees,
+  sunset: Flower2,
+  forest: TreePine,
 };
 
 const themeLabels: Record<Theme, string> = {
