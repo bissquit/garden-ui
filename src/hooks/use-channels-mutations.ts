@@ -1,9 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
+import { ApiError } from '@/lib/api-error';
 import type { components } from '@/api/types.generated';
 
 type CreateChannelRequest = components['schemas']['CreateChannelRequest'];
 type UpdateChannelRequest = components['schemas']['UpdateChannelRequest'];
+type VerifyChannelRequest = components['schemas']['VerifyChannelRequest'];
+
+interface VerifyChannelParams {
+  id: string;
+  /** 6-digit code, required for email channels */
+  code?: string;
+}
 
 export function useCreateChannel() {
   const queryClient = useQueryClient();
@@ -60,15 +68,51 @@ export function useVerifyChannel() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { data: result, error } = await apiClient.POST('/api/v1/me/channels/{id}/verify', {
-        params: { path: { id } },
-      });
-      if (error) throw new Error(error.error?.message || 'Failed to verify channel');
-      return result;
+    mutationFn: async ({ id, code }: VerifyChannelParams) => {
+      const body: VerifyChannelRequest | undefined = code ? { code } : undefined;
+
+      const { data, error, response } = await apiClient.POST(
+        '/api/v1/me/channels/{id}/verify',
+        {
+          params: { path: { id } },
+          body,
+        }
+      );
+
+      if (error) {
+        throw ApiError.fromResponse(response.status, error);
+      }
+
+      return data;
     },
-    onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: ['channels'] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['channels'] });
+    },
+  });
+}
+
+interface ResendCodeResult {
+  message: string;
+}
+
+export function useResendVerificationCode() {
+  return useMutation({
+    mutationFn: async (channelId: string): Promise<ResendCodeResult> => {
+      const { data, error, response } = await apiClient.POST(
+        '/api/v1/me/channels/{id}/resend-code',
+        {
+          params: { path: { id: channelId } },
+        }
+      );
+
+      if (error) {
+        if (response.status === 429) {
+          throw new ApiError(429, 'Please wait before requesting a new code');
+        }
+        throw ApiError.fromResponse(response.status, error);
+      }
+
+      return { message: data?.data?.message ?? 'verification code sent' };
     },
   });
 }

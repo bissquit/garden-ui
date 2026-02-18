@@ -66,7 +66,7 @@ export function ChannelsTable({ channels }: ChannelsTableProps) {
 
   const handleVerify = async (channel: NotificationChannel) => {
     try {
-      await verifyMutation.mutateAsync(channel.id);
+      await verifyMutation.mutateAsync({ id: channel.id });
       toast({ title: 'Verification initiated' });
     } catch (error) {
       toast({
