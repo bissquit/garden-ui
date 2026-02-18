@@ -4,8 +4,12 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ChannelsTable } from './channels-table';
 import { ChannelForm } from './channel-form';
+import { VerifyEmailDialog } from './verify-email-dialog';
 
 // Mock hooks
+const mockVerifyMutation = vi.fn();
+const mockResendMutation = vi.fn();
+
 vi.mock('@/hooks/use-channels-mutations', () => ({
   useDeleteChannel: () => ({
     mutateAsync: vi.fn(),
@@ -16,7 +20,11 @@ vi.mock('@/hooks/use-channels-mutations', () => ({
     isPending: false,
   }),
   useVerifyChannel: () => ({
-    mutateAsync: vi.fn(),
+    mutateAsync: mockVerifyMutation,
+    isPending: false,
+  }),
+  useResendVerificationCode: () => ({
+    mutateAsync: mockResendMutation,
     isPending: false,
   }),
   useCreateChannel: () => ({
@@ -100,8 +108,25 @@ describe('ChannelsTable', () => {
 
     expect(screen.getByText('No notification channels')).toBeInTheDocument();
     expect(
-      screen.getByText('Add an email or Telegram channel to receive notifications.')
+      screen.getByText('Add an email, Telegram, or Mattermost channel to receive notifications.')
     ).toBeInTheDocument();
+  });
+
+  it('shows mattermost channel type', () => {
+    const mattermostChannel = {
+      id: 'ch3',
+      user_id: 'user-1',
+      type: 'mattermost' as const,
+      target: 'https://mattermost.example.com/hooks/xxx',
+      is_enabled: true,
+      is_verified: true,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+    };
+    renderWithProviders(<ChannelsTable channels={[mattermostChannel]} />);
+
+    expect(screen.getByText('mattermost')).toBeInTheDocument();
+    expect(screen.getByText('https://mattermost.example.com/hooks/xxx')).toBeInTheDocument();
   });
 });
 
@@ -142,5 +167,111 @@ describe('ChannelForm', () => {
 
     const submitButton = screen.getByText('Add Channel');
     expect(submitButton).toBeDisabled();
+  });
+});
+
+describe('VerifyEmailDialog', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyMutation.mockReset();
+    mockResendMutation.mockReset();
+  });
+
+  it('renders with email address', () => {
+    renderWithProviders(
+      <VerifyEmailDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        channelId="ch1"
+        email="test@example.com"
+      />
+    );
+
+    expect(screen.getByText('Verify Email')).toBeInTheDocument();
+    expect(screen.getByText('test@example.com')).toBeInTheDocument();
+  });
+
+  it('accepts only 6 digits', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <VerifyEmailDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        channelId="ch1"
+        email="test@example.com"
+      />
+    );
+
+    const input = screen.getByPlaceholderText('000000');
+
+    // Type letters - should be filtered out
+    await user.type(input, 'abc');
+    expect(input).toHaveValue('');
+
+    // Type digits
+    await user.type(input, '1234567');
+    expect(input).toHaveValue('123456'); // Only 6 digits kept
+  });
+
+  it('enables verify button when 6 digits entered', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <VerifyEmailDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        channelId="ch1"
+        email="test@example.com"
+      />
+    );
+
+    const input = screen.getByPlaceholderText('000000');
+    const verifyButton = screen.getByRole('button', { name: 'Verify' });
+
+    // Initially disabled
+    expect(verifyButton).toBeDisabled();
+
+    // Type 5 digits - still disabled
+    await user.type(input, '12345');
+    expect(verifyButton).toBeDisabled();
+
+    // Type 6th digit - enabled
+    await user.type(input, '6');
+    expect(verifyButton).not.toBeDisabled();
+  });
+
+  it('calls verify with code', async () => {
+    const user = userEvent.setup();
+    mockVerifyMutation.mockResolvedValueOnce({});
+    const onOpenChange = vi.fn();
+
+    renderWithProviders(
+      <VerifyEmailDialog
+        open={true}
+        onOpenChange={onOpenChange}
+        channelId="ch1"
+        email="test@example.com"
+      />
+    );
+
+    const input = screen.getByPlaceholderText('000000');
+    await user.type(input, '123456');
+
+    const verifyButton = screen.getByRole('button', { name: 'Verify' });
+    await user.click(verifyButton);
+
+    expect(mockVerifyMutation).toHaveBeenCalledWith({ id: 'ch1', code: '123456' });
+  });
+
+  it('shows resend button', () => {
+    renderWithProviders(
+      <VerifyEmailDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        channelId="ch1"
+        email="test@example.com"
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Resend code' })).toBeInTheDocument();
   });
 });

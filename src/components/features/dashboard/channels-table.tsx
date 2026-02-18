@@ -12,8 +12,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, Mail, MoreHorizontal, CheckCircle, XCircle, Shield } from 'lucide-react';
+import { Mail, MessageSquare, Hash, MoreHorizontal, CheckCircle, XCircle, Shield, Bell } from 'lucide-react';
 import { useDeleteChannel, useUpdateChannel, useVerifyChannel } from '@/hooks/use-channels-mutations';
+import { VerifyEmailDialog } from './verify-email-dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { components } from '@/api/types.generated';
 
@@ -26,6 +27,7 @@ interface ChannelsTableProps {
 export function ChannelsTable({ channels }: ChannelsTableProps) {
   const { toast } = useToast();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [verifyEmailChannel, setVerifyEmailChannel] = useState<NotificationChannel | null>(null);
 
   const deleteMutation = useDeleteChannel();
   const updateMutation = useUpdateChannel();
@@ -65,15 +67,19 @@ export function ChannelsTable({ channels }: ChannelsTableProps) {
   };
 
   const handleVerify = async (channel: NotificationChannel) => {
-    try {
-      await verifyMutation.mutateAsync({ id: channel.id });
-      toast({ title: 'Verification initiated' });
-    } catch (error) {
-      toast({
-        title: 'Failed to verify channel',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive',
-      });
+    if (channel.type === 'email') {
+      setVerifyEmailChannel(channel);
+    } else {
+      try {
+        await verifyMutation.mutateAsync({ id: channel.id });
+        toast({ title: 'Verification message sent' });
+      } catch (error) {
+        toast({
+          title: 'Failed to verify channel',
+          description: error instanceof Error ? error.message : 'Unknown error',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
@@ -85,8 +91,10 @@ export function ChannelsTable({ channels }: ChannelsTableProps) {
         <div className="flex items-center gap-2">
           {channel.type === 'email' ? (
             <Mail className="h-4 w-4 text-muted-foreground" />
+          ) : channel.type === 'telegram' ? (
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
           ) : (
-            <Bell className="h-4 w-4 text-muted-foreground" />
+            <Hash className="h-4 w-4 text-muted-foreground" />
           )}
           <span className="capitalize">{channel.type}</span>
         </div>
@@ -175,7 +183,7 @@ export function ChannelsTable({ channels }: ChannelsTableProps) {
           <EmptyState
             icon={Bell}
             title="No notification channels"
-            description="Add an email or Telegram channel to receive notifications."
+            description="Add an email, Telegram, or Mattermost channel to receive notifications."
           />
         }
       />
@@ -188,6 +196,15 @@ export function ChannelsTable({ channels }: ChannelsTableProps) {
         description="Are you sure you want to delete this notification channel? You will no longer receive notifications through this channel."
         isLoading={deleteMutation.isPending}
       />
+
+      {verifyEmailChannel && (
+        <VerifyEmailDialog
+          open={verifyEmailChannel !== null}
+          onOpenChange={(open) => !open && setVerifyEmailChannel(null)}
+          channelId={verifyEmailChannel.id}
+          email={verifyEmailChannel.target}
+        />
+      )}
     </>
   );
 }
