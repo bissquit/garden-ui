@@ -107,8 +107,8 @@ src/
 │   ├── use-templates.ts       # useTemplates
 │   ├── use-templates-mutations.ts # useCreateTemplate, useDeleteTemplate
 │   ├── use-channels.ts        # useChannels
-│   ├── use-channels-mutations.ts  # useCreateChannel, useUpdateChannel, useDeleteChannel, useVerifyChannel
-│   │                              # TODO v2.8.0: + useResendVerificationCode (код для email)
+│   ├── use-channels-mutations.ts  # useCreateChannel, useUpdateChannel, useDeleteChannel,
+│   │                              # useVerifyChannel (with code for email), useResendVerificationCode
 │   ├── use-subscriptions.ts   # useSubscriptionsMatrix (per-channel model)
 │   ├── use-subscriptions-mutations.ts # useSetChannelSubscriptions
 │   └── use-theme.ts           # Theme switching (Garden/Ocean/Sunset/Forest)
@@ -219,7 +219,7 @@ SetChannelSubscriptionsRequest:
 | `lib/validations/subscription.ts` | Переписать под `SetChannelSubscriptionsRequest` | ✅ Done |
 | `hooks/use-subscriptions.ts` | Новый хук `useSubscriptionsMatrix` | ✅ Done |
 | `hooks/use-subscriptions-mutations.ts` | `useSetChannelSubscriptions`, удалить старые | ✅ Done |
-| `hooks/use-channels-mutations.ts` | Добавить `useResendVerificationCode`, обновить `useVerifyChannel` | ⏳ Stage 2 |
+| `hooks/use-channels-mutations.ts` | Добавить `useResendVerificationCode`, обновить `useVerifyChannel` | ✅ Done |
 | `components/.../subscription-editor.tsx` | Полная переработка UI под per-channel model | ⏳ Stage 4 |
 | `components/.../channel-form.tsx` | Добавить mattermost | ⏳ Stage 2 |
 | `components/.../channels-table.tsx` | Добавить verify с кодом, resend code |
