@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
+import { useTheme } from '@/hooks/use-theme';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,20 +13,24 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Sprout, LogOut, Settings, History } from 'lucide-react';
-import { ThemeSwitcher } from './theme-switcher';
+import { ThemeSwitcher, themeIcons } from './theme-switcher';
 
 export function Header() {
   const { user, isAuthenticated, logout, hasMinRole } = useAuth();
+  const { theme, mounted } = useTheme();
 
   const initials = user
     ? `${user.first_name?.[0] || ''}${user.last_name?.[0] || user.email[0]}`.toUpperCase()
     : '';
 
+  // Use Sprout as fallback before hydration to avoid mismatch
+  const LogoIcon = mounted ? themeIcons[theme] : Sprout;
+
   return (
     <header className="border-b bg-background">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
-          <Sprout className="h-6 w-6 text-primary" />
+          <LogoIcon className="h-6 w-6 text-primary" />
           <span>IncidentGarden</span>
         </Link>
 

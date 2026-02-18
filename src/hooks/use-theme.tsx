@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 
 export type Theme = 'garden' | 'ocean' | 'sunset' | 'forest';
 export type Mode = 'light' | 'dark';
@@ -8,7 +14,22 @@ export type Mode = 'light' | 'dark';
 const THEME_KEY = 'garden-ui-theme';
 const MODE_KEY = 'garden-ui-mode';
 
-export function useTheme() {
+interface ThemeContextValue {
+  theme: Theme;
+  mode: Mode;
+  setTheme: (theme: Theme) => void;
+  setMode: (mode: Mode) => void;
+  toggleMode: () => void;
+  mounted: boolean;
+}
+
+const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+interface ThemeProviderProps {
+  children: ReactNode;
+}
+
+export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>('garden');
   const [mode, setModeState] = useState<Mode>('light');
   const [mounted, setMounted] = useState(false);
@@ -65,7 +86,7 @@ export function useTheme() {
     setModeState((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  return {
+  const value: ThemeContextValue = {
     theme,
     mode,
     setTheme,
@@ -73,4 +94,16 @@ export function useTheme() {
     toggleMode,
     mounted,
   };
+
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
+}
+
+export function useTheme(): ThemeContextValue {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
 }
