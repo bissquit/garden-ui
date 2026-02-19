@@ -97,6 +97,9 @@ export function ChannelsTable({ channels }: ChannelsTableProps) {
             <Hash className="h-4 w-4 text-muted-foreground shrink-0" />
           )}
           <span className="font-mono text-sm">{channel.target}</span>
+          {channel.is_default && (
+            <Badge variant="outline">Default</Badge>
+          )}
         </div>
       ),
     },
@@ -154,12 +157,14 @@ export function ChannelsTable({ channels }: ChannelsTableProps) {
                 Verify
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem
-              onClick={() => setDeleteId(channel.id)}
-              className="text-destructive focus:text-destructive"
-            >
-              Delete
-            </DropdownMenuItem>
+            {!channel.is_default && (
+              <DropdownMenuItem
+                onClick={() => setDeleteId(channel.id)}
+                className="text-destructive focus:text-destructive"
+              >
+                Delete
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),
