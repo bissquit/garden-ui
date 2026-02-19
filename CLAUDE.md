@@ -93,7 +93,7 @@ src/
 │                              # TemplatesTable, TemplateForm, TemplateFormDialog,
 │                              # ChannelsTable, ChannelForm, ChannelFormDialog,
 │                              # VerifyEmailDialog,
-│                              # SubscriptionEditor (matrix view: channels × services)
+│                              # SubscriptionEditor (matrix view: channels × services, service search/filter)
 │
 ├── hooks/
 │   ├── use-auth.tsx           # Auth context: login, logout, hasRole, hasMinRole
