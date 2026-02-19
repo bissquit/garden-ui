@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import {
   Loader2,
   Bell,
@@ -18,6 +19,7 @@ import {
   Mail,
   MessageSquare,
   Hash,
+  Search,
 } from 'lucide-react';
 import { useSubscriptionsMatrix } from '@/hooks/use-subscriptions';
 import { useSetChannelSubscriptions } from '@/hooks/use-subscriptions-mutations';
@@ -109,13 +111,20 @@ export function SubscriptionEditor() {
     new Map()
   );
   const [dirtyChannels, setDirtyChannels] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
 
   const activeChannels = useMemo(() => {
     if (!channelsData) return [];
-    return channelsData.filter(
-      (ch) => ch.channel.is_verified && ch.channel.is_enabled
-    );
+    return channelsData;
   }, [channelsData]);
+
+  const isChannelInteractive = useCallback(
+    (channelId: string) => {
+      const ch = channelsData?.find((c) => c.channel.id === channelId);
+      return ch?.channel.is_verified === true && ch?.channel.is_enabled === true;
+    },
+    [channelsData]
+  );
 
   useEffect(() => {
     if (!channelsData) return;
@@ -135,6 +144,7 @@ export function SubscriptionEditor() {
 
   const handleSubscribeToAllChange = useCallback(
     (channelId: string, checked: boolean) => {
+      if (!isChannelInteractive(channelId)) return;
       setLocalState((prev) => {
         const newState = new Map(prev);
         const current = newState.get(channelId);
@@ -148,11 +158,12 @@ export function SubscriptionEditor() {
       });
       setDirtyChannels((prev) => new Set(prev).add(channelId));
     },
-    []
+    [isChannelInteractive]
   );
 
   const handleServiceChange = useCallback(
     (channelId: string, serviceId: string, checked: boolean) => {
+      if (!isChannelInteractive(channelId)) return;
       setLocalState((prev) => {
         const newState = new Map(prev);
         const current = newState.get(channelId);
@@ -169,7 +180,29 @@ export function SubscriptionEditor() {
       });
       setDirtyChannels((prev) => new Set(prev).add(channelId));
     },
-    []
+    [isChannelInteractive]
+  );
+
+  const handleGroupChange = useCallback(
+    (channelId: string, serviceIds: string[], checked: boolean) => {
+      if (!isChannelInteractive(channelId)) return;
+      setLocalState((prev) => {
+        const newState = new Map(prev);
+        const current = newState.get(channelId);
+        if (current && !current.subscribeToAll) {
+          const newServiceIds = new Set(current.serviceIds);
+          if (checked) {
+            serviceIds.forEach((id) => newServiceIds.add(id));
+          } else {
+            serviceIds.forEach((id) => newServiceIds.delete(id));
+          }
+          newState.set(channelId, { ...current, serviceIds: newServiceIds });
+        }
+        return newState;
+      });
+      setDirtyChannels((prev) => new Set(prev).add(channelId));
+    },
+    [isChannelInteractive]
   );
 
   const handleSave = async () => {
@@ -199,6 +232,36 @@ export function SubscriptionEditor() {
     }
   };
 
+  const groupedServices = useMemo(
+    () => groupServicesByGroup(services ?? [], groups ?? []),
+    [services, groups]
+  );
+
+  const allGroupServiceIdsMap = useMemo(() => {
+    const map = new Map<string | null, string[]>();
+    groupedServices.forEach((g) => {
+      const key = g.group?.id ?? null;
+      map.set(key, g.services.map((s) => s.id));
+    });
+    return map;
+  }, [groupedServices]);
+
+  const filteredGroupedServices = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return groupedServices;
+
+    return groupedServices
+      .map((group) => ({
+        ...group,
+        services: group.services.filter(
+          (service) =>
+            service.name.toLowerCase().includes(query) ||
+            (service.description?.toLowerCase().includes(query) ?? false)
+        ),
+      }))
+      .filter((group) => group.services.length > 0);
+  }, [groupedServices, searchQuery]);
+
   const isLoading = channelsLoading || servicesLoading;
   const isSaving = setSubscriptionsMutation.isPending;
   const hasChanges = dirtyChannels.size > 0;
@@ -224,7 +287,7 @@ export function SubscriptionEditor() {
     );
   }
 
-  if (activeChannels.length === 0) {
+  if (!channelsData || channelsData.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -237,18 +300,16 @@ export function SubscriptionEditor() {
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <BellOff className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-muted-foreground">
-              No verified channels available.
+              No channels available.
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              Add and verify a notification channel first.
+              Add a notification channel first.
             </p>
           </div>
         </CardContent>
       </Card>
     );
   }
-
-  const groupedServices = groupServicesByGroup(services ?? [], groups ?? []);
 
   return (
     <Card>
@@ -267,31 +328,60 @@ export function SubscriptionEditor() {
         </div>
       </CardHeader>
       <CardContent>
+        <div className="relative max-w-sm mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search services..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-sm pl-9"
+          />
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b">
                 <th className="text-left py-3 px-2 font-medium">Service</th>
-                {activeChannels.map((ch) => (
-                  <th
-                    key={ch.channel.id}
-                    className="text-center py-3 px-4 font-medium"
-                  >
-                    <div className="flex flex-col items-center gap-1">
-                      <ChannelIcon type={ch.channel.type} />
-                      <span
-                        className="text-xs truncate max-w-[100px]"
-                        title={ch.channel.target}
+                {activeChannels.map((ch) => {
+                  const interactive = isChannelInteractive(ch.channel.id);
+                  const statusLabel = !ch.channel.is_verified
+                    ? 'Unverified'
+                    : !ch.channel.is_enabled
+                      ? 'Disabled'
+                      : null;
+                  const tooltipText = statusLabel
+                    ? `This channel is ${statusLabel.toLowerCase()}. Verify and enable it to manage subscriptions.`
+                    : ch.channel.target;
+
+                  return (
+                    <th
+                      key={ch.channel.id}
+                      className="text-center py-3 px-4 font-medium"
+                    >
+                      <div
+                        className={`flex flex-col items-center gap-1 ${!interactive ? 'opacity-50' : ''}`}
+                        title={tooltipText}
                       >
-                        {ch.channel.type === 'email'
-                          ? ch.channel.target.split('@')[0]
-                          : ch.channel.target.length > 10
-                            ? ch.channel.target.slice(0, 10) + '...'
-                            : ch.channel.target}
-                      </span>
-                    </div>
-                  </th>
-                ))}
+                        <ChannelIcon type={ch.channel.type} />
+                        <span
+                          className="text-xs truncate max-w-[100px]"
+                          title={ch.channel.target}
+                        >
+                          {ch.channel.type === 'email'
+                            ? ch.channel.target.split('@')[0]
+                            : ch.channel.target.length > 10
+                              ? ch.channel.target.slice(0, 10) + '...'
+                              : ch.channel.target}
+                        </span>
+                        {statusLabel && (
+                          <span className="text-xs text-amber-500">
+                            {statusLabel}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -316,6 +406,7 @@ export function SubscriptionEditor() {
                               checked === true
                             )
                           }
+                          disabled={!isChannelInteractive(ch.channel.id)}
                         />
                       </div>
                     </td>
@@ -324,15 +415,31 @@ export function SubscriptionEditor() {
               </tr>
 
               {/* Grouped Services */}
-              {groupedServices.map((group, groupIdx) => (
-                <GroupRows
-                  key={group.group?.id ?? `ungrouped-${groupIdx}`}
-                  group={group}
-                  activeChannels={activeChannels}
-                  localState={localState}
-                  onServiceChange={handleServiceChange}
-                />
-              ))}
+              {filteredGroupedServices.length > 0 ? (
+                filteredGroupedServices.map((group, groupIdx) => (
+                  <GroupRows
+                    key={group.group?.id ?? `ungrouped-${groupIdx}`}
+                    group={group}
+                    allGroupServiceIds={
+                      allGroupServiceIdsMap.get(group.group?.id ?? null) ?? []
+                    }
+                    activeChannels={activeChannels}
+                    localState={localState}
+                    onServiceChange={handleServiceChange}
+                    onGroupChange={handleGroupChange}
+                    isChannelInteractive={isChannelInteractive}
+                  />
+                ))
+              ) : searchQuery.trim() ? (
+                <tr>
+                  <td
+                    colSpan={activeChannels.length + 1}
+                    className="py-8 text-center text-muted-foreground"
+                  >
+                    No services match your search
+                  </td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>
@@ -351,6 +458,7 @@ export function SubscriptionEditor() {
 
 interface GroupRowsProps {
   group: GroupedServices;
+  allGroupServiceIds: string[];
   activeChannels: ChannelWithSubscriptions[];
   localState: Map<string, ChannelState>;
   onServiceChange: (
@@ -358,23 +466,74 @@ interface GroupRowsProps {
     serviceId: string,
     checked: boolean
   ) => void;
+  onGroupChange: (
+    channelId: string,
+    serviceIds: string[],
+    checked: boolean
+  ) => void;
+  isChannelInteractive: (channelId: string) => boolean;
 }
 
 function GroupRows({
   group,
+  allGroupServiceIds,
   activeChannels,
   localState,
   onServiceChange,
+  onGroupChange,
+  isChannelInteractive,
 }: GroupRowsProps) {
   return (
     <>
       {/* Group Header */}
-      <tr className="border-b">
-        <td colSpan={activeChannels.length + 1} className="py-2 px-2">
-          <span className="font-semibold text-sm">
+      <tr className="border-b bg-muted/30">
+        <td className="py-3 px-2">
+          <span className="font-semibold">
             {group.group?.name ?? 'Other Services'}
           </span>
         </td>
+        {activeChannels.map((ch) => {
+          const state = localState.get(ch.channel.id);
+          const isSubscribedToAll = state?.subscribeToAll ?? false;
+          const interactive = isChannelInteractive(ch.channel.id);
+
+          if (isSubscribedToAll && interactive) {
+            return (
+              <td key={ch.channel.id} className="py-3 px-4">
+                <div className="flex justify-center">
+                  <span className="text-muted-foreground">&mdash;</span>
+                </div>
+              </td>
+            );
+          }
+
+          const subscribedCount = allGroupServiceIds.filter(
+            (id) => state?.serviceIds.has(id) ?? false
+          ).length;
+          const totalCount = allGroupServiceIds.length;
+          const allChecked = totalCount > 0 && subscribedCount === totalCount;
+          const someChecked = subscribedCount > 0 && !allChecked;
+
+          return (
+            <td key={ch.channel.id} className="py-3 px-4">
+              <div className="flex justify-center">
+                <Checkbox
+                  checked={
+                    allChecked ? true : someChecked ? 'indeterminate' : false
+                  }
+                  onCheckedChange={(checked) =>
+                    onGroupChange(
+                      ch.channel.id,
+                      allGroupServiceIds,
+                      checked === true
+                    )
+                  }
+                  disabled={!interactive || isSubscribedToAll}
+                />
+              </div>
+            </td>
+          );
+        })}
       </tr>
 
       {/* Services in Group */}
@@ -392,18 +551,20 @@ function GroupRows({
             const state = localState.get(ch.channel.id);
             const isSubscribedToAll = state?.subscribeToAll ?? false;
             const isSubscribed = state?.serviceIds.has(service.id) ?? false;
+            const interactive = isChannelInteractive(ch.channel.id);
 
             return (
               <td key={ch.channel.id} className="py-2 px-4">
                 <div className="flex justify-center">
-                  {isSubscribedToAll ? (
+                  {isSubscribedToAll && interactive ? (
                     <span className="text-muted-foreground">—</span>
                   ) : (
                     <Checkbox
-                      checked={isSubscribed}
+                      checked={isSubscribedToAll ? false : isSubscribed}
                       onCheckedChange={(checked) =>
                         onServiceChange(ch.channel.id, service.id, checked === true)
                       }
+                      disabled={!interactive || isSubscribedToAll}
                     />
                   )}
                 </div>
