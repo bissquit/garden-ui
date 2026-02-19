@@ -47,6 +47,7 @@ const mockChannels = [
     target: 'test@example.com',
     is_enabled: true,
     is_verified: true,
+    is_default: true,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
   },
@@ -57,6 +58,7 @@ const mockChannels = [
     target: 'john_doe',
     is_enabled: false,
     is_verified: false,
+    is_default: false,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
   },
@@ -124,6 +126,7 @@ describe('ChannelsTable', () => {
       target: 'https://mattermost.example.com/hooks/xxx',
       is_enabled: true,
       is_verified: true,
+      is_default: false,
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-01T00:00:00Z',
     };
@@ -131,6 +134,43 @@ describe('ChannelsTable', () => {
 
     // Target is displayed in the combined Channel column
     expect(screen.getByText('https://mattermost.example.com/hooks/xxx')).toBeInTheDocument();
+  });
+
+  it('shows Default badge for default channels', () => {
+    renderWithProviders(<ChannelsTable channels={mockChannels} />);
+
+    expect(screen.getByText('Default')).toBeInTheDocument();
+  });
+
+  it('does not show Delete option for default channels', async () => {
+    const user = userEvent.setup();
+    // Render only the default channel
+    const defaultChannel = [mockChannels[0]]; // is_default: true
+    renderWithProviders(<ChannelsTable channels={defaultChannel} />);
+
+    // Open the dropdown menu
+    const menuButton = screen.getByRole('button');
+    await user.click(menuButton);
+
+    // Enable/Disable should still be available
+    expect(screen.getByText('Disable')).toBeInTheDocument();
+
+    // Delete should NOT be in the menu
+    expect(screen.queryByText('Delete')).not.toBeInTheDocument();
+  });
+
+  it('shows Delete option for non-default channels', async () => {
+    const user = userEvent.setup();
+    // Render only the non-default channel
+    const nonDefaultChannel = [mockChannels[1]]; // is_default: false
+    renderWithProviders(<ChannelsTable channels={nonDefaultChannel} />);
+
+    // Open the dropdown menu
+    const menuButton = screen.getByRole('button');
+    await user.click(menuButton);
+
+    // Delete should be available
+    expect(screen.getByText('Delete')).toBeInTheDocument();
   });
 });
 

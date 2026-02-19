@@ -1605,13 +1605,15 @@ components:
           type: boolean
         is_verified:
           type: boolean
+        is_default:
+          type: boolean
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
-      required: [id, user_id, type, target, is_enabled, is_verified, created_at, updated_at]
+      required: [id, user_id, type, target, is_enabled, is_verified, is_default, created_at, updated_at]
     ChannelWithSubscriptions:
       type: object
       properties:

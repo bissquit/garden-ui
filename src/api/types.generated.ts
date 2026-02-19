@@ -855,6 +855,7 @@ export interface components {
             target: string;
             is_enabled: boolean;
             is_verified: boolean;
+            is_default: boolean;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
