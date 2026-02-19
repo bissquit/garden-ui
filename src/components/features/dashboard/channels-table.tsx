@@ -6,7 +6,13 @@ import { EmptyState } from './empty-state';
 import { DeleteConfirmationDialog } from './delete-confirmation-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Mail, MessageSquare, Hash, CheckCircle, XCircle, Power, ShieldCheck, Trash2, Bell } from 'lucide-react';
+import { Mail, MessageSquare, Hash, CheckCircle, XCircle, ShieldCheck, MoreHorizontal, Bell } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useDeleteChannel, useUpdateChannel, useVerifyChannel } from '@/hooks/use-channels-mutations';
 import { VerifyEmailDialog } from './verify-email-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -79,26 +85,19 @@ export function ChannelsTable({ channels }: ChannelsTableProps) {
 
   const columns = [
     {
-      key: 'type',
-      header: 'Type',
+      key: 'target',
+      header: 'Channel',
       cell: (channel: NotificationChannel & { actions?: React.ReactNode }) => (
         <div className="flex items-center gap-2">
           {channel.type === 'email' ? (
-            <Mail className="h-4 w-4 text-muted-foreground" />
+            <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
           ) : channel.type === 'telegram' ? (
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
           ) : (
-            <Hash className="h-4 w-4 text-muted-foreground" />
+            <Hash className="h-4 w-4 text-muted-foreground shrink-0" />
           )}
-          <span className="capitalize">{channel.type}</span>
+          <span className="font-mono text-sm">{channel.target}</span>
         </div>
-      ),
-    },
-    {
-      key: 'target',
-      header: 'Target',
-      cell: (channel: NotificationChannel & { actions?: React.ReactNode }) => (
-        <span className="font-mono text-sm">{channel.target}</span>
       ),
     },
     {
@@ -133,48 +132,38 @@ export function ChannelsTable({ channels }: ChannelsTableProps) {
       key: 'actions',
       header: '',
       cell: (channel: NotificationChannel & { actions?: React.ReactNode }) => (
-        <div className="flex items-center justify-end gap-1">
-          {!channel.is_verified && (
-            <Button
-              variant="ghost"
-              size="icon"
-              title="Verify channel"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleVerify(channel);
-              }}
-              disabled={verifyMutation.isPending}
-            >
-              <ShieldCheck className="h-4 w-4" />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontal className="h-4 w-4" />
             </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            title={channel.is_enabled ? 'Disable channel' : 'Enable channel'}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleToggleEnabled(channel);
-            }}
-            disabled={updateMutation.isPending}
-          >
-            <Power className={`h-4 w-4 ${channel.is_enabled ? 'text-green-500' : 'text-amber-500'}`} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            title="Delete channel"
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeleteId(channel.id);
-            }}
-            disabled={deleteMutation.isPending}
-          >
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => handleToggleEnabled(channel)}
+              disabled={updateMutation.isPending}
+            >
+              {channel.is_enabled ? 'Disable' : 'Enable'}
+            </DropdownMenuItem>
+            {!channel.is_verified && (
+              <DropdownMenuItem
+                onClick={() => handleVerify(channel)}
+                disabled={verifyMutation.isPending}
+              >
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                Verify
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              onClick={() => setDeleteId(channel.id)}
+              className="text-destructive focus:text-destructive"
+            >
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ),
-      className: 'w-28',
+      className: 'w-10',
     },
   ];
 

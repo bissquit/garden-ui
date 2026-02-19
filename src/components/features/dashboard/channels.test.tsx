@@ -80,11 +80,15 @@ describe('ChannelsTable', () => {
     expect(screen.getByText('john_doe')).toBeInTheDocument();
   });
 
-  it('shows channel types', () => {
+  it('shows channel type icons in Channel column', () => {
     renderWithProviders(<ChannelsTable channels={mockChannels} />);
 
-    expect(screen.getByText('email')).toBeInTheDocument();
-    expect(screen.getByText('telegram')).toBeInTheDocument();
+    // Type icons are rendered inline with target text (no separate type label)
+    // Verify the combined Channel column header exists
+    expect(screen.getByText('Channel')).toBeInTheDocument();
+    // Verify both targets are displayed
+    expect(screen.getByText('test@example.com')).toBeInTheDocument();
+    expect(screen.getByText('john_doe')).toBeInTheDocument();
   });
 
   it('shows enabled/disabled status', () => {
@@ -112,7 +116,7 @@ describe('ChannelsTable', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows mattermost channel type', () => {
+  it('shows mattermost channel with icon and target', () => {
     const mattermostChannel = {
       id: 'ch3',
       user_id: 'user-1',
@@ -125,7 +129,7 @@ describe('ChannelsTable', () => {
     };
     renderWithProviders(<ChannelsTable channels={[mattermostChannel]} />);
 
-    expect(screen.getByText('mattermost')).toBeInTheDocument();
+    // Target is displayed in the combined Channel column
     expect(screen.getByText('https://mattermost.example.com/hooks/xxx')).toBeInTheDocument();
   });
 });

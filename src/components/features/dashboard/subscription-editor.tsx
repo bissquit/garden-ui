@@ -353,29 +353,30 @@ export function SubscriptionEditor() {
                     ? `This channel is ${statusLabel.toLowerCase()}. Verify and enable it to manage subscriptions.`
                     : ch.channel.target;
 
+                  const displayText =
+                    ch.channel.type === 'email'
+                      ? ch.channel.target.split('@')[0]
+                      : ch.channel.target.length > 12
+                        ? ch.channel.target.slice(0, 12) + '...'
+                        : ch.channel.target;
+
                   return (
                     <th
                       key={ch.channel.id}
-                      className="text-center py-3 px-4 font-medium"
+                      className="text-center py-3 px-2 font-medium"
                     >
                       <div
                         className={`flex flex-col items-center gap-1 ${!interactive ? 'opacity-50' : ''}`}
                         title={tooltipText}
                       >
                         <ChannelIcon type={ch.channel.type} />
-                        <span
-                          className="text-xs truncate max-w-[100px]"
-                          title={ch.channel.target}
-                        >
-                          {ch.channel.type === 'email'
-                            ? ch.channel.target.split('@')[0]
-                            : ch.channel.target.length > 10
-                              ? ch.channel.target.slice(0, 10) + '...'
-                              : ch.channel.target}
-                        </span>
-                        {statusLabel && (
+                        {statusLabel ? (
                           <span className="text-xs text-amber-500">
                             {statusLabel}
+                          </span>
+                        ) : (
+                          <span className="text-xs truncate max-w-[80px]">
+                            {displayText}
                           </span>
                         )}
                       </div>
@@ -396,7 +397,7 @@ export function SubscriptionEditor() {
                 {activeChannels.map((ch) => {
                   const state = localState.get(ch.channel.id);
                   return (
-                    <td key={ch.channel.id} className="py-3 px-4">
+                    <td key={ch.channel.id} className="py-3 px-2">
                       <div className="flex justify-center">
                         <Checkbox
                           checked={state?.subscribeToAll ?? false}
@@ -499,7 +500,7 @@ function GroupRows({
 
           if (isSubscribedToAll && interactive) {
             return (
-              <td key={ch.channel.id} className="py-3 px-4">
+              <td key={ch.channel.id} className="py-3 px-2">
                 <div className="flex justify-center">
                   <span className="text-muted-foreground">&mdash;</span>
                 </div>
@@ -515,7 +516,7 @@ function GroupRows({
           const someChecked = subscribedCount > 0 && !allChecked;
 
           return (
-            <td key={ch.channel.id} className="py-3 px-4">
+            <td key={ch.channel.id} className="py-3 px-2">
               <div className="flex justify-center">
                 <Checkbox
                   checked={
@@ -542,7 +543,7 @@ function GroupRows({
           <td className="py-2 px-2 pl-6">
             <div>{service.name}</div>
             {service.description && (
-              <div className="text-xs text-muted-foreground truncate max-w-[200px]">
+              <div className="text-xs text-muted-foreground truncate">
                 {service.description}
               </div>
             )}
@@ -554,7 +555,7 @@ function GroupRows({
             const interactive = isChannelInteractive(ch.channel.id);
 
             return (
-              <td key={ch.channel.id} className="py-2 px-4">
+              <td key={ch.channel.id} className="py-2 px-2">
                 <div className="flex justify-center">
                   {isSubscribedToAll && interactive ? (
                     <span className="text-muted-foreground">—</span>
