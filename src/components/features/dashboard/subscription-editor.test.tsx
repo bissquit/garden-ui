@@ -216,8 +216,8 @@ describe('SubscriptionEditor', () => {
 
       renderWithProviders(<SubscriptionEditor />);
 
-      // Channel should be visible in the matrix
-      expect(screen.getByText('test')).toBeInTheDocument();
+      // Channel icon should be visible with tooltip showing target
+      expect(screen.getByTitle(/this channel is unverified/i)).toBeInTheDocument();
       // Should show "Unverified" label
       expect(screen.getByText('Unverified')).toBeInTheDocument();
       // Checkboxes should be disabled
@@ -247,8 +247,8 @@ describe('SubscriptionEditor', () => {
 
       renderWithProviders(<SubscriptionEditor />);
 
-      // Channel should be visible in the matrix
-      expect(screen.getByText('test')).toBeInTheDocument();
+      // Channel icon should be visible with tooltip showing target
+      expect(screen.getByTitle(/this channel is disabled/i)).toBeInTheDocument();
       // Should show "Disabled" label
       expect(screen.getByText('Disabled')).toBeInTheDocument();
       // Checkboxes should be disabled
@@ -264,10 +264,9 @@ describe('SubscriptionEditor', () => {
       renderWithProviders(<SubscriptionEditor />);
 
       await waitFor(() => {
-        // Email channel shows truncated username
-        expect(screen.getByText('test')).toBeInTheDocument();
-        // Telegram channel shows username
-        expect(screen.getByText('john_doe')).toBeInTheDocument();
+        // Channel icons are rendered with target as tooltip
+        expect(screen.getByTitle('test@example.com')).toBeInTheDocument();
+        expect(screen.getByTitle('john_doe')).toBeInTheDocument();
       });
     });
 
