@@ -114,7 +114,43 @@ describe('ChannelsTable', () => {
 
     expect(screen.getByText('No notification channels')).toBeInTheDocument();
     expect(
-      screen.getByText('Add an email, Telegram, or Mattermost channel to receive notifications.')
+      screen.getByText(
+        'Add Email, Telegram, or Mattermost channel to receive notifications.'
+      )
+    ).toBeInTheDocument();
+  });
+
+  it('renders empty state with subset of available channels', () => {
+    renderWithProviders(
+      <ChannelsTable channels={[]} availableChannels={['email', 'telegram']} />
+    );
+
+    expect(
+      screen.getByText(
+        'Add Email or Telegram channel to receive notifications.'
+      )
+    ).toBeInTheDocument();
+  });
+
+  it('renders empty state with single available channel', () => {
+    renderWithProviders(
+      <ChannelsTable channels={[]} availableChannels={['email']} />
+    );
+
+    expect(
+      screen.getByText('Add an Email channel to receive notifications.')
+    ).toBeInTheDocument();
+  });
+
+  it('renders empty state when no channels available', () => {
+    renderWithProviders(
+      <ChannelsTable channels={[]} availableChannels={[]} />
+    );
+
+    expect(
+      screen.getByText(
+        'No notification channel types are currently enabled by the administrator.'
+      )
     ).toBeInTheDocument();
   });
 
@@ -211,6 +247,34 @@ describe('ChannelForm', () => {
 
     const submitButton = screen.getByText('Add Channel');
     expect(submitButton).toBeDisabled();
+  });
+
+  it('accepts availableChannels prop', () => {
+    const onSubmit = vi.fn();
+    renderWithProviders(
+      <ChannelForm
+        onSubmit={onSubmit}
+        availableChannels={['email', 'telegram']}
+      />
+    );
+
+    expect(screen.getByText('Channel Type')).toBeInTheDocument();
+  });
+
+  it('renders telegram bot link when telegramBotUsername is provided', () => {
+    const onSubmit = vi.fn();
+    renderWithProviders(
+      <ChannelForm
+        onSubmit={onSubmit}
+        availableChannels={['telegram']}
+        telegramBotUsername="my_bot"
+      />
+    );
+
+    const link = screen.getByRole('link');
+    expect(link).toHaveAttribute('href', 'https://t.me/my_bot');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 });
 

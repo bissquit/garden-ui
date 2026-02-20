@@ -25,7 +25,7 @@ npm run api:generate     # Сгенерировать TypeScript типы
 ```
 
 **Backend:** https://github.com/bissquit/incident-garden
-**Compatibility:** Frontend 1.4.0 ↔ Backend >= 2.8.0
+**Compatibility:** Frontend 1.5.0 ↔ Backend >= 2.11.0
 
 ### Test Environment
 
@@ -106,6 +106,7 @@ src/
 │   ├── use-events-mutations.ts    # useCreateEvent, useAddEventUpdate, useDeleteEvent
 │   ├── use-templates.ts       # useTemplates
 │   ├── use-templates-mutations.ts # useCreateTemplate, useDeleteTemplate
+│   ├── use-notifications-config.ts # useNotificationsConfig (available channels, telegram bot config)
 │   ├── use-channels.ts        # useChannels
 │   ├── use-channels-mutations.ts  # useCreateChannel, useUpdateChannel, useDeleteChannel,
 │   │                              # useVerifyChannel (with code for email), useResendVerificationCode

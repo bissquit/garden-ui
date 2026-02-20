@@ -67,7 +67,7 @@ export function EventForm({ services, groups, onSubmit, isLoading }: EventFormPr
       status: 'investigating',
       severity: 'minor',
       description: '',
-      notify_subscribers: false,
+      notify_subscribers: true,
       affected_services: [],
       affected_groups: [],
     },

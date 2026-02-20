@@ -73,7 +73,7 @@ export function EventUpdateForm({
     defaultValues: {
       status: event.status,
       message: '',
-      notify_subscribers: false,
+      notify_subscribers: true,
       reason: '',
     },
   });

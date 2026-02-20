@@ -666,6 +666,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/notifications/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get notifications configuration
+         * @description Returns available notification channel types and their configuration.
+         *     This is a public endpoint, no authentication required.
+         *
+         *     Mattermost is always available. Email and Telegram availability
+         *     depends on server configuration.
+         */
+        get: operations["getNotificationsConfig"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/status": {
         parameters: {
             query?: never;
@@ -855,6 +879,7 @@ export interface components {
             target: string;
             is_enabled: boolean;
             is_verified: boolean;
+            /** @description Whether this is the default (registration) email channel */
             is_default: boolean;
             /** Format: date-time */
             created_at: string;
@@ -1009,7 +1034,7 @@ export interface components {
             target: string;
         };
         UpdateChannelRequest: {
-            is_enabled: boolean;
+            is_enabled?: boolean;
         };
         /** @description Request body for email channel verification. Not required for Telegram/Mattermost. */
         VerifyChannelRequest: {
@@ -1141,6 +1166,17 @@ export interface components {
                 total?: number;
                 limit?: number;
                 offset?: number;
+            };
+        };
+        NotificationsConfigResponse: {
+            data?: {
+                /** @description List of enabled notification channel types */
+                available_channels: ("email" | "telegram" | "mattermost")[];
+                /** @description Telegram configuration (only present when telegram is enabled and bot_username is configured) */
+                telegram?: {
+                    /** @description Bot username for deep links */
+                    bot_username?: string;
+                } | null;
             };
         };
         PublicStatusResponse: {
@@ -2209,6 +2245,7 @@ export interface operations {
             401: components["responses"]["UnauthorizedError"];
             403: components["responses"]["ForbiddenError"];
             404: components["responses"]["NotFoundError"];
+            409: components["responses"]["ConflictError"];
         };
     };
     updateChannel: {
@@ -2417,6 +2454,26 @@ export interface operations {
             401: components["responses"]["UnauthorizedError"];
             403: components["responses"]["ForbiddenError"];
             404: components["responses"]["NotFoundError"];
+        };
+    };
+    getNotificationsConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Notifications configuration */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationsConfigResponse"];
+                };
+            };
         };
     };
     getPublicStatus: {

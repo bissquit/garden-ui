@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/hooks/use-auth';
 import { useChannels } from '@/hooks/use-channels';
+import { useNotificationsConfig } from '@/hooks/use-notifications-config';
 import {
   ChannelsTable,
   ChannelFormDialog,
@@ -15,7 +16,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, User, AlertCircle } from 'lucide-react';
+import { Loader2, User, AlertCircle, BellOff } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -24,6 +25,17 @@ export default function SettingsPage() {
     isLoading: channelsLoading,
     isError: channelsError,
   } = useChannels();
+  const {
+    data: notificationsConfig,
+    isLoading: configLoading,
+    isError: configError,
+  } = useNotificationsConfig();
+
+  const availableChannels = notificationsConfig?.available_channels;
+  const telegramBotUsername =
+    notificationsConfig?.telegram?.bot_username ?? undefined;
+  const noChannelsAvailable =
+    availableChannels !== undefined && availableChannels.length === 0;
 
   return (
     <div className="space-y-8">
@@ -73,21 +85,38 @@ export default function SettingsPage() {
                 Manage how you receive notifications
               </CardDescription>
             </div>
-            <ChannelFormDialog />
+            {!noChannelsAvailable && (
+              <ChannelFormDialog
+                availableChannels={availableChannels}
+                telegramBotUsername={telegramBotUsername}
+              />
+            )}
           </div>
         </CardHeader>
         <CardContent>
-          {channelsLoading ? (
+          {channelsLoading || configLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : channelsError ? (
+          ) : channelsError || configError ? (
             <div className="flex flex-col items-center justify-center py-8">
               <AlertCircle className="h-8 w-8 text-destructive mb-2" />
               <p className="text-muted-foreground">Failed to load channels</p>
             </div>
+          ) : noChannelsAvailable ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <BellOff className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="font-medium">Notifications are not configured</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                No notification channel types are currently enabled by the
+                administrator.
+              </p>
+            </div>
           ) : (
-            <ChannelsTable channels={channels ?? []} />
+            <ChannelsTable
+              channels={channels ?? []}
+              availableChannels={availableChannels}
+            />
           )}
         </CardContent>
       </Card>

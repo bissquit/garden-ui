@@ -17,14 +17,19 @@ import { useDeleteChannel, useUpdateChannel, useVerifyChannel } from '@/hooks/us
 import { VerifyEmailDialog } from './verify-email-dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { components } from '@/api/types.generated';
+import type { AvailableChannelType } from '@/hooks/use-notifications-config';
 
 type NotificationChannel = components['schemas']['NotificationChannel'];
 
 interface ChannelsTableProps {
   channels: NotificationChannel[];
+  availableChannels?: AvailableChannelType[];
 }
 
-export function ChannelsTable({ channels }: ChannelsTableProps) {
+export function ChannelsTable({
+  channels,
+  availableChannels = ['email', 'telegram', 'mattermost'],
+}: ChannelsTableProps) {
   const { toast } = useToast();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [verifyEmailChannel, setVerifyEmailChannel] = useState<NotificationChannel | null>(null);
@@ -81,6 +86,26 @@ export function ChannelsTable({ channels }: ChannelsTableProps) {
         });
       }
     }
+  };
+
+  const getEmptyStateDescription = () => {
+    const channelNames: Record<string, string> = {
+      email: 'Email',
+      telegram: 'Telegram',
+      mattermost: 'Mattermost',
+    };
+    if (availableChannels.length === 0) {
+      return 'No notification channel types are currently enabled by the administrator.';
+    }
+    const names = availableChannels.map((ch) => channelNames[ch] ?? ch);
+    if (names.length === 1) {
+      const article = names[0] === 'Email' ? 'an' : 'a';
+      return `Add ${article} ${names[0]} channel to receive notifications.`;
+    }
+    if (names.length === 2) {
+      return `Add ${names[0]} or ${names[1]} channel to receive notifications.`;
+    }
+    return `Add ${names.slice(0, -1).join(', ')}, or ${names[names.length - 1]} channel to receive notifications.`;
   };
 
   const columns = [
@@ -181,7 +206,7 @@ export function ChannelsTable({ channels }: ChannelsTableProps) {
           <EmptyState
             icon={Bell}
             title="No notification channels"
-            description="Add an email, Telegram, or Mattermost channel to receive notifications."
+            description={getEmptyStateDescription()}
           />
         }
       />
