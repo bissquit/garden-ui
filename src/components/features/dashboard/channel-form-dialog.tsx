@@ -14,12 +14,19 @@ import { useCreateChannel } from '@/hooks/use-channels-mutations';
 import { useToast } from '@/hooks/use-toast';
 import { Plus } from 'lucide-react';
 import type { CreateChannelFormData } from '@/lib/validations/channel';
+import type { AvailableChannelType } from '@/hooks/use-notifications-config';
 
 interface ChannelFormDialogProps {
   trigger?: React.ReactNode;
+  availableChannels?: AvailableChannelType[];
+  telegramBotUsername?: string;
 }
 
-export function ChannelFormDialog({ trigger }: ChannelFormDialogProps) {
+export function ChannelFormDialog({
+  trigger,
+  availableChannels,
+  telegramBotUsername,
+}: ChannelFormDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
@@ -59,6 +66,8 @@ export function ChannelFormDialog({ trigger }: ChannelFormDialogProps) {
         <ChannelForm
           onSubmit={handleSubmit}
           isLoading={createMutation.isPending}
+          availableChannels={availableChannels}
+          telegramBotUsername={telegramBotUsername}
         />
       </DialogContent>
     </Dialog>

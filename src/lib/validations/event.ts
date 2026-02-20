@@ -40,7 +40,7 @@ export const createEventSchema = z
     resolved_at: z.string().datetime().optional(),
     scheduled_start_at: z.string().datetime().optional(),
     scheduled_end_at: z.string().datetime().optional(),
-    notify_subscribers: z.boolean().default(false),
+    notify_subscribers: z.boolean().default(true),
     template_id: z.string().uuid().optional(),
     // Affected services and groups with statuses
     affected_services: z.array(affectedServiceSchema).optional().default([]),
@@ -82,7 +82,7 @@ export const createEventSchema = z
 export const addEventUpdateSchema = z.object({
   status: eventStatusEnum,
   message: z.string().min(1, 'Message is required'),
-  notify_subscribers: z.boolean().default(false),
+  notify_subscribers: z.boolean().default(true),
   // New: service management within updates
   service_updates: z.array(affectedServiceSchema).optional(),
   add_services: z.array(affectedServiceSchema).optional(),

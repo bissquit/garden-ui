@@ -20,22 +20,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Mail, MessageSquare, Hash } from 'lucide-react';
+import { Loader2, Mail, MessageSquare, Hash, ExternalLink } from 'lucide-react';
 import {
   createChannelSchema,
   type CreateChannelFormData,
 } from '@/lib/validations/channel';
+import type { AvailableChannelType } from '@/hooks/use-notifications-config';
 
 interface ChannelFormProps {
   onSubmit: (data: CreateChannelFormData) => void;
   isLoading?: boolean;
+  availableChannels?: AvailableChannelType[];
+  telegramBotUsername?: string;
 }
 
-export function ChannelForm({ onSubmit, isLoading }: ChannelFormProps) {
+export function ChannelForm({
+  onSubmit,
+  isLoading,
+  availableChannels = ['email', 'telegram', 'mattermost'],
+  telegramBotUsername,
+}: ChannelFormProps) {
+  const defaultType = availableChannels[0] ?? 'email';
   const form = useForm<CreateChannelFormData>({
     resolver: zodResolver(createChannelSchema),
     defaultValues: {
-      type: 'email',
+      type: defaultType,
       target: '',
     },
   });
@@ -60,6 +69,24 @@ export function ChannelForm({ onSubmit, isLoading }: ChannelFormProps) {
       case 'email':
         return 'We will send a verification code to this address.';
       case 'telegram':
+        if (telegramBotUsername) {
+          return (
+            <span>
+              Enter your Telegram username without the @ symbol. Start a chat
+              with{' '}
+              <a
+                href={`https://t.me/${telegramBotUsername}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-0.5 text-primary hover:underline"
+              >
+                @{telegramBotUsername}
+                <ExternalLink className="h-3 w-3" />
+              </a>{' '}
+              to receive notifications.
+            </span>
+          );
+        }
         return 'Enter your Telegram username without the @ symbol.';
       case 'mattermost':
         return 'Create an Incoming Webhook in Mattermost and paste the URL here.';
@@ -103,24 +130,30 @@ export function ChannelForm({ onSubmit, isLoading }: ChannelFormProps) {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="email">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
-                      <span>Email</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="telegram">
-                    <div className="flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      <span>Telegram</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="mattermost">
-                    <div className="flex items-center gap-2">
-                      <Hash className="h-4 w-4" />
-                      <span>Mattermost</span>
-                    </div>
-                  </SelectItem>
+                  {availableChannels.includes('email') && (
+                    <SelectItem value="email">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        <span>Email</span>
+                      </div>
+                    </SelectItem>
+                  )}
+                  {availableChannels.includes('telegram') && (
+                    <SelectItem value="telegram">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        <span>Telegram</span>
+                      </div>
+                    </SelectItem>
+                  )}
+                  {availableChannels.includes('mattermost') && (
+                    <SelectItem value="mattermost">
+                      <div className="flex items-center gap-2">
+                        <Hash className="h-4 w-4" />
+                        <span>Mattermost</span>
+                      </div>
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
