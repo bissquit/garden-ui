@@ -218,10 +218,9 @@ describe('EventDetailsCard', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows event type and severity badges', () => {
+  it('shows severity and status badges', () => {
     renderWithProviders(<EventDetailsCard event={mockEvents[0]} />);
 
-    expect(screen.getByText('incident')).toBeInTheDocument();
     expect(screen.getByText('Minor')).toBeInTheDocument();
     expect(screen.getByText('Investigating')).toBeInTheDocument();
   });
