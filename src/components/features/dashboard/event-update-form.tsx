@@ -186,7 +186,7 @@ export function EventUpdateForm({
     form.reset({
       status: event.status,
       message: '',
-      notify_subscribers: false,
+      notify_subscribers: true,
       reason: '',
     });
     // Reset current services to match updated event
