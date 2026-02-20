@@ -44,14 +44,12 @@ export function EventDetailsCard({ event, services = [], groups = [] }: EventDet
             <div>
               <CardTitle>{event.title}</CardTitle>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant={isIncident ? 'destructive' : 'secondary'}>
-                  {event.type}
-                </Badge>
                 {event.severity && (
                   <Badge
+                    variant="outline"
                     className={cn(
                       severityConfig[event.severity].bgClass,
-                      'text-white'
+                      'text-white border-transparent hover:opacity-80'
                     )}
                   >
                     {severityConfig[event.severity].label}
