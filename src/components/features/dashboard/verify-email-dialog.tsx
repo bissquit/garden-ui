@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Loader2, Mail, RefreshCw } from 'lucide-react';
 import { useVerifyChannel, useResendVerificationCode } from '@/hooks/use-channels-mutations';
 import { useToast } from '@/hooks/use-toast';
+import { ApiError } from '@/lib/api-error';
 
 interface VerifyEmailDialogProps {
   open: boolean;
@@ -56,9 +57,15 @@ export function VerifyEmailDialog({
       toast({ title: 'Email verified successfully' });
       onOpenChange(false);
     } catch (error) {
+      let title = 'Verification failed';
+      if (error instanceof ApiError) {
+        if (error.isValidationError) title = 'Invalid verification code';
+        else if (error.isUnprocessableEntity) title = 'Channel setup incomplete';
+        else if (error.isTooManyRequests) title = 'Too many attempts';
+      }
       toast({
-        title: 'Verification failed',
-        description: error instanceof Error ? error.message : 'Invalid code',
+        title,
+        description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
     }
