@@ -2318,6 +2318,24 @@ export interface operations {
             401: components["responses"]["UnauthorizedError"];
             403: components["responses"]["ForbiddenError"];
             404: components["responses"]["NotFoundError"];
+            /**
+             * @description Channel verification failed. The request is valid but the external service
+             *     rejected the test message. Common causes: user hasn't started a conversation
+             *     with the Telegram bot, bot is blocked, or invalid webhook URL.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            /** @example channel verification failed: chat not found — please send /start to the bot first, then try again */
+                            message?: string;
+                        };
+                    };
+                };
+            };
             /** @description Too many verification attempts */
             429: {
                 headers: {

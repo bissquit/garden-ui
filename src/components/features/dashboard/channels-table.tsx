@@ -17,6 +17,7 @@ import { useDeleteChannel, useUpdateChannel, useVerifyChannel } from '@/hooks/us
 import { VerifyEmailDialog } from './verify-email-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { channelTypeShortLabel } from '@/lib/status-utils';
+import { ApiError } from '@/lib/api-error';
 import type { components } from '@/api/types.generated';
 import type { AvailableChannelType } from '@/hooks/use-notifications-config';
 
@@ -80,8 +81,13 @@ export function ChannelsTable({
         await verifyMutation.mutateAsync({ id: channel.id });
         toast({ title: 'Verification message sent' });
       } catch (error) {
+        let title = 'Failed to verify channel';
+        if (error instanceof ApiError) {
+          if (error.isUnprocessableEntity) title = 'Channel setup incomplete';
+          else if (error.isTooManyRequests) title = 'Too many attempts';
+        }
         toast({
-          title: 'Failed to verify channel',
+          title,
           description: error instanceof Error ? error.message : 'Unknown error',
           variant: 'destructive',
         });

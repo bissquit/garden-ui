@@ -37,4 +37,12 @@ export class ApiError extends Error {
   get isValidationError(): boolean {
     return this.status === 400;
   }
+
+  get isUnprocessableEntity(): boolean {
+    return this.status === 422;
+  }
+
+  get isTooManyRequests(): boolean {
+    return this.status === 429;
+  }
 }
