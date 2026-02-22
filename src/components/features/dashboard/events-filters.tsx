@@ -9,7 +9,30 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { X } from 'lucide-react';
+import { eventStatusConfig } from '@/lib/status-utils';
+import { incidentStatuses, maintenanceStatuses } from '@/lib/validations/event';
+
+const resolvedStatuses = ['resolved', 'completed'];
+
+function getAvailableStatuses(type: string, active: boolean): string[] {
+  let statuses: string[];
+
+  if (type === 'incident') {
+    statuses = [...incidentStatuses];
+  } else if (type === 'maintenance') {
+    statuses = [...maintenanceStatuses];
+  } else {
+    statuses = [...incidentStatuses, ...maintenanceStatuses];
+  }
+
+  if (active) {
+    statuses = statuses.filter((s) => !resolvedStatuses.includes(s));
+  }
+
+  return statuses;
+}
 
 export function EventsFilters() {
   const router = useRouter();
@@ -17,28 +40,66 @@ export function EventsFilters() {
 
   const type = searchParams.get('type') ?? '';
   const status = searchParams.get('status') ?? '';
+  const active = searchParams.get('active') === 'true';
 
-  const updateFilter = (key: string, value: string) => {
+  const availableStatuses = getAvailableStatuses(type, active);
+
+  const updateParams = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (value && value !== 'all') {
-      params.set(key, value);
-    } else {
-      params.delete(key);
+    for (const [key, value] of Object.entries(updates)) {
+      if (value && value !== 'all') {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
     }
     router.push(`/dashboard/events?${params.toString()}`);
+  };
+
+  const handleTypeChange = (value: string) => {
+    const newType = value === 'all' ? '' : value;
+    const newAvailable = getAvailableStatuses(newType, active);
+    const updates: Record<string, string | null> = { type: newType || null };
+
+    // Clear status if it's not valid for the new type
+    if (status && !newAvailable.includes(status)) {
+      updates.status = null;
+    }
+
+    updateParams(updates);
+  };
+
+  const handleStatusChange = (value: string) => {
+    updateParams({ status: value === 'all' ? null : value });
+  };
+
+  const handleActiveChange = (checked: boolean | 'indeterminate') => {
+    const isChecked = checked === true;
+    const updates: Record<string, string | null> = {
+      active: isChecked ? 'true' : null,
+    };
+
+    // Clear status if it becomes invalid when active filter is toggled on
+    if (isChecked && status && resolvedStatuses.includes(status)) {
+      updates.status = null;
+    }
+
+    updateParams(updates);
   };
 
   const clearFilters = () => {
     router.push('/dashboard/events');
   };
 
-  const hasFilters = type || status;
+  const activeFilterCount =
+    (type ? 1 : 0) + (status ? 1 : 0) + (active ? 1 : 0);
+  const hasFilters = activeFilterCount > 0;
 
   return (
     <div className="flex items-center gap-4 flex-wrap">
       <Select
         value={type || 'all'}
-        onValueChange={(v) => updateFilter('type', v)}
+        onValueChange={handleTypeChange}
       >
         <SelectTrigger className="w-[150px]" data-testid="filter-type">
           <SelectValue placeholder="Type" />
@@ -52,27 +113,30 @@ export function EventsFilters() {
 
       <Select
         value={status || 'all'}
-        onValueChange={(v) => updateFilter('status', v)}
+        onValueChange={handleStatusChange}
       >
         <SelectTrigger className="w-[180px]" data-testid="filter-status">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Statuses</SelectItem>
-          <SelectItem value="investigating">Investigating</SelectItem>
-          <SelectItem value="identified">Identified</SelectItem>
-          <SelectItem value="monitoring">Monitoring</SelectItem>
-          <SelectItem value="resolved">Resolved</SelectItem>
-          <SelectItem value="scheduled">Scheduled</SelectItem>
-          <SelectItem value="in_progress">In Progress</SelectItem>
-          <SelectItem value="completed">Completed</SelectItem>
+          {availableStatuses.map((s) => (
+            <SelectItem key={s} value={s}>
+              {eventStatusConfig[s as keyof typeof eventStatusConfig].label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 
+      <label className="flex items-center gap-2 text-sm cursor-pointer" data-testid="filter-active">
+        <Checkbox checked={active} onCheckedChange={handleActiveChange} />
+        Active only
+      </label>
+
       {hasFilters && (
-        <Button variant="ghost" size="sm" onClick={clearFilters}>
+        <Button variant="ghost" size="sm" onClick={clearFilters} data-testid="clear-filters">
           <X className="h-4 w-4 mr-1" />
-          Clear
+          Clear{activeFilterCount > 1 ? ` (${activeFilterCount})` : ''}
         </Button>
       )}
     </div>

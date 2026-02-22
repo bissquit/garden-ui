@@ -27,7 +27,12 @@ import {
 import { Loader2, Info } from 'lucide-react';
 import { CurrentServiceEditor } from './current-service-editor';
 import { AddServicesSection } from './add-services-section';
-import { addEventUpdateSchema, type AddEventUpdateFormData } from '@/lib/validations/event';
+import {
+  addEventUpdateSchema,
+  incidentStatuses,
+  maintenanceStatuses,
+  type AddEventUpdateFormData,
+} from '@/lib/validations/event';
 import { eventStatusConfig } from '@/lib/status-utils';
 import type { components } from '@/api/types.generated';
 
@@ -53,9 +58,6 @@ interface CurrentServiceState {
   currentStatus: ServiceStatus;
   isRemoved: boolean;
 }
-
-const incidentStatuses = ['investigating', 'identified', 'monitoring', 'resolved'];
-const maintenanceStatuses = ['scheduled', 'in_progress', 'completed'];
 
 export function EventUpdateForm({
   event,

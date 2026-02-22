@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useEvents } from '@/hooks/use-events';
@@ -10,6 +10,7 @@ import {
   EventFormDialog,
 } from '@/components/features/dashboard';
 import { Loader2 } from 'lucide-react';
+import { isEventActive } from '@/lib/status-utils';
 import type { components } from '@/api/types.generated';
 
 type EventType = components['schemas']['EventType'];
@@ -22,11 +23,17 @@ function EventsPageContent() {
 
   const type = searchParams.get('type') as EventType | null;
   const status = searchParams.get('status') as EventStatus | null;
+  const active = searchParams.get('active') === 'true';
 
   const { data: events, isLoading, isError } = useEvents({
     type: type ?? undefined,
     status: status ?? undefined,
   });
+
+  const filteredEvents = useMemo(() => {
+    const list = events ?? [];
+    return active ? list.filter((e) => isEventActive(e.status)) : list;
+  }, [events, active]);
 
   return (
     <div className="space-y-6">
@@ -49,7 +56,7 @@ function EventsPageContent() {
           Failed to load events. Make sure you are logged in.
         </div>
       ) : (
-        <EventsTable events={events ?? []} />
+        <EventsTable events={filteredEvents} />
       )}
     </div>
   );

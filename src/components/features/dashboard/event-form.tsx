@@ -26,6 +26,8 @@ import {
 import { Loader2, Info } from 'lucide-react';
 import {
   createEventSchema,
+  incidentStatuses,
+  maintenanceStatuses,
   type CreateEventFormData,
 } from '@/lib/validations/event';
 import { eventStatusConfig, severityConfig } from '@/lib/status-utils';
@@ -43,9 +45,6 @@ interface EventFormProps {
   onSubmit: (data: CreateEventFormData) => void;
   isLoading?: boolean;
 }
-
-const incidentStatuses = ['investigating', 'identified', 'monitoring', 'resolved'];
-const maintenanceStatuses = ['scheduled', 'in_progress', 'completed'];
 
 const DEFAULT_SERVICE_STATUS: ServiceStatus = 'degraded';
 
