@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useVerifyChannel, useResendVerificationCode } from './use-channels-mutations';
+import {
+  useCreateChannel,
+  useUpdateChannel,
+  useDeleteChannel,
+  useVerifyChannel,
+  useResendVerificationCode,
+} from './use-channels-mutations';
 import { ApiError } from '@/lib/api-error';
 import { type ReactNode } from 'react';
 
@@ -157,6 +163,146 @@ describe('useVerifyChannel', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['channels'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['subscriptions-matrix'] });
+  });
+});
+
+describe('useCreateChannel', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('invalidates subscriptions-matrix and refetches channels on success', async () => {
+    const { apiClient } = await import('@/api/client');
+    vi.mocked(apiClient.POST).mockResolvedValue({
+      data: {
+        data: {
+          id: 'channel-1',
+          user_id: 'user-1',
+          type: 'email',
+          target: 'test@example.com',
+          is_enabled: true,
+          is_verified: false,
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+        },
+      },
+      error: undefined,
+      response: { status: 201 } as Response,
+    });
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+
+    queryClient.setQueryData(['channels'], []);
+
+    const refetchSpy = vi.spyOn(queryClient, 'refetchQueries');
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useCreateChannel(), { wrapper });
+
+    result.current.mutate({ type: 'email', target: 'test@example.com' });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(refetchSpy).toHaveBeenCalledWith({ queryKey: ['channels'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['subscriptions-matrix'] });
+  });
+});
+
+describe('useUpdateChannel', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('invalidates subscriptions-matrix and refetches channels on success', async () => {
+    const { apiClient } = await import('@/api/client');
+    vi.mocked(apiClient.PATCH).mockResolvedValue({
+      data: {
+        data: {
+          id: 'channel-1',
+          user_id: 'user-1',
+          type: 'email',
+          target: 'test@example.com',
+          is_enabled: false,
+          is_verified: true,
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+        },
+      },
+      error: undefined,
+      response: { status: 200 } as Response,
+    } as any);
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+
+    queryClient.setQueryData(['channels'], [{ id: 'channel-1', is_enabled: true }]);
+
+    const refetchSpy = vi.spyOn(queryClient, 'refetchQueries');
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useUpdateChannel(), { wrapper });
+
+    result.current.mutate({ id: 'channel-1', data: { is_enabled: false } });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(refetchSpy).toHaveBeenCalledWith({ queryKey: ['channels'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['subscriptions-matrix'] });
+  });
+});
+
+describe('useDeleteChannel', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('invalidates subscriptions-matrix and refetches channels on success', async () => {
+    const { apiClient } = await import('@/api/client');
+    vi.mocked(apiClient.DELETE).mockResolvedValue({
+      data: undefined,
+      error: undefined,
+      response: { status: 204 } as Response,
+    });
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+
+    queryClient.setQueryData(['channels'], [{ id: 'channel-1' }]);
+
+    const refetchSpy = vi.spyOn(queryClient, 'refetchQueries');
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useDeleteChannel(), { wrapper });
+
+    result.current.mutate('channel-1');
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(refetchSpy).toHaveBeenCalledWith({ queryKey: ['channels'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['subscriptions-matrix'] });
   });
 });
 

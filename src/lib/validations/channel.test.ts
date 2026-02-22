@@ -48,15 +48,20 @@ describe('createChannelSchema', () => {
       expect(result.success).toBe(true);
     });
 
-    it('rejects telegram username starting with number', () => {
+    it('accepts numeric chat ID', () => {
+      const result = createChannelSchema.safeParse({
+        type: 'telegram',
+        target: '123456789',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects mixed format (starts with number, has letters)', () => {
       const result = createChannelSchema.safeParse({
         type: 'telegram',
         target: '123user',
       });
       expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.issues[0].message).toContain('Telegram username');
-      }
     });
 
     it('rejects too short telegram username', () => {

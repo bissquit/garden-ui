@@ -16,15 +16,13 @@ import {
   Bell,
   BellOff,
   AlertCircle,
-  Mail,
-  MessageSquare,
-  Hash,
   Search,
 } from 'lucide-react';
 import { useSubscriptionsMatrix } from '@/hooks/use-subscriptions';
 import { useSetChannelSubscriptions } from '@/hooks/use-subscriptions-mutations';
 import { useServices, useGroups } from '@/hooks/use-public-status';
 import { useToast } from '@/hooks/use-toast';
+import { channelTypeShortLabel } from '@/lib/status-utils';
 import type { components } from '@/api/types.generated';
 
 type ChannelWithSubscriptions = components['schemas']['ChannelWithSubscriptions'];
@@ -34,19 +32,6 @@ type ServiceGroup = components['schemas']['ServiceGroup'];
 interface ChannelState {
   subscribeToAll: boolean;
   serviceIds: Set<string>;
-}
-
-function ChannelIcon({ type }: { type: string }) {
-  switch (type) {
-    case 'email':
-      return <Mail className="h-4 w-4" />;
-    case 'telegram':
-      return <MessageSquare className="h-4 w-4" />;
-    case 'mattermost':
-      return <Hash className="h-4 w-4" />;
-    default:
-      return <Bell className="h-4 w-4" />;
-  }
 }
 
 interface GroupedServices {
@@ -369,7 +354,9 @@ export function SubscriptionEditor() {
                         className={`flex flex-col items-center gap-1 ${!interactive ? 'opacity-50' : ''}`}
                         title={tooltipText}
                       >
-                        <ChannelIcon type={ch.channel.type} />
+                        <span className="text-xs text-muted-foreground font-medium">
+                          {channelTypeShortLabel[ch.channel.type]}
+                        </span>
                         {statusLabel ? (
                           <span className="text-xs text-amber-500">
                             {statusLabel}

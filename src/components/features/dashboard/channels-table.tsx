@@ -6,7 +6,7 @@ import { EmptyState } from './empty-state';
 import { DeleteConfirmationDialog } from './delete-confirmation-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Mail, MessageSquare, Hash, CheckCircle, XCircle, ShieldCheck, MoreHorizontal, Bell } from 'lucide-react';
+import { CheckCircle, XCircle, ShieldCheck, MoreHorizontal, Bell } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +16,7 @@ import {
 import { useDeleteChannel, useUpdateChannel, useVerifyChannel } from '@/hooks/use-channels-mutations';
 import { VerifyEmailDialog } from './verify-email-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { channelTypeShortLabel } from '@/lib/status-utils';
 import type { components } from '@/api/types.generated';
 import type { AvailableChannelType } from '@/hooks/use-notifications-config';
 
@@ -110,17 +111,18 @@ export function ChannelsTable({
 
   const columns = [
     {
+      key: 'type',
+      header: 'Type',
+      cell: (channel: NotificationChannel & { actions?: React.ReactNode }) => (
+        <Badge variant="outline">{channelTypeShortLabel[channel.type]}</Badge>
+      ),
+      className: 'w-20',
+    },
+    {
       key: 'target',
       header: 'Channel',
       cell: (channel: NotificationChannel & { actions?: React.ReactNode }) => (
         <div className="flex items-center gap-2">
-          {channel.type === 'email' ? (
-            <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-          ) : channel.type === 'telegram' ? (
-            <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
-          ) : (
-            <Hash className="h-4 w-4 text-muted-foreground shrink-0" />
-          )}
           <span className="font-mono text-sm">{channel.target}</span>
           {channel.is_default && (
             <Badge variant="outline">Default</Badge>

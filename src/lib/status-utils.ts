@@ -3,6 +3,14 @@ import type { components } from '@/api/types.generated';
 type ServiceStatus = components['schemas']['ServiceStatus'];
 type EventStatus = components['schemas']['EventStatus'];
 type Severity = components['schemas']['Severity'];
+type ChannelType = components['schemas']['ChannelType'];
+
+// Channel type short labels for compact display
+export const channelTypeShortLabel: Record<ChannelType, string> = {
+  email: 'Email',
+  telegram: 'TG',
+  mattermost: 'MM',
+};
 
 // Extended service status config with Tailwind classes
 export const serviceStatusConfig: Record<
