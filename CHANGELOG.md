@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.4.0](https://github.com/bissquit/garden-ui/compare/v1.3.0...v1.4.0) (2026-02-22)
+
+
+### Features
+
+* **channels:** add email verification code support and resend functionality ([a33f586](https://github.com/bissquit/garden-ui/commit/a33f58638ab83c180d47e49e7081a713fb6db0b2))
+* **channels:** integrate notifications config endpoint for dynamic channel types ([a9fcce2](https://github.com/bissquit/garden-ui/commit/a9fcce291cef4c387c9a38d16c8f212806237bea))
+* **channels:** support is_default field for notification channels ([f013637](https://github.com/bissquit/garden-ui/commit/f0136370dcbf694578d9fb98fe2760a3c45bccec))
+* **events:** add dynamic status filtering by type and active-only toggle ([8afed63](https://github.com/bissquit/garden-ui/commit/8afed63fd6d8c48cf79d60fe34cb7ba1f9bce5e0))
+* **settings:** improve subscription editor UX and compact settings layout ([1828c53](https://github.com/bissquit/garden-ui/commit/1828c537e79c92b07c30f6992f0fbacb1bf9cdef))
+* **subscriptions:** add group checkboxes, show unverified channels in matrix ([ff2ca82](https://github.com/bissquit/garden-ui/commit/ff2ca82f2a44b774d283dd6f08dcf634a210ab52))
+* **subscriptions:** implement matrix UI for per-channel subscriptions ([81b4e7c](https://github.com/bissquit/garden-ui/commit/81b4e7c0aa93d520e0468c7fda858a6e60dfef7e))
+* **subscriptions:** migrate to per-channel subscriptions model (Backend 2.8.0) ([06032ee](https://github.com/bissquit/garden-ui/commit/06032ee3078e9403c71140bae080c81a22480fd7))
+* **ui:** add mattermost support and email verification code dialog ([df5b24a](https://github.com/bissquit/garden-ui/commit/df5b24a5e8dde315d00c6b6e06396a766a36d466))
+
+
+### Bug Fixes
+
+* change left top icon depending on theme ([2243b58](https://github.com/bissquit/garden-ui/commit/2243b584e0749307d8ed28cf96e208237128766d))
+* **channels:** improve notification channels UX — type labels, matrix refresh, telegram instructions ([9ac01f6](https://github.com/bissquit/garden-ui/commit/9ac01f6aa1fb0c5d86ba8e52485fb51661f7504d))
+* **channels:** improve verification error handling for 422/429 responses ([7659478](https://github.com/bissquit/garden-ui/commit/76594789d5ca557e9692b51bf134c1923bd91387))
+* **events:** default notify_subscribers to true in form reset state ([5fc6012](https://github.com/bissquit/garden-ui/commit/5fc601207d0ffe3d38d9e5e7a7ae118831d8d233))
+* **ui:** align channel icons with checkboxes in subscription matrix ([918daff](https://github.com/bissquit/garden-ui/commit/918daffc6133bd189765db0b5999d230c66b7f92))
+* **ui:** remove event type badge and fix severity hover color ([3813bfb](https://github.com/bissquit/garden-ui/commit/3813bfb0d6c6e30c59f6a6b0f14f0cfdd9aed3f3))
+* **ui:** replace channel actions dropdown with inline icon buttons ([af0db6e](https://github.com/bissquit/garden-ui/commit/af0db6e3f12dc30f44bcaf31db655af82c93300e))
+
 ## [1.3.0](https://github.com/bissquit/garden-ui/compare/v1.2.0...v1.3.0) (2026-02-11)
 
 
