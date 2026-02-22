@@ -13,6 +13,9 @@ export const eventStatusEnum = z.enum([
 ]);
 export const severityEnum = z.enum(['minor', 'major', 'critical']);
 
+export const incidentStatuses = ['investigating', 'identified', 'monitoring', 'resolved'] as const;
+export const maintenanceStatuses = ['scheduled', 'in_progress', 'completed'] as const;
+
 // Schema for service with status
 export const affectedServiceSchema = z.object({
   service_id: z.string().uuid(),
@@ -62,13 +65,10 @@ export const createEventSchema = z
   .refine(
     (data) => {
       // Status must match event type
-      const incidentStatuses = ['investigating', 'identified', 'monitoring', 'resolved'];
-      const maintenanceStatuses = ['scheduled', 'in_progress', 'completed'];
-
-      if (data.type === 'incident' && !incidentStatuses.includes(data.status)) {
+      if (data.type === 'incident' && !(incidentStatuses as readonly string[]).includes(data.status)) {
         return false;
       }
-      if (data.type === 'maintenance' && !maintenanceStatuses.includes(data.status)) {
+      if (data.type === 'maintenance' && !(maintenanceStatuses as readonly string[]).includes(data.status)) {
         return false;
       }
       return true;
