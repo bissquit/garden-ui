@@ -82,13 +82,16 @@ describe('ChannelsTable', () => {
     expect(screen.getByText('john_doe')).toBeInTheDocument();
   });
 
-  it('shows channel type icons in Channel column', () => {
+  it('shows separate Type column with short labels and Channel column with targets', () => {
     renderWithProviders(<ChannelsTable channels={mockChannels} />);
 
-    // Type icons are rendered inline with target text (no separate type label)
-    // Verify the combined Channel column header exists
+    // Verify both column headers exist
+    expect(screen.getByText('Type')).toBeInTheDocument();
     expect(screen.getByText('Channel')).toBeInTheDocument();
-    // Verify both targets are displayed
+    // Verify short type labels are displayed in Type column
+    expect(screen.getByText('Email')).toBeInTheDocument();
+    expect(screen.getByText('TG')).toBeInTheDocument();
+    // Verify targets are displayed in Channel column
     expect(screen.getByText('test@example.com')).toBeInTheDocument();
     expect(screen.getByText('john_doe')).toBeInTheDocument();
   });
@@ -154,7 +157,7 @@ describe('ChannelsTable', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows mattermost channel with icon and target', () => {
+  it('shows mattermost channel with type badge and target', () => {
     const mattermostChannel = {
       id: 'ch3',
       user_id: 'user-1',
@@ -168,7 +171,9 @@ describe('ChannelsTable', () => {
     };
     renderWithProviders(<ChannelsTable channels={[mattermostChannel]} />);
 
-    // Target is displayed in the combined Channel column
+    // Short label is displayed in Type column
+    expect(screen.getByText('MM')).toBeInTheDocument();
+    // Target is displayed in Channel column
     expect(screen.getByText('https://mattermost.example.com/hooks/xxx')).toBeInTheDocument();
   });
 
@@ -261,7 +266,7 @@ describe('ChannelForm', () => {
     expect(screen.getByText('Channel Type')).toBeInTheDocument();
   });
 
-  it('renders telegram bot link when telegramBotUsername is provided', () => {
+  it('renders telegram setup alert with bot and userinfobot links when telegramBotUsername is provided', () => {
     const onSubmit = vi.fn();
     renderWithProviders(
       <ChannelForm
@@ -271,10 +276,40 @@ describe('ChannelForm', () => {
       />
     );
 
-    const link = screen.getByRole('link');
-    expect(link).toHaveAttribute('href', 'https://t.me/my_bot');
-    expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    // Alert heading should be visible
+    expect(screen.getByText('Setup required')).toBeInTheDocument();
+
+    // Both links should be rendered with correct hrefs
+    const links = screen.getAllByRole('link');
+    const botLink = links.find((l) => l.getAttribute('href') === 'https://t.me/my_bot');
+    const userinfoLink = links.find((l) => l.getAttribute('href') === 'https://t.me/userinfobot');
+
+    expect(botLink).toBeDefined();
+    expect(botLink).toHaveAttribute('target', '_blank');
+    expect(botLink).toHaveTextContent('@my_bot');
+
+    expect(userinfoLink).toBeDefined();
+    expect(userinfoLink).toHaveAttribute('target', '_blank');
+    expect(userinfoLink).toHaveTextContent('@userinfobot');
+  });
+
+  it('renders fallback userinfobot link when telegramBotUsername is not provided', () => {
+    const onSubmit = vi.fn();
+    renderWithProviders(
+      <ChannelForm
+        onSubmit={onSubmit}
+        availableChannels={['telegram']}
+      />
+    );
+
+    // No alert heading
+    expect(screen.queryByText('Setup required')).not.toBeInTheDocument();
+
+    // Fallback text with userinfobot link
+    const links = screen.getAllByRole('link');
+    const userinfoLink = links.find((l) => l.getAttribute('href') === 'https://t.me/userinfobot');
+    expect(userinfoLink).toBeDefined();
+    expect(userinfoLink).toHaveTextContent('@userinfobot');
   });
 });
 

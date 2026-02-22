@@ -18,12 +18,13 @@ export const createChannelSchema = z
         });
       }
     } else if (data.type === 'telegram') {
-      // Telegram username: 5-32 characters, alphanumeric and underscores
-      const telegramRegex = /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/;
-      if (!telegramRegex.test(data.target)) {
+      // Telegram: numeric chat ID or username (5-32 chars, starts with letter)
+      const isNumericId = /^\d+$/.test(data.target);
+      const isUsername = /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/.test(data.target);
+      if (!isNumericId && !isUsername) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Please enter a valid Telegram username (5-32 characters, letters, numbers, underscores)',
+          message: 'Please enter a numeric chat ID or username (5-32 characters, letters, numbers, underscores)',
           path: ['target'],
         });
       }

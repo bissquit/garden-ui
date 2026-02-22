@@ -20,7 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Mail, MessageSquare, Hash, ExternalLink } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Mail, MessageSquare, Hash, AlertTriangle } from 'lucide-react';
 import {
   createChannelSchema,
   type CreateChannelFormData,
@@ -56,7 +57,7 @@ export function ChannelForm({
       case 'email':
         return 'Enter email address';
       case 'telegram':
-        return 'Enter Telegram username';
+        return 'Enter Telegram ID';
       case 'mattermost':
         return 'https://mattermost.example.com/hooks/xxx';
       default:
@@ -70,29 +71,70 @@ export function ChannelForm({
         return 'We will send a verification code to this address.';
       case 'telegram':
         if (telegramBotUsername) {
-          return (
-            <span>
-              Enter your Telegram username without the @ symbol. Start a chat
-              with{' '}
-              <a
-                href={`https://t.me/${telegramBotUsername}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-0.5 text-primary hover:underline"
-              >
-                @{telegramBotUsername}
-                <ExternalLink className="h-3 w-3" />
-              </a>{' '}
-              to receive notifications.
-            </span>
-          );
+          return null;
         }
-        return 'Enter your Telegram username without the @ symbol.';
+        return (
+          <span>
+            Use{' '}
+            <a
+              href="https://t.me/userinfobot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              @userinfobot
+            </a>{' '}
+            to find your chat ID.
+          </span>
+        );
       case 'mattermost':
         return 'Create an Incoming Webhook in Mattermost and paste the URL here.';
       default:
         return '';
     }
+  };
+
+  const renderTelegramAlert = () => {
+    if (watchType !== 'telegram' || !telegramBotUsername) return null;
+
+    return (
+      <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/50">
+        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        <AlertTitle className="text-amber-800 dark:text-amber-200">
+          Setup required
+        </AlertTitle>
+        <AlertDescription className="text-amber-700 dark:text-amber-300">
+          <ol className="list-decimal list-inside space-y-1 mt-1">
+            <li>
+              Start the bot — send{' '}
+              <code className="rounded bg-amber-100 px-1 py-0.5 text-xs font-mono dark:bg-amber-900/50">
+                /start
+              </code>{' '}
+              to{' '}
+              <a
+                href={`https://t.me/${telegramBotUsername}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:opacity-80"
+              >
+                @{telegramBotUsername}
+              </a>
+            </li>
+            <li>
+              Get your chat ID — send any message to{' '}
+              <a
+                href="https://t.me/userinfobot"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:opacity-80"
+              >
+                @userinfobot
+              </a>
+            </li>
+          </ol>
+        </AlertDescription>
+      </Alert>
+    );
   };
 
   const getInputLabel = () => {
@@ -174,7 +216,10 @@ export function ChannelForm({
                   type={watchType === 'email' ? 'email' : 'text'}
                 />
               </FormControl>
-              <FormDescription>{getDescription()}</FormDescription>
+              {getDescription() && (
+                <FormDescription>{getDescription()}</FormDescription>
+              )}
+              {renderTelegramAlert()}
               <FormMessage />
             </FormItem>
           )}

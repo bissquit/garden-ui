@@ -26,6 +26,7 @@ export function useCreateChannel() {
     },
     onSuccess: async () => {
       await queryClient.refetchQueries({ queryKey: ['channels'] });
+      queryClient.invalidateQueries({ queryKey: ['subscriptions-matrix'] });
     },
   });
 }
@@ -44,6 +45,7 @@ export function useUpdateChannel() {
     },
     onSuccess: async () => {
       await queryClient.refetchQueries({ queryKey: ['channels'] });
+      queryClient.invalidateQueries({ queryKey: ['subscriptions-matrix'] });
     },
   });
 }
@@ -60,6 +62,7 @@ export function useDeleteChannel() {
     },
     onSuccess: async () => {
       await queryClient.refetchQueries({ queryKey: ['channels'] });
+      queryClient.invalidateQueries({ queryKey: ['subscriptions-matrix'] });
     },
   });
 }
@@ -87,6 +90,7 @@ export function useVerifyChannel() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['channels'] });
+      queryClient.invalidateQueries({ queryKey: ['subscriptions-matrix'] });
     },
   });
 }
