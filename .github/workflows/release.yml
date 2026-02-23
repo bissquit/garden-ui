@@ -62,3 +62,25 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             NEXT_PUBLIC_API_URL=http://localhost:8080
+
+      - name: Update release with Docker info
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ needs.release-please.outputs.tag_name }}"
+          VERSION="${{ needs.release-please.outputs.version }}"
+          IMAGE="ghcr.io/${{ github.repository }}"
+
+          CURRENT_BODY=$(gh release view "$TAG" --json body -q .body)
+
+          gh release edit "$TAG" --notes "${CURRENT_BODY}
+
+          ---
+
+          ## Docker
+
+          \`\`\`bash
+          docker pull ${IMAGE}:${VERSION}
+          \`\`\`
+
+          Also available as \`${IMAGE}:latest\`"
