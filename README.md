@@ -1,206 +1,188 @@
-# :deciduous_tree: Garden UI
+# Garden UI
 
-Web interface for Garden API. Provides public status page and admin dashboard for service status management.
+Web interface for [Incident Garden](https://github.com/bissquit/incident-garden) — an open-source status page and incident management system. Communicate service status to your users through a clean public page, and manage incidents through an operator dashboard.
+
+<p align="center">
+  <img src="docs/screenshots/main-page.png" alt="Public status page" width="720" />
+</p>
+
+## Why Garden
+
+Most open-source status page tools focus on **uptime monitoring** (pinging endpoints). Garden focuses on **incident communication** — the part where you tell your users what's happening, what's affected, and when it will be fixed.
+
+- **Structured incident lifecycle** — Create, update, and resolve incidents with timeline history. Track affected services and their status changes throughout the incident. Most alternatives (Uptime Kuma, Gatus) have no real incident workflow.
+- **Role-based access control** — Three roles: user, operator, admin. Operators manage incidents, admins configure the system. Most open-source alternatives have no multi-user support.
+- **Notification subscriptions** — Users subscribe to specific services via Email, Telegram, or Mattermost. Not "all or nothing."
+- **Lightweight infrastructure** — Go backend + PostgreSQL. No PHP, no Redis, no Elasticsearch. Single `docker compose up` to run everything.
+- **Public page + operator dashboard** — Your users see a clean status page. Your team sees a full management dashboard with filters, templates, and service groups.
+
+<details>
+<summary>Dashboard screenshots</summary>
+
+**Events management:**
+![Events dashboard](docs/screenshots/events.png)
+
+**Services management:**
+![Services dashboard](docs/screenshots/services.png)
+
+</details>
+
+## Quick Start
+
+Try the full stack locally with Docker — no build steps, no Node.js required:
+
+```bash
+# Download the quickstart compose file
+curl -O https://raw.githubusercontent.com/bissquit/garden-ui/main/docker-compose.quickstart.yml
+
+# Start all services (postgres + backend + frontend)
+docker compose -f docker-compose.quickstart.yml up -d
+```
+
+Once all containers are healthy:
+
+- **Status page:** [http://localhost:3000](http://localhost:3000) — public, no auth required
+- **API:** [http://localhost:8080](http://localhost:8080) — backend REST API
+
+The quickstart comes with demo data: services, groups, incidents, and maintenance events — so you can explore the UI right away.
+
+### Default Accounts
+
+The backend migrations seed three accounts with different roles:
+
+| Role     | Email                  | Password   |
+|----------|------------------------|------------|
+| admin    | `admin@example.com`    | `admin123` |
+| operator | `operator@example.com` | `admin123` |
+| user     | `user@example.com`     | `user123`  |
+
+Log in at [http://localhost:3000/login](http://localhost:3000/login) — use the **admin** or **operator** account to access the dashboard.
+
+### Enabling Notifications
+
+Email and Telegram notifications are disabled by default. To enable them, uncomment and configure the corresponding environment variables in `docker-compose.quickstart.yml` (see the `# --- Notifications ---` section in the backend service). Without these, only in-app notification channels will be available.
+
+### Stop
+
+```bash
+# Stop containers (data preserved)
+docker compose -f docker-compose.quickstart.yml down
+
+# Stop and remove all data
+docker compose -f docker-compose.quickstart.yml down -v
+```
 
 ## Features
 
-- 📊 **Public Status Page**: Real-time service status display
-- 🔐 **Authentication**: JWT-based auth with role-based access control
-- 🎯 **Admin Dashboard**: Manage services, events, groups, and templates
-- 📱 **Responsive Design**: Mobile-first approach
-- 🧪 **Well Tested**: Unit, integration, and E2E tests
-- 🎨 **Modern Stack**: Next.js 14, TypeScript, Tailwind CSS, shadcn/ui
-- 🎨 **Theme System**: Multiple color themes (Garden, Ocean, Sunset, Forest) with light/dark modes
+### Public Status Page
+- Overall system status banner
+- Active incidents with severity and timeline
+- Scheduled maintenance announcements
+- Service list grouped by category
+- 7-day status history
+- Individual event detail pages
 
-## Tech Stack
+### Operator Dashboard
+- **Services** — CRUD with status management, grouping, tags, archive/restore
+- **Groups** — Organize services into logical categories
+- **Events** — Incidents and maintenance with full lifecycle (investigating → identified → monitoring → resolved)
+- **Templates** — Reusable event templates for common incidents
+- **Event updates** — Timeline entries with per-service status changes
 
-| Component        | Technology              |
-|------------------|-------------------------|
-| Framework        | Next.js 14 (App Router) |
-| Language         | TypeScript 5            |
-| Styling          | Tailwind CSS 3          |
-| UI Components    | shadcn/ui               |
-| State Management | TanStack Query v5       |
-| Forms            | React Hook Form + Zod   |
-| API Client       | openapi-fetch           |
-| Testing          | Vitest + Playwright     |
+### Notifications
+- **Channels** — Email, Telegram, Mattermost (with verification)
+- **Subscriptions** — Per-channel, per-service subscription matrix
+- User self-service via Settings page
 
-## Getting Started
+### Themes
+Four color themes (Garden, Ocean, Sunset, Forest), each with light and dark mode. Preference saved in browser.
 
-### Prerequisites
+## Architecture
 
-- Node.js 18+ and npm
-- Backend API running (see [incident-garden](https://github.com/bissquit/incident-garden))
+Garden is a two-component system:
 
-### Installation
+| Component         | Repository                                                      | Stack                                           |
+|-------------------|-----------------------------------------------------------------|-------------------------------------------------|
+| **Backend (API)** | [incident-garden](https://github.com/bissquit/incident-garden)  | Go, PostgreSQL, REST API                        |
+| **Frontend (UI)** | this repo                                                       | Next.js 14, TypeScript, Tailwind CSS, shadcn/ui |
 
-```bash
-# Clone the repository
-git clone https://github.com/bissquit/garden-ui.git
-cd garden-ui
+The frontend is a standalone Next.js application that communicates with the backend API. Authentication uses HTTP-only cookies managed by the backend.
 
-# Install dependencies
-npm install
+### Tech Stack
 
-# Copy environment variables
-cp .env.example .env.local
-
-# Update API specification from backend
-npm run api:update
-
-# Start development server
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to view the application.
-
-### Environment Variables
-
-Create `.env.local` file:
-
-```bash
-NEXT_PUBLIC_API_URL=http://localhost:8080
-BACKEND_REPO_URL=https://raw.githubusercontent.com/bissquit/incident-garden/main
-```
+| Layer      | Technology                |
+|------------|---------------------------|
+| Framework  | Next.js 14 (App Router)   |
+| Language   | TypeScript                |
+| Styling    | Tailwind CSS + shadcn/ui  |
+| State      | TanStack Query v5         |
+| Forms      | React Hook Form + Zod     |
+| API Client | openapi-fetch (type-safe) |
+| Testing    | Vitest + Playwright       |
 
 ## Development
 
-### Available Scripts
+### Prerequisites
+
+- Node.js 20+
+- Backend API running (see [docker-compose.yml](docker-compose.yml) or [incident-garden](https://github.com/bissquit/incident-garden))
+
+### Setup
 
 ```bash
-npm run dev           # Development server (localhost:3000)
-npm run build         # Production build
-npm run start         # Start production server
-npm run lint          # ESLint
-npm run lint:fix      # ESLint with auto-fix
-npm run typecheck     # TypeScript type checking
-npm run format        # Prettier formatting
-npm run test          # Unit + Integration tests (watch mode)
-npm run test:run      # Unit + Integration tests (single run)
-npm run test:coverage # Tests with coverage report
-npm run test:e2e      # E2E tests (Playwright)
-npm run verify        # Full validation (lint + typecheck + test + build)
-npm run api:update    # Update OpenAPI spec from backend
-npm run api:generate  # Generate TypeScript types from OpenAPI
+git clone https://github.com/bissquit/garden-ui.git
+cd garden-ui
+npm install
+cp .env.example .env.local
+npm run dev
 ```
 
-### Project Structure
+Open [http://localhost:3000](http://localhost:3000). The app expects the backend at `http://localhost:8080` by default (configured via `NEXT_PUBLIC_API_URL`).
 
-```
-garden-ui/
-├── src/
-│   ├── api/              # API client and OpenAPI types
-│   ├── app/              # Next.js App Router pages
-│   │   ├── (public)/     # Public pages (SSR/SSG)
-│   │   ├── (auth)/       # Auth pages (login/register)
-│   │   ├── dashboard/    # Protected admin area
-│   │   └── settings/     # User settings
-│   ├── components/
-│   │   ├── ui/           # shadcn/ui components
-│   │   ├── layout/       # Layout components
-│   │   └── features/     # Feature components
-│   ├── hooks/            # React hooks
-│   ├── lib/              # Utilities and helpers
-│   └── types/            # TypeScript types
-├── tests/
-│   ├── unit/             # Unit tests
-│   ├── integration/      # Integration tests
-│   ├── e2e/              # E2E tests
-│   └── mocks/            # MSW mocks
-└── scripts/              # Build and utility scripts
-```
-
-## API Integration
-
-This project uses [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) for type-safe API calls.
-
-### Update API Types
-
-When backend API changes:
+### Commands
 
 ```bash
-# Download latest OpenAPI spec and regenerate types
-npm run api:update
+npm run dev              # Dev server on :3000
+npm run verify           # Lint + typecheck + test + build (CI parity)
+npm run test:run         # Unit and integration tests
+npm run test:e2e         # E2E tests (Playwright, headless)
+npm run test:e2e:ui      # E2E tests with interactive UI
+npm run api:update       # Download OpenAPI spec from backend + regenerate types
 ```
 
-### Backend Compatibility
+### Testing
 
-| Frontend | Backend  | Status       |
-|----------|----------|--------------|
-| 1.x.x    | >= 1.0.0 | ✅ Compatible |
-
-## Testing
-
-### Coverage Thresholds
-
-Minimum coverage: **70%** for statements, branches, functions, and lines.
+Coverage threshold: **70%** (statements, branches, functions, lines).
 
 ```bash
-# Run tests with coverage
-npm run test:coverage
+npm run test:coverage    # Run tests with coverage report
+npm run test:e2e         # E2E tests (requires running backend)
 ```
 
-### E2E Tests
+## Compatibility
 
-```bash
-# Run E2E tests
-npm run test:e2e
+| Frontend | Backend | Notes |
+|---|---|---|
+| 1.5.x | >= 2.11.0 | Current |
 
-# Run E2E tests in UI mode
-npm run test:e2e:ui
-```
+Check [incident-garden releases](https://github.com/bissquit/incident-garden/releases) for backend versions.
 
-## Authentication
+## Limitations
 
-- **Type**: JWT tokens (access + refresh)
-- **Access Token**: Short-lived (15 minutes)
-- **Refresh Token**: Long-lived (7 days)
-- **Storage**: In-memory (tokens not persisted in localStorage/cookies)
-
-### Roles
-
-- `user`: Basic user access
-- `operator`: Can manage services and events
-- `admin`: Full access to all features
-
-## Themes
-
-The application supports multiple color themes that users can switch on the fly:
-
-### Available Themes
-
-- **Garden** (default) - Warm green palette, perfect for the Garden UI brand
-- **Ocean** - Cool blue palette (original)
-- **Sunset** - Warm orange-red palette
-- **Forest** - Deep dark green palette
-
-Each theme supports both **light** and **dark** modes. Theme preference is saved in browser's localStorage.
-
-### Usage
-
-Click the palette icon (🎨) in the header to select a theme, and the sun/moon icon to toggle between light and dark modes.
-
-### Adding New Themes
-
-See [CLAUDE.md](./CLAUDE.md) section "Цветовые темы" for instructions on adding custom themes.
+- **No built-in monitoring** — Garden manages incidents, not uptime checks. Use it alongside your existing monitoring (Prometheus, Grafana, Uptime Kuma, etc.)
+- **Frontend and backend are separate deployments** — you need both running
+- **Registration is API-only** — the UI registration page is disabled; accounts are created via API or by an admin
+- **NEXT_PUBLIC_API_URL is a build-time variable** — to change the backend URL, rebuild the frontend Docker image with the new value
 
 ## Contributing
 
-Please read [CLAUDE.md](./CLAUDE.md) for development guidelines and architecture decisions.
-
-### Before Submitting PR
+See [CLAUDE.md](./CLAUDE.md) for development guidelines, architecture decisions, and coding conventions.
 
 ```bash
-# Run full validation
+# Run full validation before submitting a PR
 npm run verify
 ```
 
-All checks must pass before submitting a pull request.
-
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-
-## Related Projects
-
-- [incident-garden](https://github.com/bissquit/incident-garden) - Backend API
+[Apache License 2.0](LICENSE)

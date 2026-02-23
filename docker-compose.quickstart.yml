@@ -1,0 +1,124 @@
+# ===========================================
+# Quick Start: try Garden UI in under a minute
+# ===========================================
+#
+# Usage:
+#   docker compose -f docker-compose.quickstart.yml up -d
+#
+# Then open:
+#   - Status page: http://localhost:3000 (see README.md for default credentials)
+#   - Backend API: http://localhost:8080
+#
+# Stop:
+#   docker compose -f docker-compose.quickstart.yml down
+#
+# Stop and remove all data:
+#   docker compose -f docker-compose.quickstart.yml down -v
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: garden-quickstart-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: garden
+      POSTGRES_PASSWORD: garden
+      POSTGRES_DB: garden
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U garden -d garden"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - garden
+
+  migrate:
+    image: ${BACKEND_IMAGE:-ghcr.io/bissquit/incident-garden}:${BACKEND_TAG:-latest}
+    container_name: garden-quickstart-migrate
+    user: root
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - migrations:/tmp/migrations
+    entrypoint: sh
+    command: -c "cp -r /app/migrations/* /tmp/migrations/ && chmod -R 755 /tmp/migrations/"
+    networks:
+      - garden
+
+  migrate-apply:
+    image: migrate/migrate:v4.17.0
+    container_name: garden-quickstart-migrate-apply
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - migrations:/migrations:ro
+    command: [
+      "-path", "/migrations",
+      "-database", "postgresql://garden:garden@postgres:5432/garden?sslmode=disable",
+      "up"
+    ]
+    networks:
+      - garden
+
+  backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/bissquit/incident-garden}:${BACKEND_TAG:-latest}
+    container_name: garden-quickstart-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate-apply:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    environment:
+      DATABASE_URL: postgresql://garden:garden@postgres:5432/garden?sslmode=disable
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      JWT_SECRET_KEY: quickstart-demo-key-change-in-production
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+      # --- Notifications (uncomment to enable) ---
+      # Email notifications:
+      # NOTIFICATIONS_EMAIL_ENABLED: true
+      # NOTIFICATIONS_EMAIL_SMTP_HOST: smtp.example.com
+      # NOTIFICATIONS_EMAIL_SMTP_PORT: 587
+      # NOTIFICATIONS_EMAIL_FROM_ADDRESS: noreply@example.com
+      # Telegram notifications:
+      # NOTIFICATIONS_TELEGRAM_ENABLED: true
+      # NOTIFICATIONS_TELEGRAM_BOT_TOKEN: your-bot-token
+      # NOTIFICATIONS_TELEGRAM_BOT_USERNAME: your_bot_username
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      start_period: 10s
+      retries: 5
+    networks:
+      - garden
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/bissquit/garden-ui}:${FRONTEND_TAG:-latest}
+    container_name: garden-quickstart-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    networks:
+      - garden
+
+volumes:
+  postgres_data:
+  migrations:
+
+networks:
+  garden:
+    driver: bridge
