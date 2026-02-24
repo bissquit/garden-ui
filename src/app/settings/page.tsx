@@ -16,7 +16,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, User, AlertCircle, BellOff } from 'lucide-react';
+import { User, AlertCircle, BellOff } from 'lucide-react';
+import { SettingsPageSkeleton } from '@/components/features/dashboard';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -95,9 +96,7 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           {channelsLoading || configLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
+            <SettingsPageSkeleton />
           ) : channelsError || configError ? (
             <div className="flex flex-col items-center justify-center py-8">
               <AlertCircle className="h-8 w-8 text-destructive mb-2" />

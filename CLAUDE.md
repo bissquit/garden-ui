@@ -62,7 +62,11 @@ src/
 │   └── types.generated.ts     # DO NOT EDIT - generated types
 │
 ├── app/                       # Next.js 14 App Router
+│   ├── error.tsx              # Root error boundary
+│   ├── not-found.tsx          # Custom 404 page
+│   ├── api/health/route.ts    # Health check endpoint
 │   ├── (public)/              # SSR pages (no auth)
+│   │   ├── error.tsx          # Public error boundary
 │   │   ├── page.tsx           # Status page
 │   │   ├── history/page.tsx   # History (7 days)
 │   │   └── events/[id]/page.tsx  # Public event details + timeline
@@ -70,6 +74,7 @@ src/
 │   │   ├── login/page.tsx
 │   │   └── register/page.tsx
 │   ├── dashboard/             # Protected (operator/admin only)
+│   │   ├── error.tsx          # Dashboard error boundary
 │   │   ├── layout.tsx         # Guard: operator+ required
 │   │   ├── page.tsx           # Overview
 │   │   ├── services/page.tsx  # CRUD services (tags edited in dialog)
@@ -88,9 +93,9 @@ src/
 │       ├── auth/              # LoginForm
 │       ├── status/            # OverallStatusBanner, ServiceList, ServiceItem,
 │       │                      # ActiveIncidents, ScheduledMaintenance, EventCard,
-│       │                      # HistoryList, HistoryDayGroup
+│       │                      # HistoryList, HistoryDayGroup, StatusPageSkeleton
 │       ├── events/            # Shared event components (used by public + dashboard)
-│       │                      # EventDetailsCard, EventUnifiedTimeline
+│       │                      # EventDetailsCard, EventUnifiedTimeline, EventDetailSkeleton
 │       └── dashboard/         # DataTable, EmptyState, DeleteConfirmationDialog,
 │                              # ServicesTable (with active events indicator), ServiceForm, ServiceFormDialog,
 │                              # ActiveEventsWarning (warning for services with active events),
@@ -102,7 +107,8 @@ src/
 │                              # TemplatesTable, TemplateForm, TemplateFormDialog,
 │                              # ChannelsTable, ChannelForm, ChannelFormDialog,
 │                              # VerifyEmailDialog,
-│                              # SubscriptionEditor (matrix view: channels × services, service search/filter)
+│                              # SubscriptionEditor (matrix view: channels × services, service search/filter),
+│                              # DashboardTableSkeleton, SettingsPageSkeleton
 │
 ├── hooks/
 │   ├── use-auth.tsx           # Auth context: login, logout, hasRole, hasMinRole
@@ -125,6 +131,7 @@ src/
 │
 ├── lib/
 │   ├── api-error.ts           # ApiError class
+│   ├── config.ts              # siteConfig (site name from NEXT_PUBLIC_SITE_NAME)
 │   ├── utils.ts               # cn(), formatDate(), formatRelativeTime()
 │   ├── status-utils.ts        # serviceStatusConfig, severityConfig, eventStatusConfig,
 │   │                          # calculateOverallStatus, groupServices, isEventActive, filterActiveEvents
@@ -188,8 +195,8 @@ docker-compose.quickstart.yml  # Quick start: all services from GHCR images, no 
 - [x] E2E tests in CI for critical flows
 - [x] HTTP-only cookies authentication (frontend ready, awaiting backend)
 - [ ] Mobile optimization
-- [ ] Loading skeletons
-- [ ] Error boundaries
+- [x] Loading skeletons
+- [x] Error boundaries
 - [ ] i18n (optional)
 
 ---

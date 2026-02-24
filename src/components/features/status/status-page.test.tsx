@@ -142,7 +142,7 @@ describe('StatusPage', () => {
     });
 
     renderWithProviders(<StatusPage />);
-    expect(document.querySelector('.animate-spin')).toBeInTheDocument();
+    expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
   it('renders services after loading', async () => {
@@ -296,7 +296,7 @@ describe('HistoryPage', () => {
     });
 
     renderWithProviders(<HistoryPage />);
-    expect(document.querySelector('.animate-spin')).toBeInTheDocument();
+    expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
   it('renders history events after loading', () => {

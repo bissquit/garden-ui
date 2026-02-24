@@ -4,7 +4,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { useServices, useGroups } from '@/hooks/use-public-status';
 import { useEvents } from '@/hooks/use-events';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Server, FolderTree, AlertCircle, Wrench, Loader2 } from 'lucide-react';
+import { Server, FolderTree, AlertCircle, Wrench } from 'lucide-react';
+import { DashboardTableSkeleton } from '@/components/features/dashboard';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
@@ -24,11 +25,7 @@ export default function DashboardPage() {
   }, [isAuthenticated, authLoading, router]);
 
   if (authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <DashboardTableSkeleton />;
   }
 
   if (!isAuthenticated) {
@@ -86,9 +83,7 @@ export default function DashboardPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center min-h-[200px]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <DashboardTableSkeleton />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat) => (

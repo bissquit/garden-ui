@@ -13,7 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Archive, Pencil, RotateCcw, Plus } from 'lucide-react';
+import { Archive, Pencil, RotateCcw, Plus } from 'lucide-react';
+import { DashboardTableSkeleton } from '@/components/features/dashboard';
 import type { components } from '@/api/types.generated';
 
 type ServiceGroup = components['schemas']['ServiceGroup'];
@@ -142,9 +143,7 @@ export default function GroupsPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center min-h-[200px]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <DashboardTableSkeleton />
       ) : (
         <GroupsTable groups={groupsWithActions ?? []} serviceCount={serviceCount} />
       )}

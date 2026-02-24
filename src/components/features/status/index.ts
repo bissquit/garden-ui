@@ -8,3 +8,4 @@ export { ScheduledMaintenance } from './scheduled-maintenance';
 export { EventCard } from './event-card';
 export { HistoryList } from './history-list';
 export { HistoryDayGroup } from './history-day-group';
+export { StatusPageSkeleton } from './status-page-skeleton';

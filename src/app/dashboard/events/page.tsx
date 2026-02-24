@@ -9,7 +9,7 @@ import {
   EventsFilters,
   EventFormDialog,
 } from '@/components/features/dashboard';
-import { Loader2 } from 'lucide-react';
+import { DashboardTableSkeleton } from '@/components/features/dashboard';
 import { isEventActive } from '@/lib/status-utils';
 import type { components } from '@/api/types.generated';
 
@@ -48,9 +48,7 @@ function EventsPageContent() {
       <EventsFilters />
 
       {isLoading ? (
-        <div className="flex items-center justify-center min-h-[200px]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <DashboardTableSkeleton />
       ) : isError ? (
         <div className="text-center text-destructive py-8">
           Failed to load events. Make sure you are logged in.
@@ -64,13 +62,7 @@ function EventsPageContent() {
 
 export default function EventsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      }
-    >
+    <Suspense fallback={<DashboardTableSkeleton />}>
       <EventsPageContent />
     </Suspense>
   );

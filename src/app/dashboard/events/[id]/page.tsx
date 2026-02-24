@@ -16,7 +16,8 @@ import type { AddEventUpdateFormData } from '@/lib/validations/event';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Loader2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Trash2 } from 'lucide-react';
+import { EventDetailSkeleton } from '@/components/features/events';
 export default function EventDetailsPage() {
   const params = useParams();
   const router = useRouter();
@@ -66,11 +67,7 @@ export default function EventDetailsPage() {
   };
 
   if (eventLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <EventDetailSkeleton />;
   }
 
   if (eventError || !event) {
