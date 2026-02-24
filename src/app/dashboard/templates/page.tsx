@@ -13,7 +13,8 @@ import {
 } from '@/components/features/dashboard';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus } from 'lucide-react';
+import { DashboardTableSkeleton } from '@/components/features/dashboard';
 import type { components } from '@/api/types.generated';
 
 type EventTemplate = components['schemas']['EventTemplate'];
@@ -53,11 +54,7 @@ export default function TemplatesPage() {
   };
 
   if (authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <DashboardTableSkeleton />;
   }
 
   if (!isAuthenticated) {
@@ -106,9 +103,7 @@ export default function TemplatesPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center min-h-[200px]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <DashboardTableSkeleton />
       ) : isError ? (
         <div className="text-center text-destructive py-8">
           Failed to load templates.

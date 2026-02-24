@@ -11,7 +11,8 @@ import {
 } from '@/hooks/use-public-events';
 import { EventDetailsCard, EventUnifiedTimeline } from '@/components/features/events';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Pencil, Loader2 } from 'lucide-react';
+import { ArrowLeft, Pencil } from 'lucide-react';
+import { EventDetailSkeleton } from '@/components/features/events';
 
 export default function PublicEventPage() {
   const params = useParams();
@@ -26,11 +27,7 @@ export default function PublicEventPage() {
   const { data: groups } = useGroups();
 
   if (eventLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <EventDetailSkeleton />;
   }
 
   if (isError || !event) {

@@ -30,3 +30,6 @@ export { ChannelFormDialog } from './channel-form-dialog';
 export { VerifyEmailDialog } from './verify-email-dialog';
 // Subscriptions
 export { SubscriptionEditor } from './subscription-editor';
+// Skeletons
+export { DashboardTableSkeleton } from './dashboard-table-skeleton';
+export { SettingsPageSkeleton } from './settings-page-skeleton';

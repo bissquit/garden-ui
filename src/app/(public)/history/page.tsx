@@ -2,7 +2,8 @@
 
 import { useStatusHistory } from '@/hooks/use-public-status';
 import { HistoryList } from '@/components/features/status';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { StatusPageSkeleton } from '@/components/features/status';
 import Link from 'next/link';
 
 export default function HistoryPage() {
@@ -23,11 +24,7 @@ export default function HistoryPage() {
         Incident History
       </h1>
 
-      {isLoading && (
-        <div className="flex items-center justify-center min-h-[200px]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      )}
+      {isLoading && <StatusPageSkeleton />}
 
       {isError && (
         <div className="text-center text-destructive py-8">
