@@ -17,6 +17,8 @@ WORKDIR /app
 # API URL для сборки (можно переопределить при build)
 ARG NEXT_PUBLIC_API_URL=http://localhost:8080
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SITE_NAME=IncidentGarden
+ENV NEXT_PUBLIC_SITE_NAME=$NEXT_PUBLIC_SITE_NAME
 
 # Копируем зависимости из предыдущего stage
 COPY --from=deps /app/node_modules ./node_modules

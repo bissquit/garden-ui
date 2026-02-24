@@ -173,6 +173,7 @@ Check [incident-garden releases](https://github.com/bissquit/incident-garden/rel
 - **Frontend and backend are separate deployments** — you need both running
 - **Registration is API-only** — the UI registration page is disabled; accounts are created via API or by an admin
 - **NEXT_PUBLIC_API_URL is a build-time variable** — to change the backend URL, rebuild the frontend Docker image with the new value
+- **NEXT_PUBLIC_SITE_NAME is a build-time variable** — set it to customize the site name for branding (default: `IncidentGarden`)
 
 ## Contributing
 
