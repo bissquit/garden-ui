@@ -14,6 +14,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Sprout, LogOut, Settings, History } from 'lucide-react';
 import { ThemeSwitcher, themeIcons } from './theme-switcher';
+import { siteConfig } from '@/lib/config';
 
 export function Header() {
   const { user, isAuthenticated, logout, hasMinRole } = useAuth();
@@ -31,7 +32,7 @@ export function Header() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
           <LogoIcon className="h-6 w-6 text-primary" />
-          <span>IncidentGarden</span>
+          <span>{siteConfig.name}</span>
         </Link>
 
         <nav className="flex items-center gap-4">

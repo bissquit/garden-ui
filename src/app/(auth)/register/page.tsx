@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { siteConfig } from '@/lib/config';
 
 export default function RegisterPage() {
   return (
@@ -13,7 +14,7 @@ export default function RegisterPage() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Register</CardTitle>
           <CardDescription>
-            Create a new account for IncidentGarden
+            Create a new account for {siteConfig.name}
           </CardDescription>
         </CardHeader>
         <CardContent>
