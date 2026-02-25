@@ -54,6 +54,8 @@ describe('useAuth', () => {
       id: '1',
       email: 'test@example.com',
       role: 'admin' as const,
+      is_active: true,
+      must_change_password: false,
       created_at: '2026-01-01',
       updated_at: '2026-01-01',
     };
@@ -82,6 +84,8 @@ describe('useAuth', () => {
       id: '1',
       email: 'test@example.com',
       role: 'operator' as const,
+      is_active: true,
+      must_change_password: false,
       created_at: '2026-01-01',
       updated_at: '2026-01-01',
     };
