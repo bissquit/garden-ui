@@ -108,6 +108,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(loggedInUser);
       // Токены теперь в cookies, устанавливаются сервером автоматически
 
+      // Force password change if required
+      if (loggedInUser.must_change_password) {
+        router.push('/change-password');
+        return;
+      }
+
       // Редирект в зависимости от роли
       if (loggedInUser.role === 'operator' || loggedInUser.role === 'admin') {
         router.push('/dashboard');

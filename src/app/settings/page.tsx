@@ -1,8 +1,11 @@
 'use client';
 
+import { useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 import { useChannels } from '@/hooks/use-channels';
 import { useNotificationsConfig } from '@/hooks/use-notifications-config';
+import { ChangePasswordForm } from '@/components/features/auth/change-password-form';
 import {
   ChannelsTable,
   ChannelFormDialog,
@@ -16,11 +19,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { User, AlertCircle, BellOff } from 'lucide-react';
+import { User, Lock, AlertCircle, BellOff } from 'lucide-react';
 import { SettingsPageSkeleton } from '@/components/features/dashboard';
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const { toast } = useToast();
   const {
     data: channels,
     isLoading: channelsLoading,
@@ -31,6 +35,15 @@ export default function SettingsPage() {
     isLoading: configLoading,
     isError: configError,
   } = useNotificationsConfig();
+
+  const handlePasswordChangeSuccess = useCallback(async () => {
+    toast({
+      title: 'Password changed',
+      description: 'Please log in with your new password.',
+    });
+    await logout();
+    // logout() already redirects to /login
+  }, [toast, logout]);
 
   const availableChannels = notificationsConfig?.available_channels;
   const telegramBotUsername =
@@ -71,6 +84,24 @@ export default function SettingsPage() {
               <p className="text-sm capitalize">{user?.role ?? 'N/A'}</p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Change Password Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5" />
+            Change Password
+          </CardTitle>
+          <CardDescription>
+            Update your account password
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChangePasswordForm onSuccess={handlePasswordChangeSuccess} />
         </CardContent>
       </Card>
 
