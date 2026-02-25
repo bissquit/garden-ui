@@ -93,6 +93,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       );
 
       if (error || !data) {
+        if (response.status === 403) {
+          throw ApiError.fromResponse(response.status, error, 'Account is deactivated');
+        }
         throw ApiError.fromResponse(response.status, error as any);
       }
 
