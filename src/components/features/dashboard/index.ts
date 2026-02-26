@@ -30,6 +30,11 @@ export { ChannelFormDialog } from './channel-form-dialog';
 export { VerifyEmailDialog } from './verify-email-dialog';
 // Subscriptions
 export { SubscriptionEditor } from './subscription-editor';
+// Users
+export { UsersTable } from './users-table';
+export { UserForm } from './user-form';
+export { UserFormDialog } from './user-form-dialog';
+export { ResetPasswordDialog } from './reset-password-dialog';
 // Skeletons
 export { DashboardTableSkeleton } from './dashboard-table-skeleton';
 export { SettingsPageSkeleton } from './settings-page-skeleton';

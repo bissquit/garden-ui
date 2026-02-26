@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useChannels } from '@/hooks/use-channels';
 import { useNotificationsConfig } from '@/hooks/use-notifications-config';
 import { ChangePasswordForm } from '@/components/features/auth/change-password-form';
+import { ProfileForm } from '@/components/features/auth/profile-form';
 import {
   ChannelsTable,
   ChannelFormDialog,
@@ -35,6 +36,13 @@ export default function SettingsPage() {
     isLoading: configLoading,
     isError: configError,
   } = useNotificationsConfig();
+
+  const handleProfileUpdateSuccess = useCallback(() => {
+    toast({
+      title: 'Profile updated',
+      description: 'Your profile has been updated successfully.',
+    });
+  }, [toast]);
 
   const handlePasswordChangeSuccess = useCallback(async () => {
     toast({
@@ -70,20 +78,11 @@ export default function SettingsPage() {
           <CardDescription>Your account information</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">
-                Email
-              </label>
-              <p className="text-sm">{user?.email ?? 'N/A'}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">
-                Role
-              </label>
-              <p className="text-sm capitalize">{user?.role ?? 'N/A'}</p>
-            </div>
-          </div>
+          {user ? (
+            <ProfileForm user={user} onSuccess={handleProfileUpdateSuccess} />
+          ) : (
+            <p className="text-sm text-muted-foreground">Loading profile...</p>
+          )}
         </CardContent>
       </Card>
 

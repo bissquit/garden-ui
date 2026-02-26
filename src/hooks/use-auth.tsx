@@ -20,6 +20,7 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   hasRole: (role: Role) => boolean;
   hasMinRole: (minRole: Role) => boolean;
 }
@@ -136,6 +137,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     router.push('/login');
   }, [router]);
 
+  const refreshUser = useCallback(async () => {
+    const { data, error } = await apiClient.GET('/api/v1/me');
+    if (!error && data?.data) {
+      setUser(data.data as User);
+    }
+  }, []);
+
   const hasRole = useCallback(
     (role: Role): boolean => {
       return user?.role === role;
@@ -157,6 +165,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     login,
     logout,
+    refreshUser,
     hasRole,
     hasMinRole,
   };
