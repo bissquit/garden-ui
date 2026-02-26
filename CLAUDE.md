@@ -25,7 +25,7 @@ npm run api:generate     # Generate TypeScript types
 ```
 
 **Backend:** https://github.com/bissquit/incident-garden
-**Compatibility:** Frontend 1.5.0 ↔ Backend >= 2.11.0
+**Compatibility:** Frontend 1.5.0 ↔ Backend >= 2.15.0
 **ENV:** `NEXT_PUBLIC_API_URL=http://localhost:8080`
 
 ### Default Accounts (pre-seeded by backend migrations)
@@ -72,7 +72,10 @@ src/
 │   │   └── events/[id]/page.tsx  # Public event details + timeline
 │   ├── (auth)/
 │   │   ├── login/page.tsx
-│   │   └── register/page.tsx
+│   │   ├── register/page.tsx
+│   │   ├── forgot-password/page.tsx  # Forgot password (email check + form)
+│   │   └── reset-password/page.tsx   # Reset password with token from URL
+│   ├── change-password/page.tsx      # Forced password change (must_change_password flow)
 │   ├── dashboard/             # Protected (operator/admin only)
 │   │   ├── error.tsx          # Dashboard error boundary
 │   │   ├── layout.tsx         # Guard: operator+ required
@@ -81,7 +84,8 @@ src/
 │   │   ├── groups/page.tsx    # CRUD groups
 │   │   ├── events/page.tsx    # Events list + filters
 │   │   ├── events/[id]/page.tsx  # Event detail + timeline
-│   │   └── templates/page.tsx # CRUD templates
+│   │   ├── templates/page.tsx # CRUD templates
+│   │   └── users/page.tsx     # User management (admin only, paginated)
 │   └── settings/              # Protected (any authenticated user)
 │       ├── layout.tsx         # Guard: any role
 │       └── page.tsx           # Profile, Channels, Subscriptions
@@ -90,7 +94,8 @@ src/
 │   ├── ui/                    # shadcn/ui primitives
 │   ├── layout/                # header, footer, dashboard-sidebar, theme-switcher
 │   └── features/
-│       ├── auth/              # LoginForm
+│       ├── auth/              # LoginForm, ProfileForm, ChangePasswordForm,
+│       │                      # ForgotPasswordForm, ResetPasswordForm
 │       ├── status/            # OverallStatusBanner, ServiceList, ServiceItem,
 │       │                      # ActiveIncidents, ScheduledMaintenance, EventCard,
 │       │                      # HistoryList, HistoryDayGroup, StatusPageSkeleton
@@ -108,10 +113,12 @@ src/
 │                              # ChannelsTable, ChannelForm, ChannelFormDialog,
 │                              # VerifyEmailDialog,
 │                              # SubscriptionEditor (matrix view: channels × services, service search/filter),
+│                              # UsersTable, UserForm, UserFormDialog,
+│                              # ResetPasswordDialog (admin reset user password),
 │                              # DashboardTableSkeleton, SettingsPageSkeleton
 │
 ├── hooks/
-│   ├── use-auth.tsx           # Auth context: login, logout, hasRole, hasMinRole
+│   ├── use-auth.tsx           # Auth context: login, logout, refreshUser, hasRole, hasMinRole
 │   ├── use-public-status.ts   # useServices, useGroups, usePublicStatus, useStatusHistory
 │   ├── use-public-events.ts   # usePublicEvent, usePublicEventUpdates, usePublicEventChanges
 │   ├── use-services-mutations.ts  # useCreateService, useUpdateService, useDeleteService, useRestoreService
@@ -127,6 +134,11 @@ src/
 │   │                              # useVerifyChannel (with code for email), useResendVerificationCode
 │   ├── use-subscriptions.ts   # useSubscriptionsMatrix (per-channel model)
 │   ├── use-subscriptions-mutations.ts # useSetChannelSubscriptions
+│   ├── use-auth-recovery.ts   # useForgotPassword, useResetPassword (publicClient)
+│   ├── use-change-password.ts # useChangePassword (PUT /api/v1/me/password)
+│   ├── use-update-profile.ts  # useUpdateProfile (PATCH /api/v1/me, refreshes user)
+│   ├── use-users.ts           # useUsers (paginated), useUser
+│   ├── use-users-mutations.ts # useCreateUser, useUpdateUser, useAdminResetPassword
 │   └── use-theme.ts           # Theme switching (Garden/Ocean/Sunset/Forest)
 │
 ├── lib/
@@ -143,7 +155,10 @@ src/
 │       ├── event.ts           # createEventSchema, addEventUpdateSchema,
 │       │                      # affectedServiceSchema, affectedGroupSchema
 │       ├── template.ts        # template schemas
+│       ├── password.ts        # changePasswordSchema, forgotPasswordSchema, resetPasswordSchema
 │       ├── channel.ts         # createChannelSchema (email/telegram/mattermost), verifyChannelSchema
+│       ├── profile.ts         # updateProfileSchema (first_name, last_name)
+│       ├── user.ts            # createUserSchema, updateUserSchema, adminResetPasswordSchema
 │       └── subscription.ts    # setChannelSubscriptionsSchema (per-channel model)
 │
 └── types/index.ts             # Role, User, TokenPair, AuthState
@@ -179,7 +194,7 @@ docker-compose.quickstart.yml  # Quick start: all services from GHCR images, no 
 
 ## 3. STATUS
 
-**Current:** Phase 7 (in progress) | **Version:** 1.4.0
+**Current:** Phase 7 (in progress) | **Version:** 1.5.0
 
 | Phase              | Status | Scope                                                                         |
 |--------------------|--------|-------------------------------------------------------------------------------|
@@ -197,6 +212,10 @@ docker-compose.quickstart.yml  # Quick start: all services from GHCR images, no 
 - [ ] Mobile optimization
 - [x] Loading skeletons
 - [x] Error boundaries
+- [x] User management (admin CRUD)
+- [x] Password change flow (must_change_password)
+- [x] Profile editing
+- [x] Forgot/Reset password
 - [ ] i18n (optional)
 
 ---

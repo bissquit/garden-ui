@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { changePasswordSchema } from './password';
+import { changePasswordSchema, forgotPasswordSchema, resetPasswordSchema } from './password';
 
 describe('changePasswordSchema', () => {
   it('accepts valid input', () => {
@@ -66,5 +66,73 @@ describe('changePasswordSchema', () => {
       new_password: '12345678',
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe('forgotPasswordSchema', () => {
+  it('accepts a valid email', () => {
+    const result = forgotPasswordSchema.safeParse({ email: 'user@example.com' });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects empty email', () => {
+    const result = forgotPasswordSchema.safeParse({ email: '' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('Email is required');
+    }
+  });
+
+  it('rejects invalid email format', () => {
+    const result = forgotPasswordSchema.safeParse({ email: 'not-an-email' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('Please enter a valid email address');
+    }
+  });
+});
+
+describe('resetPasswordSchema', () => {
+  it('accepts valid matching passwords', () => {
+    const result = resetPasswordSchema.safeParse({
+      new_password: 'newpass123',
+      confirm_password: 'newpass123',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects short password', () => {
+    const result = resetPasswordSchema.safeParse({
+      new_password: 'short',
+      confirm_password: 'short',
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe(
+        'Password must be at least 8 characters'
+      );
+    }
+  });
+
+  it('rejects non-matching passwords', () => {
+    const result = resetPasswordSchema.safeParse({
+      new_password: 'newpass123',
+      confirm_password: 'different1',
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('Passwords do not match');
+    }
+  });
+
+  it('rejects empty confirm_password', () => {
+    const result = resetPasswordSchema.safeParse({
+      new_password: 'newpass123',
+      confirm_password: '',
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('Please confirm your password');
+    }
   });
 });
