@@ -5,19 +5,11 @@
  * forgot password page, and reset password page.
  */
 
-import { test, expect, testAdmin, testUser } from './fixtures';
+import { test, expect, testAdmin, testUser, loginAs } from './fixtures';
 
 // Generate a unique email for test users created via admin API
 function uniqueEmail(): string {
   return `e2e-pwd-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com`;
-}
-
-// Helper to login as a specific user via UI
-async function loginAs(page: import('@playwright/test').Page, email: string, password: string) {
-  await page.goto('/login');
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).fill(password);
-  await page.getByRole('button', { name: /sign in/i }).click();
 }
 
 // ── Group A: Change Password (Settings) ─────────────────────────────────
@@ -33,8 +25,9 @@ test.describe('Password: Change Password from Settings', () => {
   test('user can change password from settings', async ({ page }) => {
     // Login as regular user
     await loginAs(page, testUser.email, originalPassword);
+    await page.waitForURL('/', { timeout: 10000 });
 
-    // User role redirects to / (status page), navigate to settings
+    // Navigate to settings
     await page.goto('/settings');
     await expect(page.getByRole('heading', { name: /settings/i })).toBeVisible();
 
