@@ -5,19 +5,11 @@
  * password reset, and self-protection.
  */
 
-import { test, expect, testAdmin, testOperator } from './fixtures';
+import { test, expect, testAdmin, testOperator, loginAs } from './fixtures';
 
 // Generate a unique email for each test run to avoid conflicts
 function uniqueEmail(): string {
   return `e2e-test-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com`;
-}
-
-// Helper to login as a specific user via UI
-async function loginAs(page: import('@playwright/test').Page, email: string, password: string) {
-  await page.goto('/login');
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).fill(password);
-  await page.getByRole('button', { name: /sign in/i }).click();
 }
 
 test.describe('User Management', () => {

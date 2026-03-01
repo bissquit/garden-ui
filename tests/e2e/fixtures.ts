@@ -25,6 +25,18 @@ async function loginAsAdmin(page: Page): Promise<void> {
   await page.waitForURL('/dashboard');
 }
 
+// Flexible login helper: logs in via UI, optionally waits for redirect
+export async function loginAs(
+  page: Page,
+  email: string,
+  password: string
+): Promise<void> {
+  await page.goto('/login');
+  await page.getByLabel(/email/i).fill(email);
+  await page.getByLabel(/password/i).fill(password);
+  await page.getByRole('button', { name: /sign in/i }).click();
+}
+
 // === API Helper Types ===
 
 export interface CreateServiceData {
