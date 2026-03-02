@@ -233,7 +233,7 @@ test.describe('User Management', () => {
 
       // Reset password dialog should appear
       await expect(page.getByRole('heading', { name: /reset password/i })).toBeVisible();
-      await expect(page.getByText(testEmail)).toBeVisible();
+      await expect(page.getByRole('dialog').getByText(testEmail)).toBeVisible();
 
       // Enter new password
       await page.getByTestId('reset-password-input').fill(newPassword);

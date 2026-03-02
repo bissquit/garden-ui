@@ -5,7 +5,7 @@
  * forgot password page, and reset password page.
  */
 
-import { test, expect, testAdmin, testUser, loginAs } from './fixtures';
+import { test, expect, loginAs } from './fixtures';
 
 // Generate a unique email for test users created via admin API
 function uniqueEmail(): string {
@@ -17,14 +17,35 @@ function uniqueEmail(): string {
 test.describe('Password: Change Password from Settings', () => {
   test.describe.configure({ mode: 'serial' });
 
-  // We use the testUser account for password change testing.
-  // Original password is restored after the test via admin reset.
-  const originalPassword = testUser.password; // 'user123'
-  const temporaryPassword = `newpass-${Date.now()}`;
+  const testEmail = uniqueEmail();
+  const tempPassword = 'temppass1234';
+  const originalPassword = 'original1234';
+  const newPassword = 'changed12345';
+
+  test('setup: create test user and clear must_change_password', async ({ api, page }) => {
+    // Create user via API (admin-created users have must_change_password=true)
+    const result = await api.rawPost('/api/v1/users', {
+      email: testEmail,
+      password: tempPassword,
+      role: 'user',
+    });
+    expect(result.status).toBe(201);
+
+    // Login - will be redirected to /change-password due to must_change_password
+    await loginAs(page, testEmail, tempPassword);
+    await expect(page).toHaveURL('/change-password', { timeout: 10000 });
+
+    // Change password (clears must_change_password flag)
+    await page.getByLabel(/current password/i).fill(tempPassword);
+    await page.getByLabel(/new password/i).fill(originalPassword);
+    await page.getByRole('button', { name: /change password/i }).click();
+
+    // Should redirect to /login after password change
+    await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
+  });
 
   test('user can change password from settings', async ({ page }) => {
-    // Login as regular user
-    await loginAs(page, testUser.email, originalPassword);
+    await loginAs(page, testEmail, originalPassword);
     await page.waitForURL('/', { timeout: 10000 });
 
     // Navigate to settings
@@ -36,7 +57,7 @@ test.describe('Password: Change Password from Settings', () => {
 
     // Fill current and new password
     await page.getByLabel(/current password/i).fill(originalPassword);
-    await page.getByLabel(/new password/i).fill(temporaryPassword);
+    await page.getByLabel(/new password/i).fill(newPassword);
 
     // Submit
     await page.getByRole('button', { name: /change password/i }).click();
@@ -46,37 +67,23 @@ test.describe('Password: Change Password from Settings', () => {
   });
 
   test('user can login with new password after change', async ({ page }) => {
-    await loginAs(page, testUser.email, temporaryPassword);
+    await loginAs(page, testEmail, newPassword);
 
     // Should successfully login (user role goes to /)
     await expect(page).toHaveURL('/', { timeout: 10000 });
   });
 
-  test('restore original password via admin reset', async ({ page }) => {
-    // Login as admin
-    await loginAs(page, testAdmin.email, testAdmin.password);
-    await page.waitForURL('/dashboard');
-
-    // Go to users page
+  test('cleanup: deactivate test user', async ({ authenticatedPage: page }) => {
     await page.goto('/dashboard/users');
     await expect(page.getByRole('heading', { name: /users/i })).toBeVisible();
 
-    // Find the test user and reset their password
-    const row = page.getByRole('row').filter({ hasText: testUser.email });
-    await row.getByTestId('reset-password-button').click();
-
-    // Reset password dialog
-    await expect(page.getByRole('heading', { name: /reset password/i })).toBeVisible();
-    await page.getByTestId('reset-password-input').fill(originalPassword);
-    await page.getByTestId('reset-password-submit').click();
-
-    // Verify success
-    await expect(page.getByText(/password reset successfully/i).first()).toBeVisible({ timeout: 10000 });
-
-    // Note: The user now has must_change_password=true.
-    // To fully restore, user would need to login and change password.
-    // For E2E test isolation this is acceptable since must_change_password
-    // is tested separately.
+    const row = page.getByRole('row').filter({ hasText: testEmail });
+    if (await row.isVisible()) {
+      await row.getByTestId('toggle-active-button').click();
+      await expect(page.getByRole('alertdialog')).toBeVisible();
+      await page.getByRole('button', { name: /deactivate/i }).click();
+      await expect(page.getByRole('alertdialog')).not.toBeVisible({ timeout: 10000 });
+    }
   });
 });
 
