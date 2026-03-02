@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.5.0](https://github.com/bissquit/garden-ui/compare/v1.4.0...v1.5.0) (2026-03-02)
+
+
+### Features
+
+* **api:** add frontend health check endpoint ([8e94d7f](https://github.com/bissquit/garden-ui/commit/8e94d7f1265a4132d7c28928fe98131d2accb27f))
+* **app:** add React error boundaries and custom 404 page ([8daeff0](https://github.com/bissquit/garden-ui/commit/8daeff007bb7223c4771b26a90b99a6aa65adebe))
+* **auth:** add password change flow and must_change_password enforcement ([bb078b2](https://github.com/bissquit/garden-ui/commit/bb078b20da4a23c95ac2a6e3d15845110f17a5e9))
+* **auth:** add profile editing, password recovery, and user management ([5e2afa8](https://github.com/bissquit/garden-ui/commit/5e2afa887fba39c37e3679420c318442cf9cfbcc))
+* **auth:** update User type and handle account deactivation on login ([6e3ad56](https://github.com/bissquit/garden-ui/commit/6e3ad56f99ab8621882a51fa15959656f9f4dd1e))
+* **config:** add security headers to Next.js config ([1f6aab4](https://github.com/bissquit/garden-ui/commit/1f6aab4c5de095f0258636f2bcced1250101d1a9))
+* **config:** add white-labeling support via NEXT_PUBLIC_SITE_NAME env var ([b8f68fb](https://github.com/bissquit/garden-ui/commit/b8f68fb991a07b31ef735fc0af7d8894e6b91d6a))
+* **ui:** replace loading spinners with skeleton placeholders ([8bc63aa](https://github.com/bissquit/garden-ui/commit/8bc63aa82474c2882946f7c9e057025ee812bcdd))
+
+
+### Bug Fixes
+
+* **ui:** change CardTitle to render as semantic &lt;h3&gt; instead of &lt;div&gt; ([b3ba718](https://github.com/bissquit/garden-ui/commit/b3ba7189e844cdfa0c3b6877bff475130dee524e))
+
 ## [1.4.0](https://github.com/bissquit/garden-ui/compare/v1.3.0...v1.4.0) (2026-02-22)
 
 
